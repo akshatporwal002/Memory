@@ -6,18 +6,20 @@ var targets: [Target] = [
     .target(name: "CArchive", exclude: ["LICENSE", "PROVENANCE.md"], cSettings: [.define("MINIZ_NO_ZLIB_COMPATIBLE_NAMES")]),
     .target(name: "LearningCore"),
     .target(name: "StudyApplication", dependencies: ["LearningCore"]),
+    .target(name: "TutorFoundation", dependencies: ["LearningCore"]),
     .target(name: "PersistenceAdapters", dependencies: ["LearningCore"]),
     .target(name: "SchedulingAdapters", dependencies: ["LearningCore", .product(name: "FSRS", package: "FSRS")]),
     .target(name: "AnkiAdapters", dependencies: ["LearningCore", "CSQLite", "CArchive"]),
     .executableTarget(name: "EngramBenchmark", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"], path: "Tools/EngramBenchmark"),
     .testTarget(name: "AnkiAdapterTests", dependencies: ["AnkiAdapters", "LearningCore", "SchedulingAdapters"], resources: [.copy("Fixtures")]),
-    .testTarget(name: "EngramTests", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters"])
+    .testTarget(name: "EngramTests", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "TutorFoundation"])
 ]
 var products: [Product] = [
     .executable(name: "EngramBenchmark", targets: ["EngramBenchmark"]),
     .library(name: "AnkiAdapters", targets: ["AnkiAdapters"]),
     .library(name: "LearningCore", targets: ["LearningCore"]),
     .library(name: "StudyApplication", targets: ["StudyApplication"]),
+    .library(name: "TutorFoundation", targets: ["TutorFoundation"]),
     .library(name: "PersistenceAdapters", targets: ["PersistenceAdapters"]),
     .library(name: "SchedulingAdapters", targets: ["SchedulingAdapters"])
 ]
