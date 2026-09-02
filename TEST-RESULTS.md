@@ -14,9 +14,14 @@ An initial compilation failure was due to async expressions inside XCTest autocl
 
 `node design/previews/build-previews.cjs`: 72 contrast pairs passed; minimum ordinary-text ratio 5.289:1. Contact sheet is a design mockup, not a native runtime capture. See DESIGN-HANDOFF.md for remaining checks.
 
+## Expanded core regression run
+
+2026-09-03 03:44 Sydney, full `swift test`: 20 XCTest tests, 0 failures. Includes 17 core/application tests plus 3 archive tests. Verified all four real FSRS grades, concurrent duplicate attempts, daily limit/undo and DST boundary, learning→review→relearning, persisted revealed-session resume, actual filesystem write failure/retry, corrupt-file non-overwrite, unsupported scheduler rejection, retirement/reintroduction and stale editor/deletion protection.
+
+Independent review regression RED: 12-test run had two failures (parent deck learning wait omitted children; parent no-op rename collided with own children). Both tests passed after sharing eligibility policy and validating rename mappings against unaffected decks case-insensitively. Baseline/RED source is checkpoint 079df56.
+
 ## Required pending checks
 
-- Run expanded core suite and fix independently reported hierarchy/learning-wait defects.
 - Compile/test Anki/native backup adapters; run real Anki fixtures in a disposable profile.
 - Build iOS/iPadOS and macOS with stable Xcode; exercise create → study → relaunch.
 - Runtime layout: iPhone portrait/landscape, iPad narrow/full, Mac resize, long content and keyboard-visible editor.

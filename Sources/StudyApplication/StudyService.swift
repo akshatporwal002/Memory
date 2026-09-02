@@ -19,12 +19,13 @@ public actor StudyService {
         guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }
         let clean = try deckName(name, in: library, excluding: id)
         let oldName = library.decks[index].name
-        for i in library.decks.indices where library.decks[i].name.hasPrefix(oldName + "::") {
-            let replacement = clean + library.decks[i].name.dropFirst(oldName.count)
-            guard !library.decks.contains(where: { !$0.deleted && $0.name == replacement }) else { throw EngramError.invalid("Renaming would collide with an existing subdeck.") }
-            library.decks[i].name = replacement
+        let affected = library.decks.indices.filter { !library.decks[$0].deleted && (library.decks[$0].id == id || library.decks[$0].name.hasPrefix(oldName + "::")) }
+        let affectedIDs = Set(affected.map { library.decks[$0].id })
+        let mappings = affected.map { index in (index, clean + library.decks[index].name.dropFirst(oldName.count)) }
+        for (_, replacement) in mappings {
+            guard !library.decks.contains(where: { !$0.deleted && !affectedIDs.contains($0.id) && $0.name.caseInsensitiveCompare(replacement) == .orderedSame }) else { throw EngramError.invalid("Renaming would collide with an existing subdeck.") }
         }
-        library.decks[index].name = clean
+        for (index, replacement) in mappings { library.decks[index].name = replacement }
         try await save(library)
     }
     /// Caller presents a destructive confirmation. Tombstones retain historical evidence for backup.
@@ -190,7 +191,7 @@ public actor StudyService {
         session.nextLearningDue = nextLearningDue(in: library, deckID: session.deckID, now: now)
     }
     private func nextLearningDue(in library: LibrarySnapshot, deckID: String?, now: Date) -> Date? {
-        library.liveCards.filter { !$0.suspended && (deckID == nil || $0.deckID == deckID) && ($0.schedule.phase == .learning || $0.schedule.phase == .relearning) && $0.schedule.due > now }.map(\.schedule.due).min()
+        QueuePolicy.eligibleCards(in: library, deckID: deckID).filter { ($0.schedule.phase == .learning || $0.schedule.phase == .relearning) && $0.schedule.due > now }.map(\.schedule.due).min()
     }
     private func invalidateSessionIfNeeded(_ library: inout LibrarySnapshot) {
         guard let current = library.session?.current else { return }

@@ -19,14 +19,7 @@ public enum QueuePolicy {
         let reviewUsed = today.filter { $0.before.phase == .review }.count
         var newBudget = max(0, library.settings.newCardsPerDay - newUsed)
         var reviewBudget = max(0, library.settings.reviewsPerDay - reviewUsed)
-        let supportedNotes = Set(library.liveNotes.filter { $0.kind != .unsupported }.map(\.id))
-        let liveDecks = Set(library.liveDecks.map(\.id))
-        let selectedName = library.decks.first { $0.id == deckID }?.name
-        let selectedDecks = Set(library.liveDecks.filter { $0.id == deckID || (selectedName != nil && $0.name.hasPrefix(selectedName! + "::")) }.map(\.id))
-        return library.cards.filter {
-            !$0.retired && !$0.suspended && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
-            (deckID == nil || selectedDecks.contains($0.deckID)) && $0.schedule.due <= now
-        }.sorted {
+        return eligibleCards(in: library, deckID: deckID).filter { $0.schedule.due <= now }.sorted {
             func priority(_ phase: LearningPhase) -> Int { phase == .new ? 2 : (phase == .review ? 1 : 0) }
             let a = priority($0.schedule.phase), b = priority($1.schedule.phase)
             if a != b { return a < b }
@@ -39,6 +32,16 @@ public enum QueuePolicy {
             case .learning, .relearning: break
             }
             return true
+        }
+    }
+    public static func eligibleCards(in library: LibrarySnapshot, deckID: String?) -> [StudyCard] {
+        let supportedNotes = Set(library.liveNotes.filter { $0.kind != .unsupported }.map(\.id))
+        let liveDecks = Set(library.liveDecks.map(\.id))
+        let selectedName = library.decks.first { $0.id == deckID && !$0.deleted }?.name
+        let selectedDecks = Set(library.liveDecks.filter { $0.id == deckID || (selectedName != nil && $0.name.hasPrefix(selectedName! + "::")) }.map(\.id))
+        return library.cards.filter {
+            !$0.retired && !$0.suspended && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
+            (deckID == nil || selectedDecks.contains($0.deckID))
         }
     }
 }
