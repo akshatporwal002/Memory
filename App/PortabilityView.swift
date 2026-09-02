@@ -74,6 +74,9 @@ struct ExportDocument: FileDocument {
             let candidate: LibrarySnapshot
             if let restored { candidate = restored }
             else if let inspection {
+                guard inspection.sourceLibraryID != model.library.libraryID else {
+                    throw EngramError.invalid("This package came from this Engram library. Use a complete Engram backup to restore it; importing its Anki export back here could duplicate cards and review evidence.")
+                }
                 guard scheduling == "preserve" || scheduling == "content" else { throw EngramError.invalid("Choose how to treat the imported study progress.") }
                 let settings = model.library.settings
                 let treatment: AnkiSchedulingTreatment = scheduling == "preserve" ? .preserveSource : .contentOnly
@@ -218,7 +221,9 @@ struct PortabilityView: View {
                 Label(finding.message, systemImage: finding.severity == .blocking ? "xmark.octagon" : "info.circle")
                     .font(theme.font(.metadata))
             }
-            if report.canImport {
+            if inspection.sourceLibraryID == transfer.model.library.libraryID {
+                Text("This package originated from this Engram library. To recover this library, choose a complete .engram backup and Restore. Anki transfer back into the same library is blocked to prevent duplicate cards or history.")
+            } else if report.canImport {
                 Picker("Study progress", selection: $transfer.scheduling) {
                     Text("Choose a treatment").tag("choose")
                     if report.canContinueScheduling { Text("Preserve supported due dates and FSRS memory").tag("preserve") }

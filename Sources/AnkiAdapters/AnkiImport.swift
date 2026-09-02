@@ -25,6 +25,8 @@ public struct AnkiCompatibilityReport: Codable, Equatable, Sendable {
 public struct AnkiInspection: Sendable {
     public let report: AnkiCompatibilityReport
     public let namespace: String
+    /// Original Engram library identity, independent of an explicit import namespace override.
+    public let sourceLibraryID: String?
     fileprivate let collection: [String: String]
     fileprivate let decks: [Deck]
     fileprivate let notes: [Note]
@@ -87,6 +89,10 @@ public enum AnkiPackageAdapter {
             guard try db.rows("PRAGMA quick_check").first?.values.first == "ok" else { throw EngramError.invalid("The Anki database failed its integrity check.") }
             let collectionConfig = try jsonObject(col["conf"] ?? "{}")
             let engramOrigin = collectionConfig["engramLibraryID"] as? String
+            if collectionConfig["engramLibraryID"] != nil {
+                guard let engramOrigin, !engramOrigin.isEmpty, engramOrigin.utf8.count <= 200,
+                      !engramOrigin.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else { throw EngramError.invalid("The embedded Engram library identity is malformed.") }
+            }
             let namespace = requestedNamespace ?? engramOrigin ?? "anki-package-" + SafeArchive.digest(sourceBytes)
             guard !namespace.isEmpty, namespace.utf8.count <= 200 else { throw EngramError.invalid("Choose a short, stable source namespace.") }
             let models = try jsonObject(col["models"] ?? "{}"), sourceDecks = try jsonObject(col["decks"] ?? "{}")
@@ -121,6 +127,8 @@ public enum AnkiPackageAdapter {
                 let id = namespace + ":note:" + guid; noteIDs[sourceID] = id
                 let modelData = try JSONSerialization.data(withJSONObject: model, options: [.sortedKeys])
                 var metadata = row; metadata["collection.crt"] = col["crt"]; metadata["collection.conf"] = col["conf"]; metadata["collection.dconf"] = col["dconf"]
+                // Reserved provenance is derived only from validated collection metadata; a namespace override cannot erase it.
+                metadata["engramSourceLibraryID"] = engramOrigin
                 let origin = ImportOrigin(namespace: namespace, noteID: sourceID, guid: guid, noteTypeJSON: modelData, fields: fields, metadata: metadata)
                 let note = Note(id: id, deckID: namespace + ":deck:" + deckID, kind: kind, front: fields.first ?? "", back: fields.count > 1 ? fields[1] : "",
                     tags: (row["tags"] ?? "").split(whereSeparator: { $0.isWhitespace }).map(String.init), origin: origin,
@@ -157,7 +165,7 @@ public enum AnkiPackageAdapter {
             if reviews.isEmpty { findings.append(.init(.warning, "No review history is present; it cannot be reconstructed from card content.")) }
             if isCollection { findings.append(.init(.warning, "Collection migration returns a candidate library. Engram must create a pre-import backup and ask for a new-library or merge choice; it must never silently replace existing cards.")) }
             return AnkiInspection(report: AnkiCompatibilityReport(format: isCollection ? "legacy-colpkg-schema11" : "legacy-apkg-schema11", deckCount: decks.count, noteCount: notes.count, cardCount: cards.count,
-                mediaCount: media.count, historyCount: reviews.count, findings: findings, canContinueScheduling: canContinue), namespace: namespace, collection: col,
+                mediaCount: media.count, historyCount: reviews.count, findings: findings, canContinueScheduling: canContinue), namespace: namespace, sourceLibraryID: engramOrigin, collection: col,
                 decks: decks, notes: notes, cardRows: cards, reviewRows: reviews, noteIDs: noteIDs, media: media)
         }
     }

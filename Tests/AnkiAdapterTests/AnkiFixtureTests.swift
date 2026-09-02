@@ -6,6 +6,42 @@ import SchedulingAdapters
 final class AnkiFixtureTests: XCTestCase {
     private func fixture(_ name: String) throws -> URL { try XCTUnwrap(Bundle.module.url(forResource: name, withExtension: nil, subdirectory: "Fixtures")) }
     private var settings: StudySettings { StudySettings(timeZoneID: "Australia/Sydney") }
+    func testDirectExportNativeProvenanceAllowsApplicationToBlockSameLibrary() throws {
+        var library = LibrarySnapshot(); library.settings = settings
+        let deck = Deck(name: "Native"), noteID = UUID().uuidString
+        let note = Note(id: noteID, deckID: deck.id, kind: .basic, front: "Question", back: "Answer")
+        let card = StudyCard(noteID: noteID, deckID: deck.id, schedule: try FSRSScheduler().initialState(now: Date(), settings: settings))
+        library.decks = [deck]; library.notes = [note]; library.cards = [card]
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".apkg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try AnkiPackageAdapter.export(snapshot: library, mode: .personalTransfer, to: url)
+        let inspection = try AnkiPackageAdapter.inspect(url: url)
+        XCTAssertEqual(inspection.sourceLibraryID, library.libraryID)
+        let candidate = try inspection.makeLibrary(scheduling: .preserveSource, scheduler: FSRSScheduler(), now: Date(), settings: settings)
+        XCTAssertTrue(candidate.notes.allSatisfy { $0.origin?.metadata["engramSourceLibraryID"] == library.libraryID })
+        let override = try AnkiPackageAdapter.inspect(url: url, namespace: "explicit-other-source")
+        XCTAssertEqual(override.namespace, "explicit-other-source")
+        XCTAssertEqual(override.sourceLibraryID, library.libraryID)
+        let overrideCandidate = try override.makeLibrary(scheduling: .contentOnly, scheduler: FSRSScheduler(), now: Date(), settings: settings)
+        XCTAssertTrue(overrideCandidate.notes.allSatisfy { $0.origin?.metadata["engramSourceLibraryID"] == library.libraryID })
+    }
+    func testDirectExportImportedProvenanceAndSeparateTargetIdentityRemainStable() throws {
+        var library = try AnkiPackageAdapter.inspect(url: fixture("anki-26.8.1-legacy.apkg")).makeLibrary(scheduling: .preserveSource, scheduler: FSRSScheduler(), now: Date(), settings: settings)
+        library.libraryID = UUID().uuidString // Represents merging source notes into an existing Engram library.
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".apkg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try AnkiPackageAdapter.export(snapshot: library, mode: .personalTransfer, to: url)
+        let inspection = try AnkiPackageAdapter.inspect(url: url)
+        XCTAssertEqual(inspection.sourceLibraryID, library.libraryID)
+        let candidate = try inspection.makeLibrary(scheduling: .preserveSource, scheduler: FSRSScheduler(), now: Date(), settings: settings)
+        XCTAssertTrue(candidate.notes.allSatisfy { $0.origin?.metadata["engramSourceLibraryID"] == library.libraryID })
+        let repeated = try AnkiPackageAdapter.inspect(url: url).makeLibrary(scheduling: .preserveSource, scheduler: FSRSScheduler(), now: Date(), settings: settings)
+        XCTAssertEqual(candidate.notes.map(\.id), repeated.notes.map(\.id))
+        XCTAssertEqual(candidate.cards.map(\.id), repeated.cards.map(\.id))
+        XCTAssertEqual(candidate.importedReviews, repeated.importedReviews)
+        XCTAssertEqual(candidate.notes.count, library.notes.count)
+        XCTAssertEqual(candidate.cards.count, library.cards.count)
+    }
     func testRealLegacyInspectionContentOnlyAndStableIDs() throws {
         let inspection = try AnkiPackageAdapter.inspect(url: fixture("anki-26.8.1-legacy.apkg"))
         XCTAssertTrue(inspection.report.canImport, inspection.report.findings.map(\.message).joined(separator: "\n"))

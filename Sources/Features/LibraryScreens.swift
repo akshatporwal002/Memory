@@ -149,7 +149,7 @@ struct LibraryView: View {
                                         Spacer()
                                         Button(card.suspended ? "Resume" : "Suspend") {
                                             Task { _ = await model.perform { try await $0.setSuspended(cardID: card.id, suspended: !card.suspended) } }
-                                        }.font(theme.font(.metadata)).disabled(model.busy)
+                                        }.font(theme.font(.metadata)).frame(minHeight: EngramShape.touchTarget).disabled(model.busy)
                                     }
                                 }
                             }

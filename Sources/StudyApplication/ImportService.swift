@@ -31,6 +31,9 @@ extension StudyService {
         }
         let original = try await repository.read()
         guard original.revision == expectedRevision else { throw EngramError.conflict }
+        guard !candidate.notes.contains(where: { $0.origin?.metadata["engramSourceLibraryID"] == original.libraryID }) else {
+            throw EngramError.invalid("This Anki package originated from this Engram library. Merging it back could duplicate native cards and review evidence. Use a complete Engram backup and confirmed restore to recover this library, or import the package into a different library.")
+        }
         var library = original; var summary = ImportSummary()
         if let destinationDeckID, !library.liveDecks.contains(where: { $0.id == destinationDeckID }) { throw EngramError.missing("destination deck") }
         var deckMap: [String: String] = [:]
