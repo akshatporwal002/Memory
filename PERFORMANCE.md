@@ -26,7 +26,7 @@ The original repository decoded the full disk JSON, including all base64 media, 
 | 10,000 cards, no media | 933 ms | 238 ms | 227 ms | 668 ms | 262 / 724 ms |
 | 10,000 cards, 16 MiB media | 3,243 ms | 475 ms | 456 ms | 2,646 ms | 660 / 736 ms |
 
-Raw baseline: `validation/storage-benchmark-baseline-windows.json`. Raw optimized result: `validation/storage-benchmark-windows.json`. Both are retained; the benchmark does not enforce arbitrary machine-specific timing thresholds. The full 61-test regression run is in `validation/persistence-optimized-tests.log`.
+Raw baseline: `validation/storage-benchmark-baseline-windows.json`. Raw optimized result: `validation/storage-benchmark-windows.json`. Both are retained; the benchmark does not enforce arbitrary machine-specific timing thresholds. The full 62-test regression run is in `validation/persistence-optimized-tests.log`.
 
 ## Limits and follow-up
 
@@ -37,3 +37,4 @@ Independent review found no production rollback/CAS defect but noticed the old m
 The one-process/one-repository-instance contract remains essential. Raw-byte checks detect sequential external modification but do not create an OS-level lock against a different process writing between the check and rename. If an external editor changes/deletes the library, restart Engram to reopen the authoritative file or enter recovery; a normal model refresh reads the existing repository instance.
 
 Before release, measure on baseline iPhone/iPad/Mac hardware, including memory pressure, native scrolling and playback, imports and large histories. The 10,000-card/16-MiB case still takes roughly half a second per save here. A normalized transactional repository and separately stored immutable media are the documented route for substantially larger libraries; introducing those formats requires explicit migrations and the same failure/recovery contracts. This benchmark does not establish worst-case behavior, mobile frame performance, or support for the 250,000-note validation ceiling.
+

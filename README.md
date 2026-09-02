@@ -2,7 +2,7 @@
 
 Engram is a standalone, local flashcard application being built in native SwiftUI for iPhone, iPad and Mac. The source includes deck management, basic/cloze editing, a durable review loop, FSRS scheduling, Anki package adapters and complete native backups. Core study and import/export have no paid AI dependency.
 
-**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **61 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
+**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **62 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
 
 ## Build and run on Apple platforms
 
@@ -74,5 +74,6 @@ Four Swift-generated package variants were imported into fresh official Anki bac
 [ARCHITECTURE.md](ARCHITECTURE.md) describes the dependency boundaries and how to replace the theme, scheduler, persistence or format adapter. [ANKI-SOURCE-REVIEW.md](ANKI-SOURCE-REVIEW.md) records the inspected upstream revision and behavior map. Pinned FSRS, SQLite and archive-codec provenance/licenses are retained beside their source; Anki's backend is validation tooling, not a shipped application dependency.
 
 AI generation/tutoring/grading, cumulative assessments, voice tutoring/transcription, MCP, cloud sync, subscriptions and billing are deferred. Ordinary imported audio playback is included in native source. There are no simulated AI or paid-service controls. No deployment or publication was performed.
+
 
 
