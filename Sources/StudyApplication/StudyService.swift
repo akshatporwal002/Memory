@@ -3,7 +3,7 @@ import LearningCore
 
 /// Application use cases. Views share this actor; no database or vendor scheduler enters presentation code.
 public actor StudyService {
-    private let repository: any LibraryRepository
+    let repository: any LibraryRepository
     private let scheduler: any Scheduler
     public init(repository: any LibraryRepository, scheduler: any Scheduler) { self.repository = repository; self.scheduler = scheduler }
     public func snapshot() async throws -> LibrarySnapshot { try await repository.read() }
