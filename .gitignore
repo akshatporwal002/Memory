@@ -1,4 +1,8 @@
 .build/
+.env
+.env.*
+!.env.example
+supabase/.temp/
 .swiftpm/
 DerivedData/
 *.xcuserstate
