@@ -111,6 +111,7 @@ private struct GradeStyle: ButtonStyle {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isFocused) private var focused
     @Environment(\.isEnabled) private var enabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let fill: Color
     let ink: Color
     func makeBody(configuration: Configuration) -> some View {
@@ -129,6 +130,8 @@ private struct GradeStyle: ButtonStyle {
                 }
             }
             .opacity(enabled ? (configuration.isPressed ? 0.80 : 1) : 0.55)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+            .animation(EngramMotion.feedback(reduceMotion: reduceMotion), value: configuration.isPressed)
     }
 }
 

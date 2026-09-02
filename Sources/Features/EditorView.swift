@@ -8,6 +8,7 @@ struct EditorView: View {
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var previewMode = false
     @State private var previewOrdinal = 0
     @State private var discardConfirmation = false
@@ -27,7 +28,12 @@ struct EditorView: View {
                             }
                         } else {
                             Picker("Editor mode", selection: $previewMode) { Text("Edit").tag(false); Text("Preview").tag(true) }.pickerStyle(.segmented)
-                            if previewMode { preview } else { fields }
+                            Group {
+                                if previewMode { preview } else { fields }
+                            }
+                            .id(previewMode)
+                            .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
+                            .animation(EngramMotion.navigation(reduceMotion: reduceMotion), value: previewMode)
                         }
                     }.padding(EngramSpacing.section).frame(maxWidth: 1200).frame(maxWidth: .infinity)
                 }

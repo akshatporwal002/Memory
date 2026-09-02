@@ -77,6 +77,7 @@ struct LibraryView: View {
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width >= 850 && !textSize.isAccessibilitySize
@@ -86,13 +87,17 @@ struct LibraryView: View {
                 if wide {
                     Divider()
                     if let note = model.visibleNotes.first(where: { $0.id == model.selectedNoteID }) {
-                        LibraryNoteDetail(model: model, note: note).frame(maxWidth: .infinity)
+                        LibraryNoteDetail(model: model, note: note)
+                            .id(note.id)
+                            .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
+                            .frame(maxWidth: .infinity)
                     } else {
                         EngramEmptyState(title: "A closer look", message: "Select a note to see its cards, content and study progress.", symbol: "rectangle.split.2x1")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
             }
+            .animation(EngramMotion.navigation(reduceMotion: reduceMotion), value: model.selectedNoteID)
         }
     }
     private func libraryList(wide: Bool) -> some View {
