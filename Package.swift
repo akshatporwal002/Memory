@@ -9,7 +9,7 @@ var targets: [Target] = [
     .target(name: "PersistenceAdapters", dependencies: ["LearningCore"]),
     .target(name: "SchedulingAdapters", dependencies: ["LearningCore", .product(name: "FSRS", package: "FSRS")]),
     .target(name: "AnkiAdapters", dependencies: ["LearningCore", "CSQLite", "CArchive"]),
-    .testTarget(name: "AnkiAdapterTests", dependencies: ["AnkiAdapters", "LearningCore"], resources: [.copy("Fixtures")]),
+    .testTarget(name: "AnkiAdapterTests", dependencies: ["AnkiAdapters", "LearningCore", "SchedulingAdapters"], resources: [.copy("Fixtures")]),
     .testTarget(name: "EngramTests", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters"])
 ]
 var products: [Product] = [

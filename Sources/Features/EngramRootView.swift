@@ -43,8 +43,6 @@ public struct EngramRootView: View {
             }
             .overlay { if !model.loaded && model.error == nil { ProgressView("Opening your library…").padding().engramSurface() } }
         }
-        .environment(\.engramTheme, model.theme)
-        .preferredColorScheme(model.appearance.colorScheme)
         .engramCanvas()
         .sheet(isPresented: $model.editorPresented) { EditorView(model: model) }
         .sheet(isPresented: $model.reviewPresented) { ReviewView(model: model) }
@@ -76,6 +74,8 @@ public struct EngramRootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh() } } }
+        .environment(\.engramTheme, model.theme)
+        .preferredColorScheme(model.appearance.colorScheme)
     }
     @ViewBuilder private func page(_ destination: EngramDestination) -> some View {
         VStack(spacing: 0) {
@@ -134,7 +134,7 @@ struct DeckFormView: View {
             }
             .engramCanvas().task { focused = true }
         }
-        .frame(minWidth: 300, idealWidth: 460, minHeight: 280)
+        .engramSheetSizing(idealWidth: 460, minimumHeight: 280)
         .interactiveDismissDisabled(model.busy)
     }
 }

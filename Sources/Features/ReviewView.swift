@@ -10,6 +10,7 @@ struct ReviewView: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AccessibilityFocusState private var answerFocused: Bool
+    @State private var completionVisible = false
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
@@ -23,10 +24,14 @@ struct ReviewView: View {
                                     Text(model.deckName(note.deckID)).font(theme.font(.metadata))
                                     Spacer()
                                     Text("\(session.completed) saved · \(session.queue.count) ready").font(theme.font(.metadata)).monospacedDigit()
+                                        .engramNumericTransition(value: session.completed)
                                 }.foregroundStyle(theme.palette(for: scheme).secondaryText)
                                 reviewContent(note: note, item: item)
+                                    .id(item.presentationID)
+                                    .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
                             }
                             .frame(maxWidth: EngramShape.readingWidth).padding(EngramSpacing.section).frame(maxWidth: .infinity)
+                            .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.presentationID)
                         }
                         .safeAreaInset(edge: .bottom, spacing: 0) {
                             controls(session: session, item: item, width: geometry.size.width)
@@ -39,6 +44,7 @@ struct ReviewView: View {
             .navigationTitle("Review")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Exit review") { dismiss() }.keyboardShortcut(.escape, modifiers: []).disabled(model.busy) }
+                ToolbarItem(placement: .automatic) { ThemeMenu(model: model) }
                 ToolbarItem(placement: .automatic) {
                     Button { Task { await model.undo() } } label: { Label("Undo last grade", systemImage: "arrow.uturn.backward") }
                         .keyboardShortcut("z", modifiers: .command).disabled(!model.canUndo || model.busy)
@@ -47,7 +53,7 @@ struct ReviewView: View {
             .engramCanvas()
             .onChange(of: model.library.session?.current?.revealedAt) { _, newValue in if newValue != nil { answerFocused = true } }
         }
-        .frame(minWidth: 300, idealWidth: 820, minHeight: 550)
+        .engramSheetSizing(idealWidth: 820, minimumHeight: 550)
         .interactiveDismissDisabled(model.busy)
     }
     @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation) -> some View {
@@ -105,10 +111,16 @@ struct ReviewView: View {
     private var completion: some View {
         ScrollView {
             VStack(spacing: EngramSpacing.section) {
-                Image(systemName: "checkmark.circle").font(.largeTitle).foregroundStyle(theme.palette(for: scheme).accentInk).accessibilityHidden(true)
-                Text("A good place to pause.").font(theme.font(.hero)).multilineTextAlignment(.center)
-                Text("You've finished the cards that are ready right now.").font(theme.font(.body)).multilineTextAlignment(.center)
-                Text("\(model.library.session?.completed ?? 0) reviews saved in this session").font(theme.font(.section)).monospacedDigit()
+                VStack(spacing: EngramSpacing.section) {
+                    Image(systemName: "checkmark.circle").font(.largeTitle).foregroundStyle(theme.palette(for: scheme).accentInk).accessibilityHidden(true)
+                        .scaleEffect(reduceMotion || completionVisible ? 1 : 0.94)
+                    Text("A good place to pause.").font(theme.font(.hero)).multilineTextAlignment(.center)
+                    Text("You've finished the cards that are ready right now.").font(theme.font(.body)).multilineTextAlignment(.center)
+                    Text("\(model.library.session?.completed ?? 0) reviews saved in this session").font(theme.font(.section)).monospacedDigit()
+                        .engramNumericTransition(value: model.library.session?.completed ?? 0)
+                }
+                .opacity(completionVisible ? 1 : 0)
+                .offset(y: reduceMotion || completionVisible ? 0 : 8)
                 if let next = model.library.session?.nextLearningDue {
                     Text("A learning card is due \(next.formatted(date: .omitted, time: .shortened)). You can return then or check again.")
                         .font(theme.font(.body)).multilineTextAlignment(.center)
@@ -119,6 +131,13 @@ struct ReviewView: View {
                 Text("Your progress is stored on this device.").font(theme.font(.metadata))
             }
             .frame(maxWidth: EngramShape.readingWidth).padding(EngramSpacing.generous).frame(maxWidth: .infinity)
+            .onAppear {
+                guard let id = model.library.session?.id, !model.animatedCompletionSessions.contains(id) else {
+                    completionVisible = true; return
+                }
+                model.animatedCompletionSessions.insert(id)
+                withAnimation(EngramMotion.completion(reduceMotion: reduceMotion)) { completionVisible = true }
+            }
         }
     }
     private func tone(_ grade: Grade) -> EngramGradeTone {

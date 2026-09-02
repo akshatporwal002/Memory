@@ -71,23 +71,39 @@ public struct AnkiInspection: Sendable {
 
 public enum AnkiPackageAdapter {
     public static func inspect(url: URL, namespace requestedNamespace: String? = nil) throws -> AnkiInspection {
-        let archive = try SafeArchive.read(url)
-        if archive["meta"] != nil || archive["collection.anki21b"] != nil {
+        let sourceBytes = try SafeArchive.loadBytes(url)
+        let archive = try SafeArchive.decode(sourceBytes)
+        let metadata = archive["meta"]
+        let legacyMetadata = metadata == nil || metadata == Data([8, 1]) || metadata == Data([8, 2])
+        if !legacyMetadata || archive["collection.anki21b"] != nil {
             throw EngramError.unsupported("Modern Anki packages with zstd/protobuf are not supported in this build. In Anki 26.08.1, export with ‘Support older Anki versions’, then try again. Your library was not changed.")
         }
-        let member = archive["collection.anki21"] != nil ? "collection.anki21" : "collection.anki2"
+        let member = metadata == Data([8, 1]) ? "collection.anki2" : metadata == Data([8, 2]) ? "collection.anki21" : archive["collection.anki21"] != nil ? "collection.anki21" : "collection.anki2"
         guard let collectionBytes = archive[member] else { throw EngramError.invalid("Package is missing a legacy Anki collection.") }
         let isCollection = url.pathExtension.lowercased() == "colpkg" || url.lastPathComponent.lowercased() == "collection.apkg"
         return try withTemporaryDatabase(collectionBytes) { db, _ in
             let colRows = try db.rows("SELECT * FROM col")
             guard colRows.count == 1, let col = colRows.first, col["ver"] == "11" else { throw EngramError.unsupported("Only Anki legacy collection schema 11 is supported. No data was imported.") }
             guard try db.rows("PRAGMA quick_check").first?.values.first == "ok" else { throw EngramError.invalid("The Anki database failed its integrity check.") }
-            let namespace = requestedNamespace ?? "anki-" + (col["crt"] ?? "unknown")
+            let collectionConfig = try jsonObject(col["conf"] ?? "{}")
+            let engramOrigin = collectionConfig["engramLibraryID"] as? String
+            let namespace = requestedNamespace ?? engramOrigin ?? "anki-package-" + SafeArchive.digest(sourceBytes)
             guard !namespace.isEmpty, namespace.utf8.count <= 200 else { throw EngramError.invalid("Choose a short, stable source namespace.") }
             let models = try jsonObject(col["models"] ?? "{}"), sourceDecks = try jsonObject(col["decks"] ?? "{}")
             let noteRows = try db.rows("SELECT * FROM notes"), cards = try db.rows("SELECT * FROM cards"), reviews = try db.rows("SELECT * FROM revlog")
             guard noteRows.count <= 250_000, cards.count <= 500_000 else { throw EngramError.invalid("The package exceeds the current library limits.") }
+            for card in cards {
+                try validateIntegers(card, keys: ["id", "nid", "did", "ord", "type", "queue", "due", "ivl", "factor", "reps", "lapses", "left", "odue", "odid"])
+                guard (0...499).contains(Int(card["ord"]!)!), (0...3).contains(Int(card["type"]!)!), (-3...4).contains(Int(card["queue"]!)!),
+                      Int64(card["id"]!)! > 0, Int64(card["reps"]!)! >= 0, Int64(card["lapses"]!)! >= 0 else { throw EngramError.invalid("Unsupported or invalid card state values.") }
+            }
+            let sourceCardIDs = Set(cards.compactMap { $0["id"] })
+            for review in reviews {
+                try validateIntegers(review, keys: ["id", "cid", "ease", "ivl", "lastIvl", "factor", "time", "type"])
+                guard sourceCardIDs.contains(review["cid"]!), (0...4).contains(Int(review["ease"]!)!), (0...5).contains(Int(review["type"]!)!) else { throw EngramError.invalid("Review history has an unsupported kind, rating or missing card reference.") }
+            }
             var findings: [CompatibilityFinding] = [], decks: [Deck] = [], notes: [Note] = [], noteIDs: [String: String] = [:]
+            if requestedNamespace == nil && engramOrigin == nil { findings.append(.init(.warning, "This external package uses an exact-file digest as its source identity. Reimporting the same file is stable. To merge future updated exports from the same Anki library, choose the same explicit source name for each import.")) }
             for (id, object) in sourceDecks {
                 guard let deck = object as? [String: Any], let name = deck["name"] as? String else { throw EngramError.invalid("Anki deck metadata is malformed.") }
                 decks.append(Deck(id: namespace + ":deck:" + id, name: name.replacingOccurrences(of: "\u{1f}", with: "::")))
@@ -125,12 +141,15 @@ public enum AnkiPackageAdapter {
                     else { findings.append(.init(.warning, "Missing media payload: \(name)")) }
                 }
             } else { findings.append(.init(.warning, "This package has no media manifest.")) }
+            let availableMedia = Set(media.map(\.name))
+            let referencedMedia = Set(notes.flatMap { note in (note.origin?.fields ?? [note.front, note.back]).flatMap { SafeCardMarkup.inspect($0).mediaNames } })
+            for missing in referencedMedia.subtracting(availableMedia).sorted() { findings.append(.init(.warning, "Card references missing media: \(missing)")) }
             let canContinue = cards.allSatisfy { row in
                 guard (Int(row["odid"] ?? "0") ?? 0) == 0 else { return false }
                 if row["type"] == "0" { return ["0", "-1"].contains(row["queue"] ?? "") }
                 guard row["type"] == "2", ["2", "-1"].contains(row["queue"] ?? ""),
                       let values = try? jsonObject(row["data"] ?? "{}") else { return false }
-                return ["s", "d", "lrt"].allSatisfy { values[$0] is NSNumber }
+                return collectionConfig["creationOffset"] is NSNumber && ["s", "d", "lrt"].allSatisfy { values[$0] is NSNumber }
             }
             if canContinue && cards.contains(where: { $0["type"] == "2" }) {
                 findings.append(.init(.warning, "Preserve scheduling retains supported FSRS memory, due calendar date and source history. Future intervals use Engram FSRS-6 defaults and your retention setting, not Anki's custom parameters, fuzz or learning policy. Due calendar dates use your chosen timezone and rollover hour."))
@@ -145,9 +164,10 @@ public enum AnkiPackageAdapter {
 }
 
 func importedDue(row: [String: String], collection: [String: String], settings: StudySettings) throws -> Date {
-    guard let epoch = Double(collection["crt"] ?? ""), let day = Int(row["due"] ?? ""), (-100_000...1_000_000).contains(day) else { throw EngramError.invalid("Invalid collection-relative Anki due date.") }
+    guard let epoch = Double(collection["crt"] ?? ""), epoch.isFinite, abs(epoch) < 100_000_000_000,
+          let day = Int(row["due"] ?? ""), (-100_000...1_000_000).contains(day) else { throw EngramError.invalid("Invalid collection-relative Anki due date.") }
     let conf = try jsonObject(collection["conf"] ?? "{}")
-    let minutesWest = (conf["creationOffset"] as? NSNumber)?.intValue ?? 0
+    guard let minutesWest = (conf["creationOffset"] as? NSNumber)?.intValue, (-1380...1380).contains(minutesWest) else { throw EngramError.unsupported("Source creation timezone is missing or invalid; choose content-only import explicitly.") }
     guard let sourceZone = TimeZone(secondsFromGMT: -minutesWest * 60), let targetZone = TimeZone(identifier: settings.timeZoneID) else { throw EngramError.invalid("Invalid source or destination timezone.") }
     var sourceCalendar = Calendar(identifier: .gregorian); sourceCalendar.timeZone = sourceZone
     let sourceDate = sourceCalendar.dateComponents([.year, .month, .day], from: Date(timeIntervalSince1970: epoch))
@@ -155,6 +175,10 @@ func importedDue(row: [String: String], collection: [String: String], settings: 
     guard let start = targetCalendar.date(from: sourceDate), let dueDay = targetCalendar.date(byAdding: .day, value: day, to: start),
           let due = targetCalendar.date(bySettingHour: settings.dayStartsAtHour, minute: 0, second: 0, of: dueDay) else { throw EngramError.invalid("Anki due date is outside the supported calendar range.") }
     return due
+}
+
+private func validateIntegers(_ row: [String: String], keys: [String]) throws {
+    guard keys.allSatisfy({ row[$0].flatMap(Int64.init) != nil }) else { throw EngramError.invalid("Anki database contains a malformed numeric record.") }
 }
 
 func jsonObject(_ text: String) throws -> [String: Any] {
@@ -189,7 +213,6 @@ func supportedKind(_ model: [String: Any], fields: [String]) -> NoteKind {
     return .unsupported
 }
 func safeFieldMarkup(_ field: String) -> Bool {
-    guard field.utf8.count <= 1_000_000 else { return false }
-    let pattern = #"(?is)<\s*/?\s*(script|iframe|object|embed|style|svg|form|input|button|link|meta)\b|\bon\w+\s*=|javascript\s*:|data\s*:|https?\s*://|\[latex\]|\\\("#
-    return field.range(of: pattern, options: .regularExpression) == nil
+    guard !field.contains("[latex]"), !field.contains("[$]"), !field.contains("[$$]"), !field.contains("\\("), !field.contains("\\[") else { return false }
+    return SafeCardMarkup.inspect(field).isSupported
 }

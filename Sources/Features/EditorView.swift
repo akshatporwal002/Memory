@@ -6,10 +6,12 @@ struct EditorView: View {
     @Bindable var model: EngramModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var previewMode = false
     @State private var previewOrdinal = 0
     @State private var discardConfirmation = false
+    @State private var tagsText = ""
     @FocusState private var focus: Field?
     enum Field { case front, back }
     var body: some View {
@@ -33,11 +35,12 @@ struct EditorView: View {
             .navigationTitle(model.draft?.id == nil ? "New card" : "Edit card")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { discardConfirmation = true }.disabled(model.busy) }
+                ToolbarItem(placement: .automatic) { ThemeMenu(model: model) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(model.busy ? "Saving…" : "Save") {
                         Task {
                             await model.saveDraft()
-                            if model.error != nil { previewMode = false; focus = model.draft?.front.isEmpty == true ? .front : .back }
+                            if model.error != nil { previewMode = false; focus = model.draft?.front.isEmpty == true || model.draft?.kind == .cloze ? .front : .back }
                         }
                     }.disabled(model.busy || model.draft?.kind == .unsupported).keyboardShortcut("s", modifiers: .command)
                 }
@@ -46,9 +49,12 @@ struct EditorView: View {
                 Button("Discard draft", role: .destructive) { model.draft = nil; dismiss() }
                 Button("Keep editing", role: .cancel) { }
             } message: { Text("Unsaved changes will be lost. The saved note and review history will not change.") }
-            .engramCanvas().task { if model.draft?.id == nil { focus = .front } }
+            .engramCanvas().task {
+                tagsText = model.draft?.tags.joined(separator: " ") ?? ""
+                if model.draft?.id == nil { focus = .front }
+            }
         }
-        .frame(minWidth: 300, idealWidth: 1050, minHeight: 600)
+        .engramSheetSizing(idealWidth: 1050, minimumHeight: 600)
         .interactiveDismissDisabled(model.draft != nil)
     }
     private func draftBinding<T>(_ path: WritableKeyPath<NoteDraft, T>, fallback: T) -> Binding<T> {
@@ -71,16 +77,25 @@ struct EditorView: View {
                 }
                 Text(draft.kind == .cloze ? "Cloze text" : "Question").font(theme.font(.control))
                 TextEditor(text: draftBinding(\.front, fallback: "")).font(theme.font(.body)).frame(minHeight: 140)
+                    .scrollContentBackground(.hidden)
                     .focused($focus, equals: .front).accessibilityLabel(draft.kind == .cloze ? "Cloze text" : "Question")
                     .engramSurface(padding: EngramSpacing.compact)
+                    .overlay { RoundedRectangle(cornerRadius: EngramShape.study).strokeBorder(theme.palette(for: scheme).controlBorder, lineWidth: focus == .front ? 2 : 1) }
                 Text(draft.kind == .cloze ? "Extra explanation (optional)" : "Answer").font(theme.font(.control))
                 TextEditor(text: draftBinding(\.back, fallback: "")).font(theme.font(.body)).frame(minHeight: 140)
+                    .scrollContentBackground(.hidden)
                     .focused($focus, equals: .back).accessibilityLabel(draft.kind == .cloze ? "Extra explanation" : "Answer")
                     .engramSurface(padding: EngramSpacing.compact)
+                    .overlay { RoundedRectangle(cornerRadius: EngramShape.study).strokeBorder(theme.palette(for: scheme).controlBorder, lineWidth: focus == .back ? 2 : 1) }
                 Picker("Deck", selection: draftBinding(\.deckID, fallback: "")) { ForEach(model.library.liveDecks) { Text($0.name).tag($0.id) } }
-                TextField("Tags (space separated)", text: Binding(get: { model.draft?.tags.joined(separator: " ") ?? "" }, set: { model.draft?.tags = $0.split(whereSeparator: \.isWhitespace).map(String.init) }))
+                Text("Tags (space separated)").font(theme.font(.control))
+                TextField("plants transport", text: $tagsText)
                     .textFieldStyle(.roundedBorder)
-                TextField("Source / reference (optional)", text: draftBinding(\.source, fallback: ""), axis: .vertical).textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Tags, space separated")
+                    .onChange(of: tagsText) { _, value in model.draft?.tags = value.split(whereSeparator: \.isWhitespace).map(String.init) }
+                Text("Source / reference (optional)").font(theme.font(.control))
+                TextField("Book, chapter or URL", text: draftBinding(\.source, fallback: ""), axis: .vertical)
+                    .textFieldStyle(.roundedBorder).accessibilityLabel("Source or reference, optional")
                 Text("Ordinary text edits and moves preserve existing schedules. Removing a cloze number retires that generated card.")
                     .font(theme.font(.metadata))
             }.disabled(model.busy || draft.kind == .unsupported)

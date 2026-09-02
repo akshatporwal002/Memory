@@ -1,5 +1,8 @@
 import XCTest
 import LearningCore
+import StudyApplication
+import PersistenceAdapters
+import SchedulingAdapters
 
 final class SafeCardMarkupTests: XCTestCase {
     func testNestedFormattingAndParagraphsPreserveReadableContent() throws {
@@ -55,5 +58,33 @@ final class SafeCardMarkupTests: XCTestCase {
         let document = SafeCardMarkup.inspect("<pre><code>let x = 2\n  x + 1</code></pre><s>old</s><span>new</span>")
         XCTAssertTrue(document.isSupported, document.findings.joined(separator: "; "))
         XCTAssertEqual(document.plainText, "let x = 2\n  x + 1\noldnew")
+    }
+    func testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable() async throws {
+        let service = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let deck = try await service.createDeck(name: "Draft validation")
+        for field in ["<script>alert(1)</script>", "<span style='display:none'>hidden</span>", "<img src='https://example.com/a.png'>"] {
+            for frontIsInvalid in [true, false] {
+                let draft = NoteDraft(deckID: deck.id, front: frontIsInvalid ? field : "Question", back: frontIsInvalid ? "Answer" : field)
+                let originalDraft = draft
+                do { _ = try await service.saveNote(draft, now: Date(timeIntervalSince1970: 1_000)); XCTFail("Unsupported formatting was saved: \(field)") }
+                catch {}
+                XCTAssertEqual(draft, originalDraft, "Validation must leave the editable draft intact")
+            }
+        }
+        let snapshot = try await service.snapshot()
+        XCTAssertTrue(snapshot.notes.isEmpty)
+        XCTAssertTrue(snapshot.cards.isEmpty)
+    }
+    func testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected() {
+        for empty in ["<b></b>", "&nbsp;", "<p><br></p>", "&#32;"] {
+            XCTAssertThrowsError(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", front: empty, back: "Answer")), empty)
+            XCTAssertThrowsError(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", front: "Question", back: empty)), empty)
+            XCTAssertThrowsError(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", kind: .cloze, front: "Context {{c1::\(empty)}}")), empty)
+        }
+    }
+    func testMediaOnlyRequiredFieldsAndEscapedLiteralTagsRemainSupported() throws {
+        XCTAssertEqual(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", front: "<img src='diagram.png'>", back: "[sound:answer.mp3]")), [0])
+        XCTAssertEqual(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", front: "What does &lt;b&gt; mean?", back: "Bold text")), [0])
+        XCTAssertEqual(try CardRenderer.ordinals(for: NoteDraft(deckID: "deck", kind: .cloze, front: "Identify {{c1::<img src='diagram.png'>}}")), [0])
     }
 }

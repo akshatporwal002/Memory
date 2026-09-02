@@ -5,11 +5,20 @@ import LearningCore
 /// Bounded in-memory ZIP codec. No archive member is ever extracted to its named path.
 enum SafeArchive {
     static let maximumBytes = 768 * 1_024 * 1_024
+    static func digest(_ data: Data) -> String {
+        var output = [UInt8](repeating: 0, count: 32)
+        data.withUnsafeBytes { eg_sha256($0.baseAddress, $0.count, &output) }
+        return output.map { String(format: "%02x", $0) }.joined()
+    }
     static func read(_ url: URL) throws -> [String: Data] {
+        try decode(loadBytes(url))
+    }
+    static func loadBytes(_ url: URL) throws -> Data {
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size > 0, size <= maximumBytes else { throw EngramError.invalid("The archive is empty or exceeds the 768 MB limit.") }
         let bytes = try Data(contentsOf: url)
-        return try decode(bytes)
+        guard bytes.count <= maximumBytes else { throw EngramError.invalid("Archive exceeds the 768 MB limit.") }
+        return bytes
     }
     static func decode(_ bytes: Data) throws -> [String: Data] {
         guard bytes.count <= maximumBytes else { throw EngramError.invalid("Archive exceeds the 768 MB limit.") }

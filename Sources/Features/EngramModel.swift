@@ -25,6 +25,10 @@ public struct DeckForm: Identifiable {
     public var error: String?
     public var destination: EngramDestination = .today
     public var selectedDeckID: String?
+    public var selectedNoteID: String?
+    public var selectedCardID: String?
+    /// Presentation-only memory prevents replaying the completion flourish on sheet re-entry.
+    public var animatedCompletionSessions: Set<String> = []
     public var search = ""
     public var draft: NoteDraft?
     public var editorPresented = false

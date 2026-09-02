@@ -26,6 +26,9 @@ extension StudyService {
         destinationDeckID: String?, expectedRevision: Int,
         preImportBackup: @Sendable (LibrarySnapshot) async throws -> Void) async throws -> ImportSummary {
         try LibraryValidation.validate(candidate)
+        guard candidate.reviews.isEmpty, candidate.corrections.isEmpty else {
+            throw EngramError.invalid("This candidate contains native review evidence. Use complete library restore to retain all events and corrections; Anki merge accepts source review records only.")
+        }
         let original = try await repository.read()
         guard original.revision == expectedRevision else { throw EngramError.conflict }
         var library = original; var summary = ImportSummary()

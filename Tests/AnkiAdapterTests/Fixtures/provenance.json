@@ -1,0 +1,12 @@
+{
+  "anki_version": "26.08.1",
+  "generator": "official anki Python backend; disposable collection",
+  "files": {
+    "anki-26.8.1-legacy.apkg": "51a245e8621e6b9be503a50070b8a75498e7e294cd855bb976cefd4a2ee61de2",
+    "anki-26.8.1-legacy.colpkg": "43bfb01c07a850d45106bc4805194fe8ad3defed6e037865d3df57a5b3d131eb",
+    "anki-26.8.1-missing-media.apkg": "b84f9723c787c123ce1327fe7dbb1a118e3948f764a0a595529099b160898457",
+    "anki-26.8.1-modern.apkg": "4a4eacafa7430fb63a90850b65d520bbfbad88885221864b768ef0f319f8aab5",
+    "anki-26.8.1-sharing.apkg": "2cb44d6c970a220cbbcf65e338357544c2828ad791377ddf58a25a5c32f03467",
+    "unsafe-path.apkg": "890dd5c3fb397e4932136876bbda94c450638d08087392929569c02b0f74bc6e"
+  }
+}

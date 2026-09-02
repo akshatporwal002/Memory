@@ -12,4 +12,5 @@ void *eg_zip_writer(void);
 int eg_zip_add(void *writer, const char *name, const void *bytes, size_t size);
 void *eg_zip_finish(void *writer, size_t *size);
 void eg_zip_abort(void *writer);
+void eg_sha256(const void *bytes, size_t size, unsigned char output[32]);
 #endif

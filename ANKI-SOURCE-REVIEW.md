@@ -111,3 +111,5 @@ Separately, upstream [fsrs-rs LICENSE](https://raw.githubusercontent.com/open-sp
 7. Verify desktop/native rendering and playback separately from format serialization. A valid ZIP suffix, source inspection, or passing Python writer test is not proof of Apple functionality or complete compatibility.
 
 The reconnaissance requirement is addressed by pinned code and tests. Interoperability acceptance remains unproven until those product-specific checks produce recorded results.
+
+Implementation follow-up: `ANKI-COMPATIBILITY.md` now records the independently implemented legacy adapter, exact supported subset, real fixture/backend round-trip results and remaining gaps. That narrower evidence does not imply modern-format or Apple runtime acceptance.

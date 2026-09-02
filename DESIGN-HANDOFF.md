@@ -65,7 +65,7 @@ System text styles, wrapping, minimum 44 pt buttons, explicit grade labels and i
 
 Open `design/previews/design-preview.html` directly in a regular browser. It contains Today, Library, Review question, Review answer, Editor and Completion; choose iPhone, iPad or Mac layout and any Warm/Neutral light/dark preset. The enlarged-text control is a reflow design study, not native Dynamic Type emulation. Empty library, editor error and keyboard focus/reduced-effects guidance are shown separately. Native navigation optics are deliberately not simulated.
 
-This artifact is entirely local with no CDN, telemetry, font downloads or backend. Controls at the top only change the mockup presentation. Illustrated application actions are noninteractive. The local file URL was blocked by Browser tool security policy during attempted inspection. No workaround was attempted; browser visual inspection is pending. There are no native screenshots in this deliverable.
+This artifact is entirely local with no CDN, telemetry, font downloads or backend. Controls at the top only change the mockup presentation. Illustrated application actions are noninteractive. This specialist's initial local-file navigation was blocked by browser policy. The parent subsequently reported inspecting a served phone mockup and found the Library's last card partially obscured by tabs. The generator now reserves 108 pixels below browsing content; the parent owns the follow-up screenshot check. There are no native screenshots in this deliverable.
 
 ## Verification evidence and remaining acceptance checks
 
@@ -87,4 +87,4 @@ Remaining Apple checks, to be run against the integrated application:
 6. Check standard native glass on light/olive/dark backdrops, supported OS fallback, Reduce Transparency, Increase Contrast, Reduce Motion toggled live, and access to the last list item above safe areas.
 7. Review rapidly and slowly with long answers. Confirm no double-grading, no transition-driven persistence, no forced waits and no inaccessible moving controls. Measure frame performance before making a frame-rate claim.
 
-Known design limitations: no native runtime evidence on this Windows host; browser mockups could not be visually inspected through the available browser tool; mockup samples are not evidence of real activity; production screen integration, persistence of preferences and focus routing belong to the parent implementation.
+Known design limitations: no native runtime evidence on this Windows host; the parent's mockup screenshot inspection does not establish native layout behavior; mockup samples are not evidence of real activity. Features now implement persisted device preferences, model-owned drafts and sessions, and review reveal accessibility focus, but these behaviors still require Apple runtime verification.

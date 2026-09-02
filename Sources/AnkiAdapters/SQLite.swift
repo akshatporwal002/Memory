@@ -15,7 +15,8 @@ final class PackageDatabase {
         try execute("PRAGMA trusted_schema=OFF")
         if !create { try execute("PRAGMA query_only=ON") }
     }
-    deinit { if let handle { sqlite3_close(handle) } }
+    deinit { close() }
+    func close() { if let handle { sqlite3_close(handle); self.handle = nil } }
     func execute(_ sql: String, _ values: [String] = []) throws {
         let statement = try prepare(sql, values); defer { sqlite3_finalize(statement) }
         guard sqlite3_step(statement) == SQLITE_DONE else { throw failure() }
@@ -30,7 +31,11 @@ final class PackageDatabase {
             var row: [String: String] = [:]
             for index in 0..<sqlite3_column_count(statement) {
                 guard let name = sqlite3_column_name(statement, index) else { continue }
-                if let value = sqlite3_column_text(statement, index) { row[String(cString: name)] = String(cString: value) }
+                if let value = sqlite3_column_text(statement, index) {
+                    let count = Int(sqlite3_column_bytes(statement, index))
+                    guard let text = String(bytes: UnsafeBufferPointer(start: value, count: count), encoding: .utf8) else { throw EngramError.invalid("Anki database contains invalid UTF-8 text.") }
+                    row[String(cString: name)] = text
+                }
                 else { row[String(cString: name)] = "" }
             }
             result.append(row)
@@ -56,5 +61,6 @@ func withTemporaryDatabase<T>(_ data: Data?, _ body: (PackageDatabase, URL) thro
     let url = directory.appendingPathComponent("collection.sqlite")
     if let data { try data.write(to: url) }
     let db = try PackageDatabase(url: url, create: data == nil)
+    defer { db.close() }
     return try body(db, url)
 }

@@ -81,13 +81,25 @@ public struct RenderedCard: Sendable {
 public enum CardRenderer {
     public static func ordinals(for draft: NoteDraft) throws -> [Int] {
         guard draft.front.utf8.count <= 1_000_000, draft.back.utf8.count <= 1_000_000 else { throw EngramError.invalid("Card fields must be smaller than 1 MB.") }
-        guard !draft.front.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw EngramError.invalid("Add a question or cloze text.") }
+        try validateMarkup(draft.front, required: true, field: "question or cloze text")
+        try validateMarkup(draft.back, required: draft.kind == .basic || draft.kind == .reversed, field: "answer")
         switch draft.kind {
         case .basic, .reversed:
-            guard !draft.back.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw EngramError.invalid("Add an answer before saving.") }
             return draft.kind == .basic ? [0] : [0, 1]
-        case .cloze: return Array(Set(try Cloze.parse(draft.front).map(\.ordinal))).sorted()
+        case .cloze:
+            let markers = try Cloze.parse(draft.front)
+            for marker in markers { try validateMarkup(marker.answer, required: true, field: "cloze answer") }
+            return Array(Set(markers.map(\.ordinal))).sorted()
         case .unsupported: throw EngramError.unsupported("This imported note type is preserved for export, but cannot be edited or studied here.")
+        }
+    }
+    private static func validateMarkup(_ text: String, required: Bool, field: String) throws {
+        let document = SafeCardMarkup.inspect(text)
+        guard document.isSupported else {
+            throw EngramError.invalid("The \(field) contains unsupported formatting. \(document.findings.joined(separator: " ")) To show literal HTML tags, escape < and > as &lt; and &gt;.")
+        }
+        if required && document.mediaNames.isEmpty && document.plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw EngramError.invalid("Add visible text or supported media to the \(field) before saving.")
         }
     }
     public static func render(note: Note, card: StudyCard, revealed: Bool) throws -> RenderedCard {
