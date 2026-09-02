@@ -63,4 +63,54 @@ final class ImportTransactionTests: XCTestCase {
         do { _ = try await app.mergeImport(candidate(), duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: before.revision, preImportBackup: { _ in }); XCTFail("Stale inspection") } catch {}
         let after = try await app.snapshot(); XCTAssertEqual(existing, after)
     }
+    func testConcurrentChangeDuringBackupIsRetainedAndImportRejected() async throws {
+        let app = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let before = try await app.snapshot()
+        do {
+            _ = try await app.mergeImport(candidate(), duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: before.revision,
+                preImportBackup: { saved in
+                    XCTAssertEqual(saved, before)
+                    _ = try await app.createDeck(name: "Saved while backing up")
+                })
+            XCTFail("Import must not overwrite a concurrent mutation")
+        } catch { XCTAssertEqual(error as? EngramError, .conflict) }
+        let after = try await app.snapshot()
+        XCTAssertEqual(after.liveDecks.map(\.name), ["Saved while backing up"])
+        XCTAssertTrue(after.notes.isEmpty)
+    }
+    func testCancellationAfterBackupLeavesLibraryUnchanged() async throws {
+        let app = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let before = try await app.snapshot(), incoming = try candidate()
+        let task = Task {
+            try await app.mergeImport(incoming, duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: before.revision,
+                preImportBackup: { _ in withUnsafeCurrentTask { $0?.cancel() } })
+        }
+        do { _ = try await task.value; XCTFail("Cancelled import must not commit") }
+        catch { XCTAssertTrue(error is CancellationError) }
+        let after = try await app.snapshot(); XCTAssertEqual(after, before)
+    }
+    func testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged() async throws {
+        let repository = MemoryRepository()
+        let app = StudyService(repository: repository, scheduler: FSRSScheduler())
+        let before = try await app.snapshot()
+        do {
+            _ = try await app.mergeImport(candidate(), duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: before.revision,
+                preImportBackup: { saved in XCTAssertEqual(saved, before); await repository.failNextCommit() })
+            XCTFail("Failed commit must not change active data")
+        } catch {}
+        let after = try await app.snapshot(); XCTAssertEqual(after, before)
+    }
+    func testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge() async throws {
+        let app = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let before = try await app.snapshot()
+        var incoming = try candidate()
+        let card = incoming.cards[0]
+        incoming.reviews = [ReviewEvent(id: "native-grade", cardID: card.id, deckID: card.deckID, sessionID: "native-session", rating: .good,
+            reviewedAt: now, committedAt: now, before: card.schedule, after: card.schedule)]
+        do {
+            _ = try await app.mergeImport(incoming, duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: before.revision, preImportBackup: { _ in })
+            XCTFail("Native records require complete restore, not Anki merge")
+        } catch {}
+        let after = try await app.snapshot(); XCTAssertEqual(after, before)
+    }
 }
