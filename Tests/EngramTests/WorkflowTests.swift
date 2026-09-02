@@ -30,7 +30,8 @@ final class WorkflowTests: XCTestCase {
         do {
             try await app.grade(sessionID: session.id, presentationID: item.presentationID, rating: .good, mutationID: mutation, now: now)
         } catch { /* stale presentation is safe; event count must stay one */ }
-        XCTAssertEqual(try await app.snapshot().reviews.count, 1)
+        let retried = try await app.snapshot()
+        XCTAssertEqual(retried.reviews.count, 1)
         try await app.undo(sessionID: session.id, now: now)
         let undone = try await app.snapshot()
         XCTAssertEqual(undone.cards.first?.schedule, item.card.schedule)
@@ -56,7 +57,8 @@ final class WorkflowTests: XCTestCase {
         snapshot = try await app.snapshot()
         XCTAssertEqual(snapshot.cards.first { $0.id == first.id }?.suspended, true)
         XCTAssertEqual(snapshot.cards.first { $0.id == first.id }?.schedule, first.schedule)
-        XCTAssertEqual(try await app.startSession(deckID: nil, now: now).queue.count, 1)
+        let session = try await app.startSession(deckID: nil, now: now)
+        XCTAssertEqual(session.queue.count, 1)
     }
 
     func testInvalidClozeAndEmptyBasicLeaveStoreUntouched() async throws {
@@ -68,7 +70,8 @@ final class WorkflowTests: XCTestCase {
         }
         do { _ = try await app.saveNote(NoteDraft(deckID: deck.id, kind: .basic, front: "Question", back: "  "), now: now); XCTFail() }
         catch {}
-        XCTAssertEqual(try await app.snapshot().notes.count, 0)
+        let snapshot = try await app.snapshot()
+        XCTAssertEqual(snapshot.notes.count, 0)
     }
 
     func testRepositoryContractsAndCompareAndSwap() async throws {
@@ -81,11 +84,13 @@ final class WorkflowTests: XCTestCase {
             changed.decks.append(Deck(name: "Saved"))
             try await repo.commit(changed, expectedRevision: original.revision)
             do { try await repo.commit(original, expectedRevision: original.revision); XCTFail("Lost-update protection") } catch {}
-            XCTAssertEqual(try await repo.read().decks.count, 1)
+            let afterConflict = try await repo.read()
+            XCTAssertEqual(afterConflict.decks.count, 1)
             var invalid = try await repo.read()
             invalid.schemaVersion = 99
             do { try await repo.commit(invalid, expectedRevision: invalid.revision); XCTFail("Unknown schema") } catch {}
-            XCTAssertEqual(try await repo.read().decks.count, 1)
+            let afterInvalid = try await repo.read()
+            XCTAssertEqual(afterInvalid.decks.count, 1)
         }
     }
 
@@ -99,9 +104,11 @@ final class WorkflowTests: XCTestCase {
         _ = try await app.reveal(sessionID: session.id, presentationID: item.presentationID, now: now)
         await repo.failNextCommit()
         do { try await app.grade(sessionID: session.id, presentationID: item.presentationID, rating: .easy, mutationID: "fail", now: now); XCTFail() } catch {}
-        XCTAssertEqual(try await app.snapshot().reviews.count, 0)
+        let failed = try await app.snapshot()
+        XCTAssertEqual(failed.reviews.count, 0)
         try await app.grade(sessionID: session.id, presentationID: item.presentationID, rating: .easy, mutationID: "retry", now: now)
-        XCTAssertEqual(try await app.snapshot().cards.first?.schedule.due, now.addingTimeInterval(400))
+        let retried = try await app.snapshot()
+        XCTAssertEqual(retried.cards.first?.schedule.due, now.addingTimeInterval(400))
     }
 }
 
