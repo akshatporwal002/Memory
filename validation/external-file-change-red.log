@@ -1,0 +1,67 @@
+[0/1] Planning build
+Building for debugging...
+[0/10] Write sources
+[2/19] Write swift-version--3A3C2627CA7A0B7E.txt
+[4/16] Compiling EngramBenchmark Benchmark.swift
+[5/16] Emitting module EngramBenchmark
+[6/17] Compiling EngramTests ExternalFileChangeTests.swift
+[7/17] Emitting module EngramTests
+[9/20] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[10/21] Write sources
+[11/21] Wrapping AST for EngramBenchmark for debugging
+[12/21] Write Objects.LinkFileList
+[13/21] Wrapping AST for EngramTests for debugging
+[14/21] Linking EngramBenchmark.exe
+[16/25] Emitting module EngramPackageDiscoveredTests
+[17/25] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[18/25] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[19/25] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[20/26] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[21/26] Write sources
+[22/26] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[24/28] Compiling EngramPackageTests runner.swift
+[25/28] Emitting module EngramPackageTests
+[26/28] Write Objects.LinkFileList
+[27/28] Linking EngramPackageTests.xctest
+Build complete! (5.31s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:22:45.877
+
+Test Suite 'ExternalFileChangeTests' started at 2026-09-03 04:22:45.878
+
+Test Case 'ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated' started at 2026-09-03 04:22:45.878
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:30: error: ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated : failed - A removed library must require reopening instead of silently reappearing
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:32: error: ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated : XCTAssertFalse failed - 
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:33: error: ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated : XCTAssertEqual failed: ("LibrarySnapshot(schemaVersion: 1, revision: 2, libraryID: "776933A4-B4A0-43F7-A8EC-B97DD3ABE366", decks: [], notes: [], cards: [], reviews: [], corrections: [], importedReviews: [], media: [], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") is not equal to ("LibrarySnapshot(schemaVersion: 1, revision: 1, libraryID: "776933A4-B4A0-43F7-A8EC-B97DD3ABE366", decks: [], notes: [], cards: [], reviews: [], corrections: [], importedReviews: [], media: [], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") - 
+
+Test Case 'ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated' failed (0.013 seconds)
+
+Test Case 'ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten' started at 2026-09-03 04:22:45.892
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:17: error: ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten : failed - Do not overwrite an external change even if revision and library ID are unchanged
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:19: error: ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten : XCTAssertEqual failed: ("366 bytes") is not equal to ("385 bytes") - 
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ExternalFileChangeTests.swift:20: error: ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten : XCTAssertEqual failed: ("LibrarySnapshot(schemaVersion: 1, revision: 2, libraryID: "2E0E5C20-3197-446C-8120-9522E0DC9B23", decks: [LearningCore.Deck(id: "deck", name: "Original", deleted: false)], notes: [], cards: [], reviews: [], corrections: [], importedReviews: [], media: [], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") is not equal to ("LibrarySnapshot(schemaVersion: 1, revision: 1, libraryID: "2E0E5C20-3197-446C-8120-9522E0DC9B23", decks: [LearningCore.Deck(id: "deck", name: "Original", deleted: false)], notes: [], cards: [], reviews: [], corrections: [], importedReviews: [], media: [], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") - 
+
+Test Case 'ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten' failed (0.012 seconds)
+
+Test Suite 'ExternalFileChangeTests' failed at 2026-09-03 04:22:45.904
+
+	 Executed 2 tests, with 6 failures (0 unexpected) in 0.025 (0.025) seconds
+
+Test Suite 'Selected tests' failed at 2026-09-03 04:22:45.904
+
+	 Executed 2 tests, with 6 failures (0 unexpected) in 0.025 (0.025) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

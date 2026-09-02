@@ -1,0 +1,69 @@
+{
+  "measuredAt" : "2026-09-02T18:21:44Z",
+  "notes" : "One cold sample per synthetic case, release configuration required. Timings include production validation and atomic file work. Not an Apple UI, image decoding, memory high-water or worst-case benchmark.",
+  "operatingSystem" : "Windows 11 (build 26200)",
+  "physicalMemoryBytes" : 34359738368,
+  "processorCount" : 16,
+  "samples" : [
+    {
+      "backupBytes" : 26199,
+      "backupReadMS" : 75.7868,
+      "backupWriteMS" : 28.9216,
+      "beginSessionMS" : 95.9519,
+      "completeBackupEqual" : true,
+      "durableGradeEqual" : true,
+      "gradeMS" : 96.2882,
+      "initialCommitMS" : 24.3097,
+      "libraryBytes" : 1049659,
+      "mediaBytes" : 0,
+      "notes" : 1000,
+      "reopenMS" : 73.6226,
+      "revealMS" : 97.794
+    },
+    {
+      "backupBytes" : 16808181,
+      "backupReadMS" : 118.6948,
+      "backupWriteMS" : 427.1486,
+      "beginSessionMS" : 2323.1969,
+      "completeBackupEqual" : true,
+      "durableGradeEqual" : true,
+      "gradeMS" : 2314.2518,
+      "initialCommitMS" : 237.7396,
+      "libraryBytes" : 23768821,
+      "mediaBytes" : 16777216,
+      "notes" : 1000,
+      "reopenMS" : 2338.3151,
+      "revealMS" : 2472.4606
+    },
+    {
+      "backupBytes" : 221693,
+      "backupReadMS" : 703.4377,
+      "backupWriteMS" : 270.1379,
+      "beginSessionMS" : 933.6797,
+      "completeBackupEqual" : true,
+      "durableGradeEqual" : true,
+      "gradeMS" : 932.5571,
+      "initialCommitMS" : 224.1652,
+      "libraryBytes" : 10516528,
+      "mediaBytes" : 0,
+      "notes" : 10000,
+      "reopenMS" : 692.7943,
+      "revealMS" : 944.3086
+    },
+    {
+      "backupBytes" : 17000193,
+      "backupReadMS" : 895.7131,
+      "backupWriteMS" : 665.0305,
+      "beginSessionMS" : 3177.2908,
+      "completeBackupEqual" : true,
+      "durableGradeEqual" : true,
+      "gradeMS" : 3242.907,
+      "initialCommitMS" : 542.5704,
+      "libraryBytes" : 33235660,
+      "mediaBytes" : 16777216,
+      "notes" : 10000,
+      "reopenMS" : 2785.8219,
+      "revealMS" : 3214.6199
+    }
+  ]
+}
