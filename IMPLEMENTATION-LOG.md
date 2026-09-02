@@ -19,3 +19,9 @@
 - A final review found that direct same-library APKG reimport cannot safely reconstruct native IDs/history. Chose explicit refusal using source-library provenance, independent of user namespace overrides; complete native backup restore is the recovery route. Separate-library transfers remain supported. The original duplicate mutation was reproduced before adding the guard.
 - Native UI includes adaptive Library detail, persistent draft/selection/session ownership, completion/count transitions, system accessibility settings, explicit file operations and bundled dependency notices. Browser screenshots are labelled mockups; Apple build/runtime/accessibility/media verification remains pending.
 - Milestone and RED/fix commits are retained on codex/engram-first-build. TEST-RESULTS.md and HANDOFF.md are the final evidence and acceptance audit; this chronological log is not a release-readiness claim.
+
+## Performance continuation
+
+- A remaining portable acceptance check measured release-mode synthetic storage workloads. With 16 MiB of attachments, redundant disk JSON/base64 decoding caused 2–3-second reveal/grade saves. Retaining and comparing exact persisted bytes reduced the measured 1,000-card grade to about247ms and 10,000-card grade to about475ms, with exact reopen/backup equality. No schema or scheduling change was introduced.
+- Added external same-revision edit/deletion regressions (actual RED then GREEN). Independent review found the old moved-directory test no longer reached writing; relabelled it and added a real Windows replacement-denial fixture with readable matching bytes. Foundation error513 leaves both caches and disk unchanged, and unlocking permits retry.
+- Documented added memory overhead, absence of cross-process locking and unmeasured Apple/upper-cap performance in PERFORMANCE.md. Benchmark tooling uses isolated synthetic temporary directories only.

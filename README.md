@@ -2,7 +2,7 @@
 
 Engram is a standalone, local flashcard application being built in native SwiftUI for iPhone, iPad and Mac. The source includes deck management, basic/cloze editing, a durable review loop, FSRS scheduling, Anki package adapters and complete native backups. Core study and import/export have no paid AI dependency.
 
-**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **59 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
+**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **61 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
 
 ## Build and run on Apple platforms
 
@@ -53,7 +53,7 @@ Create a deck in Today or Library, then add a basic question/answer or a cloze n
 
 Study shows a question, then an explicit reveal action, then Again/Hard/Good/Easy. The service saves a grade before advancing, rejects stale/duplicate presentations and supports undo. In the review sheet, Space reveals, 1–4 grade, Command-Z undoes and Escape exits. The persisted session can resume after exit/restart. Keyboard behavior still needs native verification.
 
-Each installation stores its own library at `Application Support/Engram/library.json` inside the app's container. Notes, cards, schedules, review evidence, source originals and media are persisted together with atomic replacement. Theme and appearance are separate device preferences. No cloud synchronization exists. The app is configured for one active library window to avoid competing writers. Large-library memory use and whole-snapshot write performance remain unbenchmarked.
+Each installation stores its own library at `Application Support/Engram/library.json` inside the app's container. Notes, cards, schedules, review evidence, source originals and media are persisted together with atomic replacement. Theme and appearance are separate device preferences. No cloud synchronization exists. The app is configured for one active library window to avoid competing writers. PERFORMANCE.md records release-mode Windows measurements up to 10,000 cards and 16 MiB of attachments; Apple performance and larger-library memory use remain unverified.
 
 Use **Import and export → Save complete Engram backup** to save a versioned `.engram` archive outside the app. It contains the whole library and media payloads. Confirmed imports/restores first create a local recovery backup. Deleting the app or losing the device can remove both the active library and local recovery copies; keep an external copy. Restore requires explicit replacement confirmation. If the library cannot open, startup recovery can inspect a complete backup and preserve the unreadable original before confirmed replacement; its backend tests pass, while the Apple UI path remains unverified.
 
@@ -74,4 +74,5 @@ Four Swift-generated package variants were imported into fresh official Anki bac
 [ARCHITECTURE.md](ARCHITECTURE.md) describes the dependency boundaries and how to replace the theme, scheduler, persistence or format adapter. [ANKI-SOURCE-REVIEW.md](ANKI-SOURCE-REVIEW.md) records the inspected upstream revision and behavior map. Pinned FSRS, SQLite and archive-codec provenance/licenses are retained beside their source; Anki's backend is validation tooling, not a shipped application dependency.
 
 AI generation/tutoring/grading, cumulative assessments, voice tutoring/transcription, MCP, cloud sync, subscriptions and billing are deferred. Ordinary imported audio playback is included in native source. There are no simulated AI or paid-service controls. No deployment or publication was performed.
+
 

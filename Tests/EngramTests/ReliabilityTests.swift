@@ -118,7 +118,7 @@ final class ReliabilityTests: XCTestCase {
         XCTAssertEqual(final.reviews.first, saved.reviews.first)
     }
 
-    func testProductionWriteFailureLeavesGradeAndScheduleUntouchedAndCanRetry() async throws {
+    func testDisappearedLibraryLeavesGradeAndScheduleUntouchedAndCanRetry() async throws {
         let root = temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let directory = root.appendingPathComponent("active", isDirectory: true)
@@ -133,14 +133,14 @@ final class ReliabilityTests: XCTestCase {
         _ = try await service.reveal(sessionID: session.id, presentationID: item.presentationID, now: epoch)
         let before = try await service.snapshot()
         let originalBytes = try Data(contentsOf: url)
-        // All paths are descendants of a unique test-owned temp directory. A regular file
-        // in place of the parent directory forces a real filesystem write error on every OS.
+        // All paths are descendants of a unique test-owned temp directory. The library
+        // disappears at the conflict check; restoring its exact bytes allows retry.
         try FileManager.default.moveItem(at: directory, to: rescuedDirectory)
         try Data("intentional filesystem blocker".utf8).write(to: directory)
         do {
             try await service.grade(sessionID: session.id, presentationID: item.presentationID, rating: .good, mutationID: "retryable-grade", now: epoch)
             XCTFail("A grade must not be acknowledged when its durable write fails")
-        } catch { /* The exact Foundation error code varies by platform. */ }
+        } catch { XCTAssertEqual(error as? EngramError, .conflict) }
         let failed = try await repository.read()
         XCTAssertEqual(failed, before, "Failed IO must not advance the in-memory transaction")
         XCTAssertEqual(try Data(contentsOf: rescuedDirectory.appendingPathComponent("library.json")), originalBytes)

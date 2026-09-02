@@ -1,0 +1,57 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--3A3C2627CA7A0B7E.txt
+[3/6] Compiling EngramTests ReliabilityTests.swift
+[4/6] Compiling EngramTests ExternalFileChangeTests.swift
+[5/6] Emitting module EngramTests
+[6/14] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[7/15] Write sources
+[8/15] Wrapping AST for EngramTests for debugging
+[10/19] Emitting module EngramPackageDiscoveredTests
+[11/19] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[12/19] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[13/19] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[14/20] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[15/20] Write sources
+[16/20] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[18/22] Emitting module EngramPackageTests
+[19/22] Compiling EngramPackageTests runner.swift
+[20/22] Write Objects.LinkFileList
+[21/22] Linking EngramPackageTests.xctest
+Build complete! (6.42s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:27:03.040
+
+Test Suite 'ExternalFileChangeTests' started at 2026-09-03 04:27:03.041
+
+Test Case 'ExternalFileChangeTests.testAtomicReplacementFailurePreservesCachedBytesAndAllowsRetry' started at 2026-09-03 04:27:03.041
+
+Verified atomic replacement fault: NSCocoaErrorDomain code 513
+
+Test Case 'ExternalFileChangeTests.testAtomicReplacementFailurePreservesCachedBytesAndAllowsRetry' passed (0.017 seconds)
+
+Test Case 'ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated' started at 2026-09-03 04:27:03.058
+
+Test Case 'ExternalFileChangeTests.testExternalDeletionIsNotSilentlyRecreated' passed (0.002 seconds)
+
+Test Case 'ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten' started at 2026-09-03 04:27:03.060
+
+Test Case 'ExternalFileChangeTests.testSameRevisionExternalEditIsNotOverwritten' passed (0.006 seconds)
+
+Test Suite 'ExternalFileChangeTests' passed at 2026-09-03 04:27:03.067
+
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.025 (0.025) seconds
+
+Test Suite 'Selected tests' passed at 2026-09-03 04:27:03.067
+
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.025 (0.025) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+
