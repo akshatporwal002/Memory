@@ -1,1 +1,1 @@
-Syntax-only pass. SwiftUI typechecking and Apple linking were not performed.
+Syntax-only pass of final native source. SwiftUI typechecking and Apple linking were not performed.

@@ -2,7 +2,7 @@
 
 Engram is a standalone, local flashcard application being built in native SwiftUI for iPhone, iPad and Mac. The source includes deck management, basic/cloze editing, a durable review loop, FSRS scheduling, Anki package adapters and complete native backups. Core study and import/export have no paid AI dependency.
 
-**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **56 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
+**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **59 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
 
 ## Build and run on Apple platforms
 
@@ -63,6 +63,8 @@ The verified interoperability path uses official Anki **26.08.1**, legacy-compat
 
 Give each Anki profile a distinct **source name** and reuse it for future imports from that profile. Without a name, external packages use their exact file contents as identity, so changed exports are separate sources; Engram's direct exports carry a stable library identity. Import results report added/updated/kept-or-skipped notes, cards, history and media. Structural conflicts are rejected with an explicit resolution instead of silently duplicating cards or discarding history.
 
+Importing an Anki package directly back into the same Engram library that exported it is blocked, including when a different source name is entered. Anki transfer cannot reconstruct all original native identities and undo evidence safely. Use a complete `.engram` backup and confirmed restore for recovery of that library. Transfers into a different library remain supported.
+
 Modern zstd/protobuf packages, custom CSS/JavaScript templates, image occlusion and other unsupported formats are explicitly rejected. Exact continuation of legacy SM-2 or source learning/relearning/buried/filtered states is not implemented; the user can cancel or explicitly restart eligible content while retaining original evidence. FSRS review-state continuation preserves supported memory/due/history, but future intervals use Engram's documented scheduler policy.
 
 Four Swift-generated package variants were imported into fresh official Anki backend collections and passed semantic comparisons; this is not an Apple UI migration test. See [ANKI-COMPATIBILITY.md](ANKI-COMPATIBILITY.md), [MEDIA-COMPATIBILITY.md](MEDIA-COMPATIBILITY.md), fixture provenance, and `validation/anki-roundtrip-results.json` for exact evidence and limits.
@@ -72,3 +74,4 @@ Four Swift-generated package variants were imported into fresh official Anki bac
 [ARCHITECTURE.md](ARCHITECTURE.md) describes the dependency boundaries and how to replace the theme, scheduler, persistence or format adapter. [ANKI-SOURCE-REVIEW.md](ANKI-SOURCE-REVIEW.md) records the inspected upstream revision and behavior map. Pinned FSRS, SQLite and archive-codec provenance/licenses are retained beside their source; Anki's backend is validation tooling, not a shipped application dependency.
 
 AI generation/tutoring/grading, cumulative assessments, voice tutoring/transcription, MCP, cloud sync, subscriptions and billing are deferred. Ordinary imported audio playback is included in native source. There are no simulated AI or paid-service controls. No deployment or publication was performed.
+

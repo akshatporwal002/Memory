@@ -1,0 +1,390 @@
+Building for debugging...
+[0/33] Write sources
+[8/33] Copying Fixtures
+[9/33] Compiling CArchive identity.c
+[10/33] Compiling CArchive archive.c
+[11/33] Compiling CArchive miniz.c
+[11/33] Compiling CArchive miniz_tinfl.c
+[13/33] Compiling CArchive miniz_tdef.c
+[14/33] Compiling CArchive miniz_zip.c
+[15/33] Write swift-version--3A3C2627CA7A0B7E.txt
+[16/33] Compiling CSQLite sqlite3.c
+[18/52] Emitting module FSRS
+[19/52] Compiling FSRS FSRSAlgorithm.swift
+[20/52] Compiling FSRS FSRSHelper.swift
+[21/52] Compiling FSRS FSRS.swift
+[22/52] Compiling FSRS FSRSAlea.swift
+[23/52] Compiling FSRS FSRSSteps.swift
+[24/52] Compiling FSRS FSRSModels.swift
+[25/52] Compiling FSRS BasicScheduler.swift
+[26/52] Compiling FSRS AbstractScheduler.swift
+[27/52] Compiling FSRS FSRSDefaults.swift
+[28/52] Compiling FSRS BasicSchedulerV6.swift
+[29/52] Compiling FSRS FSRSReschedule.swift
+[30/52] Compiling FSRS LongTermScheduler.swift
+[31/52] Compiling FSRS FSRSTypes.swift
+[32/53] Wrapping AST for FSRS for debugging
+[34/53] Emitting module LearningCore
+[35/53] Compiling LearningCore Models.swift
+[36/53] Compiling LearningCore SafeCardMarkup.swift
+[37/53] Compiling LearningCore Validation.swift
+[38/53] Compiling LearningCore Contracts.swift
+[39/60] Wrapping AST for LearningCore for debugging
+[41/68] Emitting module PersistenceAdapters
+[42/68] Compiling SchedulingAdapters FSRSScheduler.swift
+[43/68] Emitting module SchedulingAdapters
+[44/68] Compiling PersistenceAdapters Repositories.swift
+[45/68] Compiling PersistenceAdapters StartupLibraryRecovery.swift
+[47/70] Wrapping AST for PersistenceAdapters for debugging
+[48/70] Wrapping AST for SchedulingAdapters for debugging
+[50/70] Compiling StudyApplication ImportService.swift
+[51/70] Emitting module StudyApplication
+[52/70] Compiling StudyApplication QueuePolicy.swift
+[53/70] Compiling StudyApplication StudyService.swift
+[54/71] Wrapping AST for StudyApplication for debugging
+[56/79] Compiling AnkiAdapters AnkiExport.swift
+[57/79] Emitting module AnkiAdapters
+[58/79] Compiling AnkiAdapters Archive.swift
+[59/79] Compiling AnkiAdapters AnkiImport.swift
+[60/79] Compiling AnkiAdapters SQLite.swift
+[61/80] Wrapping AST for AnkiAdapters for debugging
+[63/84] Compiling AnkiAdapterTests AnkiFixtureTests.swift
+[64/84] Emitting module AnkiAdapterTests
+[65/84] Compiling AnkiAdapterTests resource_bundle_accessor.swift
+[66/84] Compiling AnkiAdapterTests ArchiveTests.swift
+[68/85] Compiling EngramTests ImportReviewRegressionTests.swift
+[69/85] Emitting module EngramTests
+[70/85] Compiling EngramTests SafeCardMarkupTests.swift
+[71/85] Compiling EngramTests ImportTransactionTests.swift
+[72/85] Compiling EngramTests QueueAndMutationTests.swift
+[73/85] Compiling EngramTests ReliabilityTests.swift
+[74/85] Compiling EngramTests StartupRecoveryTests.swift
+[75/85] Compiling EngramTests WorkflowTests.swift
+[75/86] Wrapping AST for AnkiAdapterTests for debugging
+[77/86] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\final-delivery-build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[78/86] Write sources
+[79/86] Wrapping AST for EngramTests for debugging
+[81/90] Emitting module EngramPackageDiscoveredTests
+[82/90] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[83/90] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[84/90] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[85/91] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\final-delivery-build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[86/91] Write sources
+[87/93] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[89/93] Compiling EngramPackageTests runner.swift
+[90/93] Emitting module EngramPackageTests
+[91/94] Wrapping AST for EngramPackageTests for debugging
+[92/94] Write Objects.LinkFileList
+[93/94] Linking EngramPackageTests.xctest
+Build complete! (39.72s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\final-delivery-build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\final-delivery-build\debug
+Test Suite 'All tests' started at 2026-09-03 04:16:16.571
+
+Test Suite 'debug.xctest' started at 2026-09-03 04:16:16.573
+
+Test Suite 'AnkiFixtureTests' started at 2026-09-03 04:16:16.573
+
+Test Case 'AnkiFixtureTests.testCollectionCandidateMissingMediaAndModernRejection' started at 2026-09-03 04:16:16.573
+
+Test Case 'AnkiFixtureTests.testCollectionCandidateMissingMediaAndModernRejection' passed (0.045 seconds)
+
+Test Case 'AnkiFixtureTests.testDirectExportImportedProvenanceAndSeparateTargetIdentityRemainStable' started at 2026-09-03 04:16:16.617
+
+Test Case 'AnkiFixtureTests.testDirectExportImportedProvenanceAndSeparateTargetIdentityRemainStable' passed (0.064 seconds)
+
+Test Case 'AnkiFixtureTests.testDirectExportNativeProvenanceAllowsApplicationToBlockSameLibrary' started at 2026-09-03 04:16:16.681
+
+Test Case 'AnkiFixtureTests.testDirectExportNativeProvenanceAllowsApplicationToBlockSameLibrary' passed (0.041 seconds)
+
+Test Case 'AnkiFixtureTests.testExportParentIncludesDescendantsAndRejectsMissingMedia' started at 2026-09-03 04:16:16.722
+
+Test Case 'AnkiFixtureTests.testExportParentIncludesDescendantsAndRejectsMissingMedia' passed (0.053 seconds)
+
+Test Case 'AnkiFixtureTests.testInvalidSchedulerPayloadFailsExportWithoutReplacingDestination' started at 2026-09-03 04:16:16.775
+
+Test Case 'AnkiFixtureTests.testInvalidSchedulerPayloadFailsExportWithoutReplacingDestination' passed (0.036 seconds)
+
+Test Case 'AnkiFixtureTests.testPreservationAndExportsForOfficialAnkiRoundtrip' started at 2026-09-03 04:16:16.811
+
+Test Case 'AnkiFixtureTests.testPreservationAndExportsForOfficialAnkiRoundtrip' passed (0.157 seconds)
+
+Test Case 'AnkiFixtureTests.testRealLegacyInspectionContentOnlyAndStableIDs' started at 2026-09-03 04:16:16.969
+
+Test Case 'AnkiFixtureTests.testRealLegacyInspectionContentOnlyAndStableIDs' passed (0.022 seconds)
+
+Test Case 'AnkiFixtureTests.testUnsupportedTemplatePreservedInInspectionAndRejectedForImport' started at 2026-09-03 04:16:16.991
+
+Test Case 'AnkiFixtureTests.testUnsupportedTemplatePreservedInInspectionAndRejectedForImport' passed (0.024 seconds)
+
+Test Suite 'AnkiFixtureTests' passed at 2026-09-03 04:16:17.014
+
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.442 (0.442) seconds
+
+Test Suite 'ArchiveTests' started at 2026-09-03 04:16:17.014
+
+Test Case 'ArchiveTests.testBackupRestoresMediaAndRejectsMissingPayload' started at 2026-09-03 04:16:17.014
+
+Test Case 'ArchiveTests.testBackupRestoresMediaAndRejectsMissingPayload' passed (0.011 seconds)
+
+Test Case 'ArchiveTests.testModernPackageIsExplicitlyUnsupported' started at 2026-09-03 04:16:17.026
+
+Test Case 'ArchiveTests.testModernPackageIsExplicitlyUnsupported' passed (0.006 seconds)
+
+Test Case 'ArchiveTests.testPackageIdentityDigestKnownVectors' started at 2026-09-03 04:16:17.031
+
+Test Case 'ArchiveTests.testPackageIdentityDigestKnownVectors' passed (0.045 seconds)
+
+Test Case 'ArchiveTests.testUnsafeArchiveNameRejectedBeforeWrite' started at 2026-09-03 04:16:17.076
+
+Test Case 'ArchiveTests.testUnsafeArchiveNameRejectedBeforeWrite' passed (0.0 seconds)
+
+Test Suite 'ArchiveTests' passed at 2026-09-03 04:16:17.077
+
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.062 (0.062) seconds
+
+Test Suite 'ImportReviewRegressionTests' started at 2026-09-03 04:16:17.077
+
+Test Case 'ImportReviewRegressionTests.testChangedHistoricalPayloadWithSameIDIsExplicitConflict' started at 2026-09-03 04:16:17.077
+
+Test Case 'ImportReviewRegressionTests.testChangedHistoricalPayloadWithSameIDIsExplicitConflict' passed (0.0 seconds)
+
+Test Case 'ImportReviewRegressionTests.testDeletedSourceDeckCannotSilentlyMapToUnrelatedRecreatedName' started at 2026-09-03 04:16:17.077
+
+Test Case 'ImportReviewRegressionTests.testDeletedSourceDeckCannotSilentlyMapToUnrelatedRecreatedName' passed (0.0 seconds)
+
+Test Case 'ImportReviewRegressionTests.testExactSourceDeckIDTakesPrecedenceOverAnotherDeckWithTheOldName' started at 2026-09-03 04:16:17.077
+
+Test Case 'ImportReviewRegressionTests.testExactSourceDeckIDTakesPrecedenceOverAnotherDeckWithTheOldName' passed (0.0 seconds)
+
+Test Case 'ImportReviewRegressionTests.testKeepExistingRejectsNewSourceSiblingInsteadOfDroppingItsHistory' started at 2026-09-03 04:16:17.078
+
+Test Case 'ImportReviewRegressionTests.testKeepExistingRejectsNewSourceSiblingInsteadOfDroppingItsHistory' passed (0.0 seconds)
+
+Test Case 'ImportReviewRegressionTests.testRecreatedSourceCardIDForSameOrdinalIsExplicitConflict' started at 2026-09-03 04:16:17.078
+
+Test Case 'ImportReviewRegressionTests.testRecreatedSourceCardIDForSameOrdinalIsExplicitConflict' passed (0.0 seconds)
+
+Test Case 'ImportReviewRegressionTests.testUpdateReactivatesReintroducedSourceSiblingAndPreservesProgress' started at 2026-09-03 04:16:17.078
+
+Test Case 'ImportReviewRegressionTests.testUpdateReactivatesReintroducedSourceSiblingAndPreservesProgress' passed (0.001 seconds)
+
+Test Suite 'ImportReviewRegressionTests' passed at 2026-09-03 04:16:17.079
+
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+
+Test Suite 'ImportTransactionTests' started at 2026-09-03 04:16:17.079
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' started at 2026-09-03 04:16:17.079
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' started at 2026-09-03 04:16:17.080
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' started at 2026-09-03 04:16:17.080
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' started at 2026-09-03 04:16:17.080
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' started at 2026-09-03 04:16:17.080
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' started at 2026-09-03 04:16:17.081
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary' started at 2026-09-03 04:16:17.081
+
+Test Case 'ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' started at 2026-09-03 04:16:17.081
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' passed (0.001 seconds)
+
+Test Suite 'ImportTransactionTests' passed at 2026-09-03 04:16:17.081
+
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+
+Test Suite 'QueueAndMutationTests' started at 2026-09-03 04:16:17.082
+
+Test Case 'QueueAndMutationTests.testDayBoundaryUsesPinnedZoneAndDailyLimitsUndo' started at 2026-09-03 04:16:17.082
+
+Test Case 'QueueAndMutationTests.testDayBoundaryUsesPinnedZoneAndDailyLimitsUndo' passed (0.002 seconds)
+
+Test Case 'QueueAndMutationTests.testFourGradesAndDuplicatePresentation' started at 2026-09-03 04:16:17.084
+
+Test Case 'QueueAndMutationTests.testFourGradesAndDuplicatePresentation' passed (0.002 seconds)
+
+Test Case 'QueueAndMutationTests.testParentDeckReportsChildLearningWait' started at 2026-09-03 04:16:17.086
+
+Test Case 'QueueAndMutationTests.testParentDeckReportsChildLearningWait' passed (0.001 seconds)
+
+Test Case 'QueueAndMutationTests.testRenameHierarchyNoOpAndCaseInsensitiveConflict' started at 2026-09-03 04:16:17.087
+
+Test Case 'QueueAndMutationTests.testRenameHierarchyNoOpAndCaseInsensitiveConflict' passed (0.0 seconds)
+
+Test Suite 'QueueAndMutationTests' passed at 2026-09-03 04:16:17.087
+
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+
+Test Suite 'ReliabilityTests' started at 2026-09-03 04:16:17.087
+
+Test Case 'ReliabilityTests.testClozeRetirementRestorationAndMovePreserveSchedulesAndHistory' started at 2026-09-03 04:16:17.087
+
+Test Case 'ReliabilityTests.testClozeRetirementRestorationAndMovePreserveSchedulesAndHistory' passed (0.001 seconds)
+
+Test Case 'ReliabilityTests.testCorruptDiskFileIsNeverOverwrittenByOpenOrStaleCommit' started at 2026-09-03 04:16:17.088
+
+Test Case 'ReliabilityTests.testCorruptDiskFileIsNeverOverwrittenByOpenOrStaleCommit' passed (0.004 seconds)
+
+Test Case 'ReliabilityTests.testEditingThenDeletingPresentedNoteRejectsStaleGradesWithoutLosingHistory' started at 2026-09-03 04:16:17.092
+
+Test Case 'ReliabilityTests.testEditingThenDeletingPresentedNoteRejectsStaleGradesWithoutLosingHistory' passed (0.108 seconds)
+
+Test Case 'ReliabilityTests.testLearningGraduationLapseAndRelearningThroughApplication' started at 2026-09-03 04:16:17.199
+
+Test Case 'ReliabilityTests.testLearningGraduationLapseAndRelearningThroughApplication' passed (0.003 seconds)
+
+Test Case 'ReliabilityTests.testProductionWriteFailureLeavesGradeAndScheduleUntouchedAndCanRetry' started at 2026-09-03 04:16:17.202
+
+Test Case 'ReliabilityTests.testProductionWriteFailureLeavesGradeAndScheduleUntouchedAndCanRetry' passed (0.032 seconds)
+
+Test Case 'ReliabilityTests.testReopenResumesExactRevealedPresentationAndRetainsPriorGrade' started at 2026-09-03 04:16:17.234
+
+Test Case 'ReliabilityTests.testReopenResumesExactRevealedPresentationAndRetainsPriorGrade' passed (0.041 seconds)
+
+Test Case 'ReliabilityTests.testSchedulerRejectsBackwardClockAndUnknownStateVersions' started at 2026-09-03 04:16:17.275
+
+Test Case 'ReliabilityTests.testSchedulerRejectsBackwardClockAndUnknownStateVersions' passed (0.0 seconds)
+
+Test Case 'ReliabilityTests.testUnsupportedSavedSchedulerCannotResetOrMutateLibraryOnReveal' started at 2026-09-03 04:16:17.275
+
+Test Case 'ReliabilityTests.testUnsupportedSavedSchedulerCannotResetOrMutateLibraryOnReveal' passed (0.0 seconds)
+
+Test Suite 'ReliabilityTests' passed at 2026-09-03 04:16:17.276
+
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.189 (0.189) seconds
+
+Test Suite 'SafeCardMarkupTests' started at 2026-09-03 04:16:17.276
+
+Test Case 'SafeCardMarkupTests.testEscapedTagsRemainLiteralTextNotInstructions' started at 2026-09-03 04:16:17.276
+
+Test Case 'SafeCardMarkupTests.testEscapedTagsRemainLiteralTextNotInstructions' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testLocalMediaEntitiesAndAudioReferences' started at 2026-09-03 04:16:17.276
+
+Test Case 'SafeCardMarkupTests.testLocalMediaEntitiesAndAudioReferences' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testMalformedAndNestedMismatchedMarkupIsReported' started at 2026-09-03 04:16:17.276
+
+Test Case 'SafeCardMarkupTests.testMalformedAndNestedMismatchedMarkupIsReported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testMediaOnlyRequiredFieldsAndEscapedLiteralTagsRemainSupported' started at 2026-09-03 04:16:17.276
+
+Test Case 'SafeCardMarkupTests.testMediaOnlyRequiredFieldsAndEscapedLiteralTagsRemainSupported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testNestedFormattingAndParagraphsPreserveReadableContent' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testNestedFormattingAndParagraphsPreserveReadableContent' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPathTraversalAndUnsupportedMediaCannotReachRenderer' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testPathTraversalAndUnsupportedMediaCannotReachRenderer' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPlainMathUnicodeAndLineBreaksRemainReadable' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testPlainMathUnicodeAndLineBreaksRemainReadable' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPreformattedCodeAndStrikethroughAreSupported' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testPreformattedCodeAndStrikethroughAreSupported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testScriptStyleExternalLoadsAndUnexpectedAttributesAreUnsupported' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testScriptStyleExternalLoadsAndUnexpectedAttributesAreUnsupported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testUnknownEntitiesAndComplexMarkupHaveExplicitFindings' started at 2026-09-03 04:16:17.277
+
+Test Case 'SafeCardMarkupTests.testUnknownEntitiesAndComplexMarkupHaveExplicitFindings' passed (0.014 seconds)
+
+Test Case 'SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable' started at 2026-09-03 04:16:17.292
+
+Test Case 'SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected' started at 2026-09-03 04:16:17.292
+
+Test Case 'SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected' passed (0.0 seconds)
+
+Test Suite 'SafeCardMarkupTests' passed at 2026-09-03 04:16:17.293
+
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.017 (0.017) seconds
+
+Test Suite 'StartupRecoveryTests' started at 2026-09-03 04:16:17.293
+
+Test Case 'StartupRecoveryTests.testChangedOriginalRequiresFreshConfirmation' started at 2026-09-03 04:16:17.293
+
+Test Case 'StartupRecoveryTests.testChangedOriginalRequiresFreshConfirmation' passed (0.003 seconds)
+
+Test Case 'StartupRecoveryTests.testFailedPreservationCopyCannotReplaceOriginal' started at 2026-09-03 04:16:17.296
+
+Test Case 'StartupRecoveryTests.testFailedPreservationCopyCannotReplaceOriginal' passed (0.004 seconds)
+
+Test Case 'StartupRecoveryTests.testInvalidIncomingLibraryNeverChangesUnreadableOriginal' started at 2026-09-03 04:16:17.300
+
+Test Case 'StartupRecoveryTests.testInvalidIncomingLibraryNeverChangesUnreadableOriginal' passed (0.003 seconds)
+
+Test Case 'StartupRecoveryTests.testSuccessfulRecoveryPreservesExactOriginalAndOpensValidSnapshot' started at 2026-09-03 04:16:17.303
+
+Test Case 'StartupRecoveryTests.testSuccessfulRecoveryPreservesExactOriginalAndOpensValidSnapshot' passed (0.009 seconds)
+
+Test Suite 'StartupRecoveryTests' passed at 2026-09-03 04:16:17.312
+
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.019 (0.019) seconds
+
+Test Suite 'WorkflowTests' started at 2026-09-03 04:16:17.312
+
+Test Case 'WorkflowTests.testClozeSiblingsKeepStateWhenEditing' started at 2026-09-03 04:16:17.312
+
+Test Case 'WorkflowTests.testClozeSiblingsKeepStateWhenEditing' passed (0.001 seconds)
+
+Test Case 'WorkflowTests.testCreateStudyReopenAndUndo' started at 2026-09-03 04:16:17.313
+
+Test Case 'WorkflowTests.testCreateStudyReopenAndUndo' passed (0.027 seconds)
+
+Test Case 'WorkflowTests.testInvalidClozeAndEmptyBasicLeaveStoreUntouched' started at 2026-09-03 04:16:17.339
+
+Test Case 'WorkflowTests.testInvalidClozeAndEmptyBasicLeaveStoreUntouched' passed (0.0 seconds)
+
+Test Case 'WorkflowTests.testRepositoryContractsAndCompareAndSwap' started at 2026-09-03 04:16:17.340
+
+Test Case 'WorkflowTests.testRepositoryContractsAndCompareAndSwap' passed (0.006 seconds)
+
+Test Case 'WorkflowTests.testSchedulerReplaceabilityAndTransactionFailure' started at 2026-09-03 04:16:17.345
+
+Test Case 'WorkflowTests.testSchedulerReplaceabilityAndTransactionFailure' passed (0.001 seconds)
+
+Test Suite 'WorkflowTests' passed at 2026-09-03 04:16:17.346
+
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.034 (0.034) seconds
+
+Test Suite 'debug.xctest' passed at 2026-09-03 04:16:17.346
+
+	 Executed 59 tests, with 0 failures (0 unexpected) in 0.772 (0.772) seconds
+
+Test Suite 'All tests' passed at 2026-09-03 04:16:17.346
+
+	 Executed 59 tests, with 0 failures (0 unexpected) in 0.772 (0.772) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

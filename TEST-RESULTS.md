@@ -2,6 +2,8 @@
 
 ## Current integrated result
 
+**Final delivered-source verification: 3 September 2026, 04:16:17 Australia/Sydney — 59 XCTest cases passed, 0 failures.** Built from the committed requested project at `C:\Users\aoswa\Documents\project\Memory` into a fresh external scratch directory, so no staged-package build outputs were reused. Source checkpoint: `e6fe3d4`. Full compile/test output: `validation/delivered-project-clean-tests.log`. The final three cases add direct-export provenance checks and refusal of unsafe same-library APKG merge. Eight application import transaction tests and twelve Anki/archive tests now pass. The original same-library duplication is captured in `validation/own-export-red.log`; the no-mutation guard result is in `validation/own-export-green.log`.
+
 3 September 2026, 04:06:48 Australia/Sydney: **56 XCTest cases passed, 0 failures**, using the production core, application, file/memory repositories, FSRS adapter, archive/Anki adapters and startup recovery helper. Full output: `validation/swift-tests-windows.log`. The trailing Swift Testing runner reports zero tests because Engram's suite uses XCTest; it does not negate the 56 executed XCTest cases.
 
 The pinned upstream FSRS source independently passed **98 tests in 23 suites**; output: `validation/fsrs-upstream-tests-windows.log`. Four actual Swift-produced package variants passed official Anki 26.08.1 backend import/semantic comparison in disposable collections; structured output: `validation/anki-roundtrip-results.json`. See ANKI-COMPATIBILITY.md for exact fixture provenance, tested content and limitations.
@@ -19,7 +21,7 @@ swift test --package-path Vendor/FSRS
 node design/previews/build-previews.cjs
 ```
 
-The first integrated run used `--package-path staging` in the working sandbox. The delivered tree is copied without build artifacts, and the final clean delivery verification is recorded below. Apple commands are in README-APPLE.md. Anki fixture commands are in ANKI-COMPATIBILITY.md. Ordinary tests use bundled fixtures without requiring Anki installed.
+The first integrated run used `--package-path staging` in the working sandbox. The delivered tree was copied without build artifacts; the final verification above used `swift test --package-path <delivered-project> --scratch-path <fresh-scratch-directory>`. Apple commands are in README-APPLE.md. Anki fixture commands are in ANKI-COMPATIBILITY.md. Ordinary tests use bundled fixtures without requiring Anki installed.
 
 ## Host
 
