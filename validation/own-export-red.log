@@ -1,0 +1,35 @@
+[0/1] Planning build
+Building for debugging...
+[0/2] Write swift-version--3A3C2627CA7A0B7E.txt
+Build complete! (1.01s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:13:07.087
+
+Test Suite 'ImportTransactionTests' started at 2026-09-03 04:13:07.088
+
+Test Case 'ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary' started at 2026-09-03 04:13:07.088
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ImportTransactionTests.swift:127: error: ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary : failed - Same-library package should be refused before backup
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ImportTransactionTests.swift:128: error: ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary : failed - Own export cannot safely merge native identities/history back into itself
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ImportTransactionTests.swift:130: error: ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary : XCTAssertEqual failed: ("LibrarySnapshot(schemaVersion: 1, revision: 1, libraryID: "71719EF3-B98B-4C8E-A113-D8660EF3A86C", decks: [LearningCore.Deck(id: "source:deck:1", name: "Imported", deleted: false)], notes: [LearningCore.Note(id: "source:note:guid", deckID: "source:deck:1", kind: LearningCore.NoteKind.basic, front: "Original", back: "Answer", tags: [], source: "", origin: nil, deleted: false, modifiedAt: 2026-09-02 18:13:07 +0000), LearningCore.Note(id: "source:note:guid:reimport", deckID: "source:deck:1", kind: LearningCore.NoteKind.basic, front: "Original", back: "Answer", tags: [], source: "", origin: Optional(LearningCore.ImportOrigin(namespace: "explicit-alternate-name", noteID: "123", guid: "guid", noteTypeJSON: 0 bytes, fields: [], metadata: ["engramSourceLibraryID": "71719EF3-B98B-4C8E-A113-D8660EF3A86C"])), deleted: false, modifiedAt: 2026-09-02 18:13:07 +0000)], cards: [LearningCore.StudyCard(id: "source:card:1", noteID: "source:note:guid", deckID: "source:deck:1", ordinal: 0, schedule: LearningCore.ScheduleState(schedulerID: "fsrs-6", implementationVersion: "swift-fsrs-4fbaf201", schemaVersion: 1, settingsVersion: 1, due: 2026-09-03 00:00:00 +0000, phase: LearningCore.LearningPhase.new, payload: 128 bytes), suspended: false, retired: false, version: 0, sourceCardID: nil, sourceSchedule: [:]), LearningCore.StudyCard(id: "source:card:1:reimport", noteID: "source:note:guid:reimport", deckID: "source:deck:1", ordinal: 0, schedule: LearningCore.ScheduleState(schedulerID: "fsrs-6", implementationVersion: "swift-fsrs-4fbaf201", schemaVersion: 1, settingsVersion: 1, due: 2026-09-03 00:00:00 +0000, phase: LearningCore.LearningPhase.new, payload: 128 bytes), suspended: false, retired: false, version: 0, sourceCardID: nil, sourceSchedule: [:])], reviews: [], corrections: [], importedReviews: [LearningCore.ImportedReview(id: "source:rev:1", cardID: "source:card:1", origin: "source", values: ["ivl": "-60", "ease": "0"]), LearningCore.ImportedReview(id: "source:rev:1:reimport", cardID: "source:card:1:reimport", origin: "source", values: ["ivl": "-60", "ease": "0"])], media: [LearningCore.MediaFile(name: "image.png", data: 3 bytes)], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") is not equal to ("LibrarySnapshot(schemaVersion: 1, revision: 0, libraryID: "71719EF3-B98B-4C8E-A113-D8660EF3A86C", decks: [LearningCore.Deck(id: "source:deck:1", name: "Imported", deleted: false)], notes: [LearningCore.Note(id: "source:note:guid", deckID: "source:deck:1", kind: LearningCore.NoteKind.basic, front: "Original", back: "Answer", tags: [], source: "", origin: nil, deleted: false, modifiedAt: 2026-09-02 18:13:07 +0000)], cards: [LearningCore.StudyCard(id: "source:card:1", noteID: "source:note:guid", deckID: "source:deck:1", ordinal: 0, schedule: LearningCore.ScheduleState(schedulerID: "fsrs-6", implementationVersion: "swift-fsrs-4fbaf201", schemaVersion: 1, settingsVersion: 1, due: 2026-09-03 00:00:00 +0000, phase: LearningCore.LearningPhase.new, payload: 128 bytes), suspended: false, retired: false, version: 0, sourceCardID: nil, sourceSchedule: [:])], reviews: [], corrections: [], importedReviews: [LearningCore.ImportedReview(id: "source:rev:1", cardID: "source:card:1", origin: "source", values: ["ivl": "-60", "ease": "0"])], media: [LearningCore.MediaFile(name: "image.png", data: 3 bytes)], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") - 
+
+Test Case 'ImportTransactionTests.testOwnAnkiExportCannotDuplicateOriginalNativeLibrary' failed (0.004 seconds)
+
+Test Suite 'ImportTransactionTests' failed at 2026-09-03 04:13:07.092
+
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.004 (0.004) seconds
+
+Test Suite 'Selected tests' failed at 2026-09-03 04:13:07.092
+
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.004 (0.004) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

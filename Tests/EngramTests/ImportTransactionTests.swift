@@ -113,4 +113,20 @@ final class ImportTransactionTests: XCTestCase {
         } catch {}
         let after = try await app.snapshot(); XCTAssertEqual(after, before)
     }
+    func testOwnAnkiExportCannotDuplicateOriginalNativeLibrary() async throws {
+        let original = try candidate()
+        let app = StudyService(repository: MemoryRepository(initial: original), scheduler: FSRSScheduler())
+        var incoming = original
+        incoming.notes[0].id += ":reimport"
+        incoming.notes[0].origin = ImportOrigin(namespace: "explicit-alternate-name", noteID: "123", guid: "guid",
+            metadata: ["engramSourceLibraryID": original.libraryID])
+        incoming.cards[0].id += ":reimport"; incoming.cards[0].noteID = incoming.notes[0].id
+        incoming.importedReviews[0].id += ":reimport"; incoming.importedReviews[0].cardID = incoming.cards[0].id
+        do {
+            _ = try await app.mergeImport(incoming, duplicates: .keepExisting, destinationDeckID: nil, expectedRevision: original.revision,
+                preImportBackup: { _ in XCTFail("Same-library package should be refused before backup") })
+            XCTFail("Own export cannot safely merge native identities/history back into itself")
+        } catch { XCTAssertTrue(error.localizedDescription.lowercased().contains("backup")) }
+        let after = try await app.snapshot(); XCTAssertEqual(after, original)
+    }
 }
