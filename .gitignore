@@ -1,4 +1,5 @@
 .build/
+Tools/EngramMCP/node_modules/
 .swiftpm/
 DerivedData/
 *.xcuserstate
