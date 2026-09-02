@@ -1,0 +1,139 @@
+[0/1] Planning build
+Building for debugging...
+[0/18] Write sources
+[3/18] Write swift-version--3A3C2627CA7A0B7E.txt
+[5/20] Compiling EngramTests ImportReviewRegressionTests.swift
+[6/20] Emitting module EngramTests
+[7/20] Compiling EngramTests SafeCardMarkupTests.swift
+[8/21] Wrapping AST for EngramTests for debugging
+[10/21] Compiling AnkiAdapters AnkiExport.swift
+[11/21] Emitting module AnkiAdapters
+[12/21] Compiling AnkiAdapters AnkiImport.swift
+[13/21] Compiling AnkiAdapters SQLite.swift
+[14/22] Wrapping AST for AnkiAdapters for debugging
+[16/24] Emitting module AnkiAdapterTests
+[17/24] Compiling AnkiAdapterTests AnkiFixtureTests.swift
+[18/25] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[19/26] Write sources
+[20/26] Wrapping AST for AnkiAdapterTests for debugging
+[22/30] Emitting module EngramPackageDiscoveredTests
+[23/30] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[24/30] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[25/30] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[26/31] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[27/32] Write sources
+[28/32] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[30/34] Emitting module EngramPackageTests
+[31/34] Compiling EngramPackageTests runner.swift
+[32/34] Write Objects.LinkFileList
+[33/34] Linking EngramPackageTests.xctest
+Build complete! (8.37s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\debug
+Test Suite 'Selected tests' started at 2026-09-03 03:56:58.274
+
+Test Suite 'SafeCardMarkupTests' started at 2026-09-03 03:56:58.276
+
+Test Case 'SafeCardMarkupTests.testEscapedTagsRemainLiteralTextNotInstructions' started at 2026-09-03 03:56:58.276
+
+Test Case 'SafeCardMarkupTests.testEscapedTagsRemainLiteralTextNotInstructions' passed (0.001 seconds)
+
+Test Case 'SafeCardMarkupTests.testLocalMediaEntitiesAndAudioReferences' started at 2026-09-03 03:56:58.277
+
+Test Case 'SafeCardMarkupTests.testLocalMediaEntitiesAndAudioReferences' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testMalformedAndNestedMismatchedMarkupIsReported' started at 2026-09-03 03:56:58.277
+
+Test Case 'SafeCardMarkupTests.testMalformedAndNestedMismatchedMarkupIsReported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testMediaOnlyRequiredFieldsAndEscapedLiteralTagsRemainSupported' started at 2026-09-03 03:56:58.278
+
+Test Case 'SafeCardMarkupTests.testMediaOnlyRequiredFieldsAndEscapedLiteralTagsRemainSupported' passed (0.001 seconds)
+
+Test Case 'SafeCardMarkupTests.testNestedFormattingAndParagraphsPreserveReadableContent' started at 2026-09-03 03:56:58.279
+
+Test Case 'SafeCardMarkupTests.testNestedFormattingAndParagraphsPreserveReadableContent' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPathTraversalAndUnsupportedMediaCannotReachRenderer' started at 2026-09-03 03:56:58.279
+
+Test Case 'SafeCardMarkupTests.testPathTraversalAndUnsupportedMediaCannotReachRenderer' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPlainMathUnicodeAndLineBreaksRemainReadable' started at 2026-09-03 03:56:58.279
+
+Test Case 'SafeCardMarkupTests.testPlainMathUnicodeAndLineBreaksRemainReadable' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testPreformattedCodeAndStrikethroughAreSupported' started at 2026-09-03 03:56:58.279
+
+Test Case 'SafeCardMarkupTests.testPreformattedCodeAndStrikethroughAreSupported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testScriptStyleExternalLoadsAndUnexpectedAttributesAreUnsupported' started at 2026-09-03 03:56:58.280
+
+Test Case 'SafeCardMarkupTests.testScriptStyleExternalLoadsAndUnexpectedAttributesAreUnsupported' passed (0.0 seconds)
+
+Test Case 'SafeCardMarkupTests.testUnknownEntitiesAndComplexMarkupHaveExplicitFindings' started at 2026-09-03 03:56:58.280
+
+Test Case 'SafeCardMarkupTests.testUnknownEntitiesAndComplexMarkupHaveExplicitFindings' passed (0.015 seconds)
+
+Test Case 'SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable' started at 2026-09-03 03:56:58.295
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <script>alert(1)</script>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <script>alert(1)</script>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <span style='display:none'>hidden</span>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <span style='display:none'>hidden</span>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <img src='https://example.com/a.png'>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:69: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : failed - Unsupported formatting was saved: <img src='https://example.com/a.png'>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:75: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : XCTAssertTrue failed - 
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:76: error: SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable : XCTAssertTrue failed - 
+
+Test Case 'SafeCardMarkupTests.testUnsupportedManualFieldsCannotBeSavedAndDraftRemainsAvailable' failed (0.001 seconds)
+
+Test Case 'SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected' started at 2026-09-03 03:56:58.296
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:80: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <b></b>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:81: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <b></b>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:82: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <b></b>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:80: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &nbsp;
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:81: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &nbsp;
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:82: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &nbsp;
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:80: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <p><br></p>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:81: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <p><br></p>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:82: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - <p><br></p>
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:80: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &#32;
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:81: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &#32;
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\SafeCardMarkupTests.swift:82: error: SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected : XCTAssertThrowsError failed: did not throw error - &#32;
+
+Test Case 'SafeCardMarkupTests.testVisuallyEmptyBasicFieldsAndClozeAnswersAreRejected' failed (0.0 seconds)
+
+Test Suite 'SafeCardMarkupTests' failed at 2026-09-03 03:56:58.297
+
+	 Executed 12 tests, with 20 failures (0 unexpected) in 0.021 (0.021) seconds
+
+Test Suite 'Selected tests' failed at 2026-09-03 03:56:58.297
+
+	 Executed 12 tests, with 20 failures (0 unexpected) in 0.021 (0.021) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

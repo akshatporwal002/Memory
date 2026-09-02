@@ -15,7 +15,7 @@ Verified 3 September 2026 on Windows x86_64 with Swift 6.3.3 and official Anki P
 
 ## Explicit unsupported cases
 
-- Modern Latest `collection.anki21b` zstd/protobuf packages; unknown package metadata; schema versions other than 11. Preflight directs the user to Anki's “Support older Anki versions” export option. Modern-format implementation remains unfinished against the broader first-build brief.
+- Modern Latest `collection.anki21b` zstd/protobuf packages; unknown package metadata; schema versions other than 11. Preflight directs the user to Anki's “Support older Anki versions” export option. Legacy-compatible schema11 is this build's explicit validated package boundary.
 - Exact continuation of legacy SM-2, learning/relearning, buried or filtered source states. The user can cancel or explicitly select content-only import with original evidence retained. Filtered decks must be returned to original decks in Anki before this importer accepts them.
 - Custom template logic, JavaScript, non-default CSS, image occlusion, typed-answer templates, nested/comma clozes and unsupported field markup. Unsupported notes are reported and block import; the adapter does not flatten them into misleading plain text.
 - Rendering uses the shared SafeCardMarkup allowlist. HTML attributes/CSS, remote URLs, scripts and unsupported tags are rejected. Ordinary inline emphasis/paragraphs and local image/audio references are supported. LaTeX/MathJax markers are rejected. See the parser for exact image/audio formats. Unsupported media files may remain in complete native backups, but unsupported referenced content cannot enter the ordinary study renderer.

@@ -50,6 +50,11 @@ struct SettingsView: View {
                 Section("Your library") {
                     Text("Engram works offline with its local cards, media and saved reviews. This installation does not sync with your other devices. Create a complete backup before moving devices or removing the app.")
                     Text("Anki import/export and core study do not depend on paid AI. AI generation, voice tutoring and cloud sync are not included in this build.")
+                    NavigationLink("Open-source acknowledgements") {
+                        ScrollView {
+                            Text(acknowledgements).textSelection(.enabled).padding().frame(maxWidth: 720)
+                        }.navigationTitle("Acknowledgements")
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -60,5 +65,12 @@ struct SettingsView: View {
         }
         .engramSheetSizing(idealWidth: 600, minimumHeight: 600)
         .interactiveDismissDisabled(model.busy)
+    }
+    private var acknowledgements: String {
+        guard let url = Bundle.main.url(forResource: "Acknowledgements", withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else {
+            return "Acknowledgements could not be loaded. The source distribution includes Vendor/FSRS/LICENSE and Sources/CArchive/LICENSE; SQLite is public domain."
+        }
+        return text
     }
 }

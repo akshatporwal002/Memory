@@ -1,0 +1,80 @@
+[0/1] Planning build
+Building for debugging...
+[0/20] Write sources
+[3/20] Compiling CArchive identity.c
+[4/20] Write swift-version--3A3C2627CA7A0B7E.txt
+[5/16] Compiling CArchive archive.c
+[7/23] Emitting module PersistenceAdapters
+[8/23] Compiling PersistenceAdapters StartupLibraryRecovery.swift
+[9/24] Wrapping AST for PersistenceAdapters for debugging
+[11/32] Compiling AnkiAdapters AnkiExport.swift
+[12/32] Emitting module AnkiAdapters
+[13/32] Compiling AnkiAdapters AnkiImport.swift
+[14/32] Compiling AnkiAdapters Archive.swift
+[15/32] Compiling AnkiAdapters SQLite.swift
+[16/33] Wrapping AST for AnkiAdapters for debugging
+[18/33] Compiling EngramTests ReliabilityTests.swift
+[19/33] Emitting module EngramTests
+[20/33] Compiling EngramTests ImportReviewRegressionTests.swift
+[21/33] Compiling EngramTests QueueAndMutationTests.swift
+[22/33] Compiling EngramTests ImportTransactionTests.swift
+[23/33] Compiling EngramTests StartupRecoveryTests.swift
+[24/33] Compiling EngramTests SafeCardMarkupTests.swift
+[25/33] Compiling EngramTests WorkflowTests.swift
+[26/34] Wrapping AST for EngramTests for debugging
+[28/38] Compiling AnkiAdapterTests ArchiveTests.swift
+[29/38] Compiling AnkiAdapterTests AnkiFixtureTests.swift
+[30/38] Emitting module AnkiAdapterTests
+[31/38] Compiling AnkiAdapterTests resource_bundle_accessor.swift
+[32/39] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[33/40] Write sources
+[34/40] Wrapping AST for AnkiAdapterTests for debugging
+[36/44] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[37/44] Emitting module EngramPackageDiscoveredTests
+[38/44] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[39/44] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[40/45] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[41/46] Write sources
+[42/46] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[44/48] Emitting module EngramPackageTests
+[45/48] Compiling EngramPackageTests runner.swift
+[46/48] Write Objects.LinkFileList
+[47/48] Linking EngramPackageTests.xctest
+Build complete! (8.78s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\tooling\reliability-build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:02:48.773
+
+Test Suite 'StartupRecoveryTests' started at 2026-09-03 04:02:48.774
+
+Test Case 'StartupRecoveryTests.testChangedOriginalRequiresFreshConfirmation' started at 2026-09-03 04:02:48.774
+
+Test Case 'StartupRecoveryTests.testChangedOriginalRequiresFreshConfirmation' passed (0.014 seconds)
+
+Test Case 'StartupRecoveryTests.testFailedPreservationCopyCannotReplaceOriginal' started at 2026-09-03 04:02:48.788
+
+Test Case 'StartupRecoveryTests.testFailedPreservationCopyCannotReplaceOriginal' passed (0.007 seconds)
+
+Test Case 'StartupRecoveryTests.testInvalidIncomingLibraryNeverChangesUnreadableOriginal' started at 2026-09-03 04:02:48.795
+
+Test Case 'StartupRecoveryTests.testInvalidIncomingLibraryNeverChangesUnreadableOriginal' passed (0.006 seconds)
+
+Test Case 'StartupRecoveryTests.testSuccessfulRecoveryPreservesExactOriginalAndOpensValidSnapshot' started at 2026-09-03 04:02:48.801
+
+Test Case 'StartupRecoveryTests.testSuccessfulRecoveryPreservesExactOriginalAndOpensValidSnapshot' passed (0.01 seconds)
+
+Test Suite 'StartupRecoveryTests' passed at 2026-09-03 04:02:48.811
+
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.037 (0.037) seconds
+
+Test Suite 'Selected tests' passed at 2026-09-03 04:02:48.811
+
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.037 (0.037) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

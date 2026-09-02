@@ -1,0 +1,76 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[2/4] Write swift-version--3A3C2627CA7A0B7E.txt
+[4/8] Emitting module EngramTests
+[5/8] Compiling EngramTests ImportTransactionTests.swift
+[7/9] Emitting module AnkiAdapters
+[8/9] Compiling AnkiAdapters AnkiExport.swift
+[9/17] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageDiscoveredTests.derived\all-discovered-tests.swift
+[10/18] Write sources
+[11/18] Wrapping AST for EngramTests for debugging
+[13/22] Emitting module EngramPackageDiscoveredTests
+[14/22] Compiling EngramPackageDiscoveredTests AnkiAdapterTests.swift
+[15/22] Compiling EngramPackageDiscoveredTests EngramTests.swift
+[16/22] Compiling EngramPackageDiscoveredTests all-discovered-tests.swift
+[17/23] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\x86_64-unknown-windows-msvc\debug\EngramPackageTests.derived\runner.swift
+[18/23] Write sources
+[19/23] Wrapping AST for EngramPackageDiscoveredTests for debugging
+[21/25] Emitting module EngramPackageTests
+[22/25] Compiling EngramPackageTests runner.swift
+[23/25] Write Objects.LinkFileList
+[24/25] Linking EngramPackageTests.xctest
+Build complete! (6.54s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:05:16.276
+
+Test Suite 'ImportTransactionTests' started at 2026-09-03 04:05:16.278
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' started at 2026-09-03 04:05:16.278
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' passed (0.002 seconds)
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' started at 2026-09-03 04:05:16.280
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' started at 2026-09-03 04:05:16.280
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' started at 2026-09-03 04:05:16.281
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' started at 2026-09-03 04:05:16.281
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' started at 2026-09-03 04:05:16.281
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ImportTransactionTests.swift:112: error: ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge : failed - Native records require complete restore, not Anki merge
+
+C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Tests\EngramTests\ImportTransactionTests.swift:114: error: ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge : XCTAssertEqual failed: ("LibrarySnapshot(schemaVersion: 1, revision: 1, libraryID: "DB6E4815-5983-4781-8101-B68155D704FF", decks: [LearningCore.Deck(id: "source:deck:1", name: "Imported", deleted: false)], notes: [LearningCore.Note(id: "source:note:guid", deckID: "source:deck:1", kind: LearningCore.NoteKind.basic, front: "Original", back: "Answer", tags: [], source: "", origin: nil, deleted: false, modifiedAt: 2026-09-02 18:05:16 +0000)], cards: [LearningCore.StudyCard(id: "source:card:1", noteID: "source:note:guid", deckID: "source:deck:1", ordinal: 0, schedule: LearningCore.ScheduleState(schedulerID: "fsrs-6", implementationVersion: "swift-fsrs-4fbaf201", schemaVersion: 1, settingsVersion: 1, due: 2026-09-03 00:00:00 +0000, phase: LearningCore.LearningPhase.new, payload: 128 bytes), suspended: false, retired: false, version: 0, sourceCardID: nil, sourceSchedule: [:])], reviews: [], corrections: [], importedReviews: [LearningCore.ImportedReview(id: "source:rev:1", cardID: "source:card:1", origin: "source", values: ["ease": "0", "ivl": "-60"])], media: [LearningCore.MediaFile(name: "image.png", data: 3 bytes)], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") is not equal to ("LibrarySnapshot(schemaVersion: 1, revision: 0, libraryID: "DB6E4815-5983-4781-8101-B68155D704FF", decks: [], notes: [], cards: [], reviews: [], corrections: [], importedReviews: [], media: [], settings: LearningCore.StudySettings(version: 1, newCardsPerDay: 20, reviewsPerDay: 200, dayStartsAtHour: 4, timeZoneID: "Australia/Sydney", desiredRetention: 0.9), session: nil)") - 
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' failed (0.232 seconds)
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' started at 2026-09-03 04:05:16.513
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' passed (0.001 seconds)
+
+Test Suite 'ImportTransactionTests' failed at 2026-09-03 04:05:16.514
+
+	 Executed 7 tests, with 2 failures (0 unexpected) in 0.236 (0.236) seconds
+
+Test Suite 'Selected tests' failed at 2026-09-03 04:05:16.514
+
+	 Executed 7 tests, with 2 failures (0 unexpected) in 0.236 (0.236) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

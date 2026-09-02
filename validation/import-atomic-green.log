@@ -1,0 +1,58 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write sources
+[1/3] Write swift-version--3A3C2627CA7A0B7E.txt
+[3/5] Emitting module StudyApplication
+[4/5] Compiling StudyApplication ImportService.swift
+[5/7] Write Objects.LinkFileList
+[6/7] Linking EngramPackageTests.xctest
+Build complete! (2.49s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\.build\debug
+Test Suite 'Selected tests' started at 2026-09-03 04:06:05.387
+
+Test Suite 'ImportTransactionTests' started at 2026-09-03 04:06:05.388
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' started at 2026-09-03 04:06:05.388
+
+Test Case 'ImportTransactionTests.testCancellationAfterBackupLeavesLibraryUnchanged' passed (0.002 seconds)
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' started at 2026-09-03 04:06:05.391
+
+Test Case 'ImportTransactionTests.testCommitFailureAfterSuccessfulBackupLeavesLibraryUnchanged' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' started at 2026-09-03 04:06:05.391
+
+Test Case 'ImportTransactionTests.testConcurrentChangeDuringBackupIsRetainedAndImportRejected' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' started at 2026-09-03 04:06:05.391
+
+Test Case 'ImportTransactionTests.testImportBackupFailureLeavesExistingLibraryUntouched' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' started at 2026-09-03 04:06:05.392
+
+Test Case 'ImportTransactionTests.testMediaCollisionAndStaleInspectionDoNotMutateLibrary' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' started at 2026-09-03 04:06:05.392
+
+Test Case 'ImportTransactionTests.testNativeEvidenceCannotBeSilentlyDroppedByAnkiMerge' passed (0.0 seconds)
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' started at 2026-09-03 04:06:05.392
+
+Test Case 'ImportTransactionTests.testRepeatedImportUpdatePreservesLocalGradesAndAddsNoDuplicates' passed (0.001 seconds)
+
+Test Suite 'ImportTransactionTests' passed at 2026-09-03 04:06:05.393
+
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+
+Test Suite 'Selected tests' passed at 2026-09-03 04:06:05.393
+
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+√ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+

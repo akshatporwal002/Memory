@@ -64,7 +64,11 @@ public struct EngramRootView: View {
                     Task { if await model.perform({ try await $0.deleteNote(id: note.id) }) { model.deleteNote = nil } }
                 }
             }
-        } message: { Text("The note will leave your library and all its generated cards will stop appearing in study. History is retained in backups.") }
+        } message: {
+            if let note = model.deleteNote {
+                Text("Delete “\(note.front.prefix(120))” and all its generated cards? They will leave study; history is retained in complete backups.")
+            }
+        }
         .task {
             await model.refresh()
             while !Task.isCancelled {

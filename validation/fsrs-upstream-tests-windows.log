@@ -1,0 +1,663 @@
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--3A3C2627CA7A0B7E.txt
+[4/27] Emitting module FSRS
+[5/27] Compiling FSRS FSRSAlea.swift
+[6/27] Compiling FSRS FSRS.swift
+[7/27] Compiling FSRS FSRSAlgorithm.swift
+[8/27] Compiling FSRS FSRSHelper.swift
+[9/27] Compiling FSRS FSRSDefaults.swift
+[10/27] Compiling FSRS FSRSModels.swift
+[11/27] Compiling FSRS BasicScheduler.swift
+[12/27] Compiling FSRS FSRSTypes.swift
+[13/27] Compiling FSRS AbstractScheduler.swift
+[14/27] Compiling FSRS FSRSReschedule.swift
+[15/27] Compiling FSRS BasicSchedulerV6.swift
+[16/27] Compiling FSRS FSRSSteps.swift
+[17/27] Compiling FSRS LongTermScheduler.swift
+[18/28] Wrapping AST for FSRS for debugging
+[20/50] Compiling FSRSTests FSRSAbstractSchedulerTests.swift
+[21/50] Compiling FSRSTests FSRSAleaTests.swift
+[22/50] Emitting module FSRSTests
+[23/50] Compiling FSRSTests FSRSCompletionHandlerTests.swift
+[24/50] Compiling FSRSTests FSRSConcurrencyTests.swift
+[25/50] Compiling FSRSTests FSRSAlgorithmInternalsTests.swift
+[26/50] Compiling FSRSTests FSRSBasicSchedulerTests.swift
+[27/50] Compiling FSRSTests FSRSCalcElapsedDaysTests.swift
+[28/50] Compiling FSRSTests FSRSCodableCompatTests.swift
+[29/50] Compiling FSRSTests FSRSDefaultTests.swift
+[30/50] Compiling FSRSTests FSRSElapsedDaysTests.swift
+[31/50] Compiling FSRSTests FSRSForgetTests.swift
+[32/50] Compiling FSRSTests FSRSFuzzSameSeedTests.swift
+[33/50] Compiling FSRSTests FSRSGeneratorParametersV6Tests.swift
+[34/50] Compiling FSRSTests FSRSLongTermSchedulerTests.swift
+[35/50] Compiling FSRSTests FSRSReschduleTests.swift
+[36/50] Compiling FSRSTests FSRSRollbackTests.swift
+[37/50] Compiling FSRSTests FSRSModelEnumStringValueTests.swift
+[38/50] Compiling FSRSTests FSRSStepsTests.swift
+[39/50] Compiling FSRSTests FSRSShowDiffMessageTests.swift
+[40/50] Compiling FSRSTests FSRSV6Tests.swift
+[41/50] Compiling FSRSTests FSRSV5Tests.swift
+[42/51] Compiling FSRSTests TestSupport.swift
+[43/52] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Vendor\FSRS\.build\x86_64-unknown-windows-msvc\debug\FSRSPackageDiscoveredTests.derived\all-discovered-tests.swift
+[44/52] Write sources
+[45/52] Wrapping AST for FSRSTests for debugging
+[47/55] Emitting module FSRSPackageDiscoveredTests
+[48/55] Compiling FSRSPackageDiscoveredTests all-discovered-tests.swift
+[49/55] Compiling FSRSPackageDiscoveredTests FSRSTests.swift
+[50/56] C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Vendor\FSRS\.build\x86_64-unknown-windows-msvc\debug\FSRSPackageTests.derived\runner.swift
+[51/56] Write sources
+[52/56] Wrapping AST for FSRSPackageDiscoveredTests for debugging
+[54/58] Emitting module FSRSPackageTests
+[55/58] Compiling FSRSPackageTests runner.swift
+[56/59] Wrapping AST for FSRSPackageTests for debugging
+[57/59] Write Objects.LinkFileList
+[58/59] Linking FSRSPackageTests.xctest
+Build complete! (33.99s)
+warning: unable to create symbolic link at C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Vendor\FSRS\.build\debug: encountered an I/O error (code: 512) while reading C:\Users\aoswa\OneDrive\Documents\ChatGPT\Memory\staging\Vendor\FSRS\.build\debug
+Test Suite 'All tests' started at 2026-09-03 04:03:22.374
+
+Test Suite 'debug.xctest' started at 2026-09-03 04:03:22.376
+
+Test Suite 'debug.xctest' passed at 2026-09-03 04:03:22.376
+
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.0 (0.0) seconds
+
+Test Suite 'All tests' passed at 2026-09-03 04:03:22.376
+
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.0 (0.0) seconds
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+[FSRS V5]auto fill w to 19 length
+
+The operation could not be completed. (FSRS.FSRSError error 1.)
+
+The operation could not be completed. (FSRS.FSRSError error 1.)
+
+The operation could not be completed. (FSRS.FSRSError error 1.)
+
+[FSRS V5]auto fill w to 19 length
+
+Requested retention rate should be in the range (0,1]
+
+Requested retention rate should be in the range (0,1]
+
+Requested retention rate should be in the range (0,1]
+
+Requested retention rate should be in the range (0,1]
+
+◊ Test run started.
+
+→ Testing Library Version: 6.3.3 (48d727cc1cf4eda)
+
+→ Target Platform: x86_64-unknown-windows-msvc
+
+◊ Suite FSRSAbstractSchedulerTests started.
+
+◊ Suite FSRSForgetTests started.
+
+◊ Suite FSRSCompletionHandlerTests started.
+
+◊ Suite FSRSBasicSchedulerTests started.
+
+◊ Suite ShowDiffMessageTests started.
+
+◊ Suite FSRSDefaultTests started.
+
+◊ Suite FSRSModelEnumStringValueTests started.
+
+◊ Suite FSRSConcurrencyTests started.
+
+◊ Suite LongTermSchedulerTests started.
+
+◊ Suite FSRSRollbackTests started.
+
+◊ Suite FSRSNextMethodTests started.
+
+◊ Suite FSRSV5Tests started.
+
+◊ Suite FSRSRetrievabilityTests started.
+
+◊ Suite FSRSReschduleTests started.
+
+◊ Suite FSRSAleaTests started.
+
+◊ Suite FSRSV6Tests started.
+
+◊ Suite FSRSCodableCompatTests started.
+
+◊ Suite FSRSStepsTests started.
+
+◊ Suite FSRSGeneratorParametersV6Tests started.
+
+◊ Suite FSRSCalcElapsedDaysTests started.
+
+◊ Test ratingStringValueIsExhaustive() started.
+
+◊ Suite FSRSElapsedDaysTests started.
+
+◊ Test sequenceMatchesOracle(fixture:) started.
+
+◊ Test concurrentNextMatchesSerialBaseline() started.
+
+◊ Test symbolIterator() started.
+
+◊ Test firstRollback() started.
+
+◊ Test rollbackNewStateMissingDueThrows() started.
+
+◊ Test ratingStringValue(rating:expected:) started.
+
+◊ Suite FuzzSameSeedTests started.
+
+◊ Test cardStateStringValue(state:expected:) started.
+
+◊ Test rollbackMissingStateThrows() started.
+
+◊ Test newCardForgetResetTrue() started.
+
+◊ Test forget() started.
+
+◊ Test previewSubscriptSetReplacesItem() started.
+
+◊ Test rollback2() started.
+
+◊ Suite FSRSAlgorithmInternalsTests started.
+
+◊ Test retrievabilityPercentageForReviewCards() started.
+
+◊ Test stateSwitching() started.
+
+◊ Test publicTypesAreSendable() started.
+
+◊ Test returnZeroForNewCards() started.
+
+◊ Test loopAgain() started.
+
+◊ Test newCardForget() started.
+
+◊ Test minutes() started.
+
+◊ Test badType() started.
+
+◊ Test concurrentRepeatMatchesSerialBaseline() started.
+
+◊ Test defaultCard() started.
+
+◊ Test wrongTimeUnitLength() started.
+
+◊ Test invalidGrade() started.
+
+◊ Test ivlHistory() started.
+
+◊ Test firstRepeat() started.
+
+◊ Test months() started.
+
+◊ Test previewMatchesPerGradeReview(initialState:) started.
+
+◊ Test years() started.
+
+◊ Test defaultParams() started.
+
+◊ Test memoryState() started.
+
+◊ Test unsupportedWLengthFallsBackToDefault(length:) started.
+
+◊ Test days() started.
+
+◊ Test hours() started.
+
+◊ Test basicGrade() started.
+
+◊ Test case passing 2 arguments rating → .hard, expected → "hard" to ratingStringValue(rating:expected:) started.
+
+◊ Test case passing 2 arguments rating → .again, expected → "again" to ratingStringValue(rating:expected:) started.
+
+◊ Test case passing 2 arguments rating → .good, expected → "good" to ratingStringValue(rating:expected:) started.
+
+◊ Test case passing 1 argument fixture → LongTermFixture(ratings: [FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.again, FSRS.Rating.again, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good, FSRS.Rating.good], ivlHistory: [3, 13, 48, 155, 445, 1158, 17, 3, 11, 37, 112, 307, 773], sHistory: [3.0412, 13.09130698, 48.15848988, 154.93732625, 445.05562739, 1158.07779739, 16.63063166, 3.01732209, 11.42247264, 37.37521902, 111.8752758, 306.5974569, 772.94031572], dHistory: [4.49094334, 4.26664289, 4.05746029, 3.86237659, 3.68044154, 3.51076891, 4.69833071, 5.55956298, 5.26323756, 4.98688448, 4.72915759, 4.4888015, 4.26464541]) to sequenceMatchesOracle(fixture:) started.
+
+◊ Test currentCardEqualRescheduleCard() started.
+
+◊ Test case passing 2 arguments rating → .manual, expected → "manual" to ratingStringValue(rating:expected:) started.
+
+◊ Test includeManualRatingManuallyConfigureData() started.
+
+◊ Test includeManualRatingSetForget() started.
+
+◊ Test includeManualRatingAndDsNotProvided() started.
+
+◊ Test case passing 2 arguments state → .new, expected → "new" to cardStateStringValue(state:expected:) started.
+
+◊ Test case passing 2 arguments state → .learning, expected → "learning" to cardStateStringValue(state:expected:) started.
+
+◊ Test case passing 2 arguments rating → .easy, expected → "easy" to ratingStringValue(rating:expected:) started.
+
+◊ Test case passing 1 argument fixture → LongTermFixture(ratings: [FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again], ivlHistory: [2, 7, 54, 5, 8, 26, 171, 8], sHistory: [1.1869, 6.59167572, 53.76078737, 5.0853693, 8.09786749, 25.52991279, 171.16195166, 8.11072373], dHistory: [6.23225985, 5.89059466, 5.14583392, 5.884097, 5.99269555, 5.667177, 4.91430736, 5.71619151]) to sequenceMatchesOracle(fixture:) started.
+
+◊ Test case passing 2 arguments state → .review, expected → "review" to cardStateStringValue(state:expected:) started.
+
+◊ Test case passing 1 argument fixture → LongTermFixture(ratings: [FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy], ivlHistory: [1, 2, 6, 41, 4, 7, 21, 133], sHistory: [0.4197, 1.0344317, 5.5356759, 41.0033667, 4.46605519, 6.67743292, 20.88868155, 132.81849454], dHistory: [7.1434, 7.03653841, 6.64066485, 5.92312772, 6.44779861, 6.45995078, 6.10293922, 5.36588547]) to sequenceMatchesOracle(fixture:) started.
+
+◊ Test case passing 2 arguments state → .relearning, expected → "relearning" to cardStateStringValue(state:expected:) started.
+
+◊ Test case passing 1 argument fixture → LongTermFixture(ratings: [FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good], ivlHistory: [15, 3, 6, 27, 240, 10, 17, 60], sHistory: [15.2441, 3.25621013, 6.32684549, 26.56339029, 239.70462771, 9.75621519, 17.06035531, 59.59547542], dHistory: [1.16304343, 2.99573557, 3.59851762, 3.43436666, 2.60045771, 4.03816348, 4.46259158, 4.24020203]) to sequenceMatchesOracle(fixture:) started.
+
+◊ Test case passing 1 argument fixture → LongTermFixture(ratings: [FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard, FSRS.Rating.good, FSRS.Rating.easy, FSRS.Rating.again, FSRS.Rating.hard], ivlHistory: [3, 33, 4, 7, 26, 193, 9, 14], sHistory: [3.0412, 32.65484522, 4.22256838, 7.23250123, 25.52681848, 193.36619432, 8.63899858, 14.31323884], dHistory: [4.49094334, 3.69538259, 4.83221448, 5.12078462, 4.85403286, 4.07165035, 5.1050878, 5.34697075]) to sequenceMatchesOracle(fixture:) started.
+
+◊ Test getRetrievability() started.
+
+◊ Test basicReschedule() started.
+
+◊ Test includeManualRatingStateNotProvided() started.
+
+◊ Test rescheduleSwallowsReplayErrors() started.
+
+◊ Test forgetReschedule() started.
+
+◊ Test getRescheduleItem() started.
+
+◊ Test rollbackRunsCompletionHandler() started.
+
+◊ Test handleEmptySetReviews() started.
+
+◊ Test forgetRunsCompletionHandler() started.
+
+◊ Test includeManualRatingDueNotProvided() started.
+
+◊ Test singleOneDayLearningStepGraduates() started.
+
+◊ Test sameSeedProducesSameState() started.
+
+◊ Test reproducesNamedSeed(seed:expectedNext:c:s0:s1:s2:) started.
+
+◊ Test ivlHistory() started.
+
+◊ Test repeatRunsCompletionHandler() started.
+
+◊ Test firstRepeat() started.
+
+◊ Test memoryStateShortTerm() started.
+
+◊ Test forgettingCurveUsesLearnableDecay() started.
+
+◊ Test longLearningStepGraduatesToReviewWithScheduledDays() started.
+
+◊ Test memoryStateLongTerm() started.
+
+◊ Test nextProducesKnownDoubleSequence() started.
+
+◊ Test nextRunsCompletionHandler() started.
+
+◊ Test versionDetection() started.
+
+◊ Test currentCardJSONRoundTrips() started.
+
+◊ Test legacyParametersJSONDecodes() started.
+
+◊ Test zeroStateProducesZero() started.
+
+◊ Test rescheduleRecordLogHandlerMapsItems() started.
+
+◊ Test stateAdvancesAfterNext() started.
+
+◊ Test unknownUnitSuffixThrows() started.
+
+◊ Test importStateClonesGenerator() started.
+
+◊ Test happyPath(input:expectedMinutes:) started.
+
+◊ Test emptyStringThrows() started.
+
+◊ Test invalidValuePartThrows() started.
+
+◊ Test doubleIsBoundedAndReproducible() started.
+
+◊ Test int32IsBoundedAndReproducible() started.
+
+◊ Test noArgsStaysOnV5() started.
+
+◊ Test v6DefaultPassesThrough() started.
+
+◊ Test legacyReviewLogJSONDecodes() started.
+
+◊ Test ceilingFiniteForOutOfRangeInputs() started.
+
+◊ Test length19DoesNotAutoMigrateTo21() started.
+
+◊ Test sMinIsVersionDispatched() started.
+
+◊ Test legacyCardJSONDecodes() started.
+
+◊ Test malformedLearningStepThrowsOnReview() started.
+
+◊ Test legacy17PathUnchanged() started.
+
+◊ Test v6ClampForcesValidRanges() started.
+
+◊ Test firstRepeatGood() started.
+
+◊ Test elapsedDays() started.
+
+◊ Test factorIsDerivedFromDecayInV6() started.
+
+◊ Test dateDiffMinutes() started.
+
+◊ Test sseUseNextState() started.
+
+◊ Test case passing 1 argument initialState → .review to previewMatchesPerGradeReview(initialState:) started.
+
+◊ Test case passing 1 argument initialState → .new to previewMatchesPerGradeReview(initialState:) started.
+
+◊ Test case passing 1 argument initialState → .learning to previewMatchesPerGradeReview(initialState:) started.
+
+◊ Test case passing 1 argument length → 16 to unsupportedWLengthFallsBackToDefault(length:) started.
+
+◊ Test case passing 1 argument length → 18 to unsupportedWLengthFallsBackToDefault(length:) started.
+
+◊ Test case passing 1 argument length → 20 to unsupportedWLengthFallsBackToDefault(length:) started.
+
+◊ Test case passing 1 argument length → 22 to unsupportedWLengthFallsBackToDefault(length:) started.
+
+◊ Test fuzzSameShortTerm() started.
+
+◊ Test fuzzSameLongTerm() started.
+
+√ Test ratingStringValueIsExhaustive() passed after 0.004 seconds.
+
+√ Test cardStateStringValue(state:expected:) with 4 test cases passed after 0.004 seconds.
+
+◊ Test intervalModifierFallbackForOutOfRangeRetention(retention:) started.
+
+√ Test ratingStringValue(rating:expected:) with 5 test cases passed after 0.004 seconds.
+
+◊ Test nextStateAllowsManualOnExistingMemory() started.
+
+◊ Test nextStateRejectsNegativeDeltaT() started.
+
+◊ Test nextStateRejectsStabilityBelowSMin() started.
+
+√ Test previewSubscriptSetReplacesItem() passed after 0.005 seconds.
+
+√ Test symbolIterator() passed after 0.005 seconds.
+
+◊ Test nextStateRejectsDifficultyBelowOne() started.
+
+◊ Test intervalModifierFallbackForNonFiniteRetention() started.
+
+√ Test publicTypesAreSendable() passed after 0.004 seconds.
+
+√ Test returnZeroForNewCards() passed after 0.004 seconds.
+
+√ Test loopAgain() passed after 0.004 seconds.
+
+√ Test newCardForgetResetTrue() passed after 0.005 seconds.
+
+√ Test newCardForget() passed after 0.004 seconds.
+
+√ Test firstRollback() passed after 0.005 seconds.
+
+√ Test minutes() passed after 0.005 seconds.
+
+√ Test rollback2() passed after 0.005 seconds.
+
+√ Test defaultCard() passed after 0.005 seconds.
+
+◊ Test case passing 6 arguments seed → "Seedp5fxh9kf4r0", expectedNext → 0.14867847645655274, c → 1776946, s0 → 0.6778371171094477, s1 → 0.0770602801349014, s2 → 0.14867847645655274 to reproducesNamedSeed(seed:expectedNext:c:s0:s1:s2:) started.
+
+◊ Test case passing 6 arguments seed → "1727015666066", expectedNext → 0.6320083506871015, c → 1828249, s0 → 0.5888567129150033, s1 → 0.5074866858776659, s2 → 0.6320083506871015 to reproducesNamedSeed(seed:expectedNext:c:s0:s1:s2:) started.
+
+◊ Test case passing 6 arguments seed → "NegativeS2Seed", expectedNext → 0.830770346801728, c → 952982, s0 → 0.25224833423271775, s1 → 0.9213257452938706, s2 → 0.830770346801728 to reproducesNamedSeed(seed:expectedNext:c:s0:s1:s2:) started.
+
+√ Test wrongTimeUnitLength() passed after 0.005 seconds.
+
+√ Test rollbackMissingStateThrows() passed after 0.006 seconds.
+
+√ Test rollbackNewStateMissingDueThrows() passed after 0.006 seconds.
+
+√ Test invalidGrade() passed after 0.005 seconds.
+
+◊ Test case passing 2 arguments input → "1m", expectedMinutes → 1 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "10m", expectedMinutes → 10 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "1h", expectedMinutes → 60 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "2h", expectedMinutes → 120 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "1d", expectedMinutes → 1440 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "3d", expectedMinutes → 4320 to happyPath(input:expectedMinutes:) started.
+
+◊ Test case passing 2 arguments input → "0m", expectedMinutes → 0 to happyPath(input:expectedMinutes:) started.
+
+√ Test forget() passed after 0.006 seconds.
+
+√ Test months() passed after 0.006 seconds.
+
+√ Test stateSwitching() passed after 0.006 seconds.
+
+√ Test sequenceMatchesOracle(fixture:) with 5 test cases passed after 0.007 seconds.
+
+√ Test firstRepeat() passed after 0.006 seconds.
+
+√ Test defaultParams() passed after 0.006 seconds.
+
+√ Test years() passed after 0.006 seconds.
+
+√ Test days() passed after 0.006 seconds.
+
+√ Test unsupportedWLengthFallsBackToDefault(length:) with 4 test cases passed after 0.006 seconds.
+
+√ Test previewMatchesPerGradeReview(initialState:) with 3 test cases passed after 0.006 seconds.
+
+√ Test hours() passed after 0.006 seconds.
+
+◊ Test case passing 1 argument retention → 1.5 to intervalModifierFallbackForOutOfRangeRetention(retention:) started.
+
+◊ Test case passing 1 argument retention → 2.0 to intervalModifierFallbackForOutOfRangeRetention(retention:) started.
+
+√ Test retrievabilityPercentageForReviewCards() passed after 0.006 seconds.
+
+◊ Test case passing 1 argument retention → 0.0 to intervalModifierFallbackForOutOfRangeRetention(retention:) started.
+
+◊ Test case passing 1 argument retention → -0.1 to intervalModifierFallbackForOutOfRangeRetention(retention:) started.
+
+√ Test includeManualRatingManuallyConfigureData() passed after 0.006 seconds.
+
+√ Test currentCardEqualRescheduleCard() passed after 0.006 seconds.
+
+√ Test includeManualRatingAndDsNotProvided() passed after 0.006 seconds.
+
+√ Test memoryState() passed after 0.006 seconds.
+
+√ Test badType() passed after 0.007 seconds.
+
+√ Test forgetRunsCompletionHandler() passed after 0.004 seconds.
+
+√ Test handleEmptySetReviews() passed after 0.004 seconds.
+
+√ Test rollbackRunsCompletionHandler() passed after 0.004 seconds.
+
+√ Test includeManualRatingStateNotProvided() passed after 0.005 seconds.
+
+√ Test sameSeedProducesSameState() passed after 0.004 seconds.
+
+√ Test repeatRunsCompletionHandler() passed after 0.004 seconds.
+
+√ Test singleOneDayLearningStepGraduates() passed after 0.004 seconds.
+
+√ Test includeManualRatingDueNotProvided() passed after 0.004 seconds.
+
+√ Test getRetrievability() passed after 0.005 seconds.
+
+√ Test reproducesNamedSeed(seed:expectedNext:c:s0:s1:s2:) with 3 test cases passed after 0.004 seconds.
+
+√ Test forgettingCurveUsesLearnableDecay() passed after 0.004 seconds.
+
+√ Test firstRepeat() passed after 0.004 seconds.
+
+√ Test forgetReschedule() passed after 0.004 seconds.
+
+√ Test longLearningStepGraduatesToReviewWithScheduledDays() passed after 0.004 seconds.
+
+√ Test basicReschedule() passed after 0.005 seconds.
+
+√ Test rescheduleSwallowsReplayErrors() passed after 0.005 seconds.
+
+√ Test nextRunsCompletionHandler() passed after 0.004 seconds.
+
+√ Test stateAdvancesAfterNext() passed after 0.004 seconds.
+
+√ Test versionDetection() passed after 0.004 seconds.
+
+√ Test zeroStateProducesZero() passed after 0.004 seconds.
+
+√ Test unknownUnitSuffixThrows() passed after 0.004 seconds.
+
+√ Test nextProducesKnownDoubleSequence() passed after 0.004 seconds.
+
+√ Test rescheduleRecordLogHandlerMapsItems() passed after 0.004 seconds.
+
+√ Test legacyParametersJSONDecodes() passed after 0.004 seconds.
+
+√ Test emptyStringThrows() passed after 0.004 seconds.
+
+√ Test doubleIsBoundedAndReproducible() passed after 0.004 seconds.
+
+√ Test memoryStateShortTerm() passed after 0.004 seconds.
+
+√ Test happyPath(input:expectedMinutes:) with 7 test cases passed after 0.004 seconds.
+
+√ Test memoryStateLongTerm() passed after 0.004 seconds.
+
+√ Test noArgsStaysOnV5() passed after 0.004 seconds.
+
+√ Test int32IsBoundedAndReproducible() passed after 0.004 seconds.
+
+√ Test invalidValuePartThrows() passed after 0.004 seconds.
+
+√ Test ceilingFiniteForOutOfRangeInputs() passed after 0.003 seconds.
+
+√ Test v6DefaultPassesThrough() passed after 0.003 seconds.
+
+√ Test getRescheduleItem() passed after 0.005 seconds.
+
+√ Test length19DoesNotAutoMigrateTo21() passed after 0.003 seconds.
+
+√ Test legacyReviewLogJSONDecodes() passed after 0.003 seconds.
+
+√ Test currentCardJSONRoundTrips() passed after 0.004 seconds.
+
+√ Test v6ClampForcesValidRanges() passed after 0.003 seconds.
+
+√ Test legacy17PathUnchanged() passed after 0.003 seconds.
+
+√ Test sMinIsVersionDispatched() passed after 0.003 seconds.
+
+√ Test dateDiffMinutes() passed after 0.003 seconds.
+
+√ Test legacyCardJSONDecodes() passed after 0.003 seconds.
+
+√ Test factorIsDerivedFromDecayInV6() passed after 0.003 seconds.
+
+√ Test malformedLearningStepThrowsOnReview() passed after 0.003 seconds.
+
+√ Test firstRepeatGood() passed after 0.003 seconds.
+
+√ Test elapsedDays() passed after 0.003 seconds.
+
+√ Suite FSRSModelEnumStringValueTests passed after 0.008 seconds.
+
+√ Test nextStateAllowsManualOnExistingMemory() passed after 0.003 seconds.
+
+√ Test intervalModifierFallbackForOutOfRangeRetention(retention:) with 4 test cases passed after 0.003 seconds.
+
+√ Suite FSRSAbstractSchedulerTests passed after 0.008 seconds.
+
+√ Test nextStateRejectsNegativeDeltaT() passed after 0.003 seconds.
+
+√ Test nextStateRejectsDifficultyBelowOne() passed after 0.003 seconds.
+
+√ Suite FSRSForgetTests passed after 0.008 seconds.
+
+√ Test intervalModifierFallbackForNonFiniteRetention() passed after 0.003 seconds.
+
+√ Test nextStateRejectsStabilityBelowSMin() passed after 0.003 seconds.
+
+√ Suite FSRSRollbackTests passed after 0.008 seconds.
+
+√ Suite FSRSRetrievabilityTests passed after 0.008 seconds.
+
+√ Suite FSRSNextMethodTests passed after 0.008 seconds.
+
+√ Test sseUseNextState() passed after 0.004 seconds.
+
+√ Suite FSRSDefaultTests passed after 0.008 seconds.
+
+√ Suite LongTermSchedulerTests passed after 0.008 seconds.
+
+√ Suite FSRSBasicSchedulerTests passed after 0.009 seconds.
+
+√ Suite FSRSElapsedDaysTests passed after 0.008 seconds.
+
+√ Suite ShowDiffMessageTests passed after 0.009 seconds.
+
+√ Suite FSRSCompletionHandlerTests passed after 0.009 seconds.
+
+√ Suite FSRSStepsTests passed after 0.008 seconds.
+
+√ Suite FSRSCodableCompatTests passed after 0.008 seconds.
+
+√ Suite FSRSCalcElapsedDaysTests passed after 0.008 seconds.
+
+√ Suite FSRSAlgorithmInternalsTests passed after 0.008 seconds.
+
+√ Suite FSRSGeneratorParametersV6Tests passed after 0.008 seconds.
+
+√ Test ivlHistory() passed after 0.010 seconds.
+
+√ Suite FSRSV5Tests passed after 0.011 seconds.
+
+√ Test ivlHistory() passed after 0.010 seconds.
+
+√ Suite FSRSV6Tests passed after 0.013 seconds.
+
+√ Test fuzzSameShortTerm() passed after 0.009 seconds.
+
+√ Test fuzzSameLongTerm() passed after 0.015 seconds.
+
+√ Suite FuzzSameSeedTests passed after 0.020 seconds.
+
+√ Test concurrentRepeatMatchesSerialBaseline() passed after 0.021 seconds.
+
+√ Test concurrentNextMatchesSerialBaseline() passed after 0.028 seconds.
+
+√ Suite FSRSConcurrencyTests passed after 0.029 seconds.
+
+√ Test importStateClonesGenerator() passed after 0.026 seconds.
+
+√ Suite FSRSAleaTests passed after 0.030 seconds.
+
+√ Test basicGrade() passed after 0.084 seconds.
+
+√ Test includeManualRatingSetForget() passed after 0.829 seconds.
+
+√ Suite FSRSReschduleTests passed after 0.831 seconds.
+
+√ Test run with 98 tests in 23 suites passed after 0.831 seconds.
+
