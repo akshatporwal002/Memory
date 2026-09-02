@@ -33,7 +33,11 @@ extension StudyService {
         var deckMap: [String: String] = [:]
         for deck in candidate.liveDecks {
             if let destinationDeckID { deckMap[deck.id] = destinationDeckID }
-            else if let existing = library.liveDecks.first(where: { $0.id == deck.id || $0.name.caseInsensitiveCompare(deck.name) == .orderedSame }) { deckMap[deck.id] = existing.id }
+            else if let existing = library.decks.first(where: { $0.id == deck.id }) {
+                guard !existing.deleted else { throw EngramError.invalid("An imported deck was deleted locally. Choose an existing destination deck or a separate source identity.") }
+                deckMap[deck.id] = existing.id
+            }
+            else if let existing = library.liveDecks.first(where: { $0.name.caseInsensitiveCompare(deck.name) == .orderedSame }) { deckMap[deck.id] = existing.id }
             else {
                 guard !library.decks.contains(where: { $0.id == deck.id }) else { throw EngramError.invalid("An imported deck was deleted locally. Choose an existing destination deck or a separate source identity.") }
                 library.decks.append(deck); deckMap[deck.id] = deck.id
@@ -61,13 +65,19 @@ extension StudyService {
             if let index = library.cards.firstIndex(where: { $0.id == card.id }) {
                 guard library.cards[index].noteID == card.noteID, library.cards[index].ordinal == card.ordinal else { throw EngramError.invalid("A source card identifier now refers to different content. Import under a separate source identity.") }
                 if duplicates == .updateContent {
-                    // Preserve local schedule/suspension/retirement. Source evidence remains available for later export/migration.
+                    // An accepted source sibling is live again; its local progress and suspension remain intact.
                     library.cards[index].deckID = deckID
                     library.cards[index].sourceSchedule = card.sourceSchedule
+                    library.cards[index].retired = false
                     library.cards[index].version += 1
                 }
             } else if !existingNoteIDs.contains(card.noteID) || duplicates == .updateContent {
+                guard !library.cards.contains(where: { $0.noteID == card.noteID && $0.ordinal == card.ordinal }) else {
+                    throw EngramError.invalid("A source card was recreated with a different identifier for an existing note and ordinal. Import under a separate source identity.")
+                }
                 library.cards.append(card); summary.addedCards += 1
+            } else {
+                throw EngramError.invalid("The source adds a card to existing content. Choose Update content or Skip existing notes to resolve this change.")
             }
         }
         // Retire no-longer-generated siblings on content updates; do not delete their evidence.
@@ -78,9 +88,13 @@ extension StudyService {
             }
         }
         let cardIDs = Set(library.cards.filter { acceptedNotes.contains($0.noteID) }.map(\.id))
-        var historyIDs = Set(library.importedReviews.map(\.id))
-        for event in candidate.importedReviews where cardIDs.contains(event.cardID) && historyIDs.insert(event.id).inserted {
-            library.importedReviews.append(event); summary.addedHistory += 1
+        var historyByID = Dictionary(uniqueKeysWithValues: library.importedReviews.map { ($0.id, $0) })
+        for event in candidate.importedReviews where cardIDs.contains(event.cardID) {
+            if let existing = historyByID[event.id] {
+                guard existing == event else { throw EngramError.invalid("Imported history changed under an existing identifier. Use a separate source identity to retain both records.") }
+            } else {
+                library.importedReviews.append(event); historyByID[event.id] = event; summary.addedHistory += 1
+            }
         }
         for media in candidate.media {
             if let existing = library.media.first(where: { $0.name.caseInsensitiveCompare(media.name) == .orderedSame }) {
