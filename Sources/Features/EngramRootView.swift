@@ -1,16 +1,29 @@
 import SwiftUI
 import LearningCore
 import DesignSystem
+#if os(iOS)
+import UIKit
+#endif
 
 public struct EngramRootView: View {
     @Bindable private var model: EngramModel
     private let portabilityAction: (() -> Void)?
+    private let screenshotAction: (() -> Void)?
+    private let capturingScreenshots: Bool
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var scheme
-    public init(model: EngramModel, portabilityAction: (() -> Void)? = nil) {
+    private var usesPhoneTodayTitle: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
+    public init(model: EngramModel, portabilityAction: (() -> Void)? = nil, screenshotAction: (() -> Void)? = nil, capturingScreenshots: Bool = false) {
         self.model = model; self.portabilityAction = portabilityAction
+        self.screenshotAction = screenshotAction; self.capturingScreenshots = capturingScreenshots
     }
     public var body: some View {
         GeometryReader { geometry in
@@ -31,7 +44,7 @@ public struct EngramRootView: View {
                             }
                             Section("On this device") {
                                 ForEach(model.library.liveDecks) { deck in
-                                    Button { model.selectedDeckID = deck.id; model.destination = .library } label: {
+                                    Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: {
                                         Label(deck.name, systemImage: "rectangle.stack")
                                     }.buttonStyle(.plain)
                                 }
@@ -44,10 +57,8 @@ public struct EngramRootView: View {
             .overlay { if !model.loaded && model.error == nil { ProgressView("Opening your library…").padding().engramSurface() } }
         }
         .engramCanvas()
-        .sheet(isPresented: $model.editorPresented) { EditorView(model: model) }
-        .sheet(isPresented: $model.reviewPresented) { ReviewView(model: model) }
-        .sheet(isPresented: $model.settingsPresented) { SettingsView(model: model) }
-        .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form) }
+        .engramCaptureSurface()
+        .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
         .confirmationDialog("Delete deck?", isPresented: Binding(get: { model.deleteDeck != nil }, set: { if !$0 { model.deleteDeck = nil } }), titleVisibility: .visible) {
             if let deck = model.deleteDeck {
                 Button("Delete “\(deck.name)”", role: .destructive) {
@@ -71,6 +82,7 @@ public struct EngramRootView: View {
         }
         .task {
             await model.refresh()
+            guard !capturingScreenshots else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
                 guard !Task.isCancelled else { break }
@@ -90,22 +102,72 @@ public struct EngramRootView: View {
                 }.padding(EngramSpacing.regular)
             }
             switch destination {
-            case .today: TodayView(model: model)
-            case .library: LibraryView(model: model)
+            case .today: TodayView(model: model, showsPageTitle: usesPhoneTodayTitle)
+            case .library:
+                #if os(iOS)
+                if usesPhoneTodayTitle { LibraryLandingView(model: model, importAction: portabilityAction) }
+                else { LibraryView(model: model) }
+                #else
+                LibraryView(model: model)
+                #endif
             case .activity: ActivityView(model: model)
             }
         }
-        .navigationTitle(destination.title)
+        .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.editorPresented }, set: { model.editorPresented = $0 })) {
+            EditorView(model: model, embedded: true).engramCaptureSurface()
+        }
+        .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.settingsPresented }, set: { model.settingsPresented = $0 })) {
+            SettingsView(model: model, embedded: true).engramCaptureSurface()
+        }
+        .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.creationPresented }, set: { model.creationPresented = $0 })) {
+            NotebookCreationPage(model: model).engramCaptureSurface()
+        }
+        .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.reviewPresented }, set: { model.reviewPresented = $0 })) {
+            ReviewView(model: model, embedded: true).engramCaptureSurface()
+        }
+        .navigationDestination(item: Binding(get: { model.destination == destination ? model.notebookDeckID : nil }, set: { model.notebookDeckID = $0 })) { id in
+            NotebookView(model: model, deckID: id).engramCaptureSurface()
+        }
+        .navigationTitle(usesPhoneTodayTitle && destination != .activity ? "" : destination.title)
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
                 if let portabilityAction { Button(action: portabilityAction) { Label("Import and export", systemImage: "square.and.arrow.up.on.square") } }
                 Button { model.settingsPresented = true } label: { Label("Settings", systemImage: "gearshape") }
+                if let screenshotAction {
+                    Menu {
+                        Button(action: screenshotAction) { Label("Screenshot all pages…", systemImage: "camera.on.rectangle") }
+                            .disabled(!model.loaded || model.busy)
+                    } label: { Label("More", systemImage: "ellipsis.circle") }
+                    .accessibilityIdentifier("screenshot-menu")
+                }
             }
         }
         .toolbarBackground(model.theme.palette(for: scheme).surface,
                            for: .automatic)
         .toolbarBackground(EngramNavigationPolicy.needsOpaqueChrome(reduceTransparency: reduceTransparency, increasedContrast: contrast == .increased) ? .visible : .automatic, for: .automatic)
+        .modifier(PhoneTodayNavigation(enabled: usesPhoneTodayTitle && destination != .activity))
         .engramCanvas()
+    }
+}
+
+/// Keep Today's heading in the page, without a collapsing centered title or bar fill.
+private struct PhoneTodayNavigation: ViewModifier {
+    let enabled: Bool
+    @ViewBuilder func body(content: Content) -> some View {
+        #if os(iOS)
+        if enabled {
+            if #available(iOS 26.0, *) {
+                content.navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
+                    .scrollEdgeEffectHidden(true, for: .top)
+            } else {
+                content.navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
+            }
+        } else { content }
+        #else
+        content
+        #endif
     }
 }
 
@@ -114,6 +176,7 @@ struct DeckFormView: View {
     @State var form: DeckForm
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focused: Bool
+    @Environment(\.engramScreenshotCapture) private var capturing
     var body: some View {
         NavigationStack {
             Form {
@@ -136,7 +199,7 @@ struct DeckFormView: View {
                     }.disabled(model.busy || form.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .engramCanvas().task { focused = true }
+            .engramCanvas().task { focused = !capturing }
         }
         .engramSheetSizing(idealWidth: 460, minimumHeight: 280)
         .interactiveDismissDisabled(model.busy)

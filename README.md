@@ -2,7 +2,11 @@
 
 Engram is a standalone, local flashcard application being built in native SwiftUI for iPhone, iPad and Mac. The source includes deck management, basic/cloze editing, a durable review loop, FSRS scheduling, Anki package adapters and complete native backups. Core study and import/export have no paid AI dependency.
 
-**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **62 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](TEST-RESULTS.md) for the latest consolidated evidence.
+## Documentation
+
+Project plans, research, architecture, build guides, and review reports live in [`docs/`](docs/README.md). Start with the [documentation index](docs/README.md) to find the relevant guide.
+
+**Status: implementation under verification, not a verified Apple release.** The current Windows suite passed **62 tests**, the pinned scheduler's **98 tests in 23 suites** passed, and four real Anki legacy-package round trips passed. Xcode builds, Apple simulators/devices, native media playback, accessibility and UI workflows have not run. See [HANDOFF.md](docs/HANDOFF.md) for the requirement audit and unresolved work, and [TEST-RESULTS.md](docs/TEST-RESULTS.md) for the latest consolidated evidence.
 
 ## Build and run on Apple platforms
 
@@ -18,7 +22,7 @@ xcodebuild -project Engram.xcodeproj -scheme Engram-macOS -destination 'platform
 open Engram.xcodeproj
 ```
 
-In Xcode, choose an available iPhone or iPad simulator and Run `Engram-iOS`; choose My Mac and Run `Engram-macOS`. List installed simulator devices with `xcrun simctl list devices available`. Physical-device installation requires the user's own signing configuration. These Apple commands are documented but **not yet executed** in this Windows run. More detail: [README-APPLE.md](README-APPLE.md).
+In Xcode, choose an available iPhone or iPad simulator and Run `Engram-iOS`; choose My Mac and Run `Engram-macOS`. List installed simulator devices with `xcrun simctl list devices available`. Physical-device installation requires the user's own signing configuration. These Apple commands are documented but **not yet executed** in this Windows run. More detail: [README-APPLE.md](docs/README-APPLE.md).
 
 ## Run backend tests
 
@@ -37,7 +41,7 @@ On the configured Windows machine, initialize Swift/MSVC first:
 swift test
 ```
 
-[TOOLCHAIN.md](TOOLCHAIN.md) records the verified Swift 6.3.3, MSVC and Windows SDK setup. An earlier independent import regression run intentionally failed before remediation; use the current full-suite result, not a historical passing subset, to assess the current revision. Native builds cannot be replaced by a Windows test pass.
+[TOOLCHAIN.md](docs/TOOLCHAIN.md) records the verified Swift 6.3.3, MSVC and Windows SDK setup. An earlier independent import regression run intentionally failed before remediation; use the current full-suite result, not a historical passing subset, to assess the current revision. Native builds cannot be replaced by a Windows test pass.
 
 The design contact sheet is a standalone **mockup**, not a web version of Engram:
 
@@ -45,7 +49,7 @@ The design contact sheet is a standalone **mockup**, not a web version of Engram
 node design/previews/build-previews.cjs
 ```
 
-Open `design/previews/design-preview.html` to review six screen compositions, three layout families, four theme/appearance combinations and enlarged text. The generator checks 72 color pairings directly from the Swift theme definitions. See [DESIGN-HANDOFF.md](DESIGN-HANDOFF.md).
+Open `design/previews/design-preview.html` to review six screen compositions, three layout families, four theme/appearance combinations and enlarged text. The generator checks 72 color pairings directly from the Swift theme definitions. See [DESIGN-HANDOFF.md](docs/DESIGN-HANDOFF.md).
 
 ## Study and storage
 
@@ -53,7 +57,7 @@ Create a deck in Today or Library, then add a basic question/answer or a cloze n
 
 Study shows a question, then an explicit reveal action, then Again/Hard/Good/Easy. The service saves a grade before advancing, rejects stale/duplicate presentations and supports undo. In the review sheet, Space reveals, 1–4 grade, Command-Z undoes and Escape exits. The persisted session can resume after exit/restart. Keyboard behavior still needs native verification.
 
-Each installation stores its own library at `Application Support/Engram/library.json` inside the app's container. Notes, cards, schedules, review evidence, source originals and media are persisted together with atomic replacement. Theme and appearance are separate device preferences. No cloud synchronization exists. The app is configured for one active library window to avoid competing writers. PERFORMANCE.md records release-mode Windows measurements up to 10,000 cards and 16 MiB of attachments; Apple performance and larger-library memory use remain unverified.
+Each installation stores its own library at `Application Support/Engram/library.json` inside the app's container. Notes, cards, schedules, review evidence, source originals and media are persisted together with atomic replacement. Theme and appearance are separate device preferences. No cloud synchronization exists. The app is configured for one active library window to avoid competing writers. [PERFORMANCE.md](docs/PERFORMANCE.md) records release-mode Windows measurements up to 10,000 cards and 16 MiB of attachments; Apple performance and larger-library memory use remain unverified.
 
 Use **Import and export → Save complete Engram backup** to save a versioned `.engram` archive outside the app. It contains the whole library and media payloads. Confirmed imports/restores first create a local recovery backup. Deleting the app or losing the device can remove both the active library and local recovery copies; keep an external copy. Restore requires explicit replacement confirmation. If the library cannot open, startup recovery can inspect a complete backup and preserve the unreadable original before confirmed replacement; its backend tests pass, while the Apple UI path remains unverified.
 
@@ -67,13 +71,11 @@ Importing an Anki package directly back into the same Engram library that export
 
 Modern zstd/protobuf packages, custom CSS/JavaScript templates, image occlusion and other unsupported formats are explicitly rejected. Exact continuation of legacy SM-2 or source learning/relearning/buried/filtered states is not implemented; the user can cancel or explicitly restart eligible content while retaining original evidence. FSRS review-state continuation preserves supported memory/due/history, but future intervals use Engram's documented scheduler policy.
 
-Four Swift-generated package variants were imported into fresh official Anki backend collections and passed semantic comparisons; this is not an Apple UI migration test. See [ANKI-COMPATIBILITY.md](ANKI-COMPATIBILITY.md), [MEDIA-COMPATIBILITY.md](MEDIA-COMPATIBILITY.md), fixture provenance, and `validation/anki-roundtrip-results.json` for exact evidence and limits.
+Four Swift-generated package variants were imported into fresh official Anki backend collections and passed semantic comparisons; this is not an Apple UI migration test. See [ANKI-COMPATIBILITY.md](docs/ANKI-COMPATIBILITY.md), [MEDIA-COMPATIBILITY.md](docs/MEDIA-COMPATIBILITY.md), fixture provenance, and `validation/anki-roundtrip-results.json` for exact evidence and limits.
 
 ## Architecture and scope
 
-[ARCHITECTURE.md](ARCHITECTURE.md) describes the dependency boundaries and how to replace the theme, scheduler, persistence or format adapter. [ANKI-SOURCE-REVIEW.md](ANKI-SOURCE-REVIEW.md) records the inspected upstream revision and behavior map. Pinned FSRS, SQLite and archive-codec provenance/licenses are retained beside their source; Anki's backend is validation tooling, not a shipped application dependency.
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the dependency boundaries and how to replace the theme, scheduler, persistence or format adapter. [ANKI-SOURCE-REVIEW.md](docs/ANKI-SOURCE-REVIEW.md) records the inspected upstream revision and behavior map. Pinned FSRS, SQLite and archive-codec provenance/licenses are retained beside their source; Anki's backend is validation tooling, not a shipped application dependency.
 
 AI generation/tutoring/grading, cumulative assessments, voice tutoring/transcription, MCP, cloud sync, subscriptions and billing are deferred. Ordinary imported audio playback is included in native source. There are no simulated AI or paid-service controls. No deployment or publication was performed.
-
-
 

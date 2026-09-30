@@ -6,12 +6,106 @@ public actor StudyService {
     let repository: any LibraryRepository
     private let scheduler: any Scheduler
     public init(repository: any LibraryRepository, scheduler: any Scheduler) { self.repository = repository; self.scheduler = scheduler }
+    public func activity(in library: LibrarySnapshot, period: ActivityPeriod, now: Date) -> ActivitySummary {
+        ActivitySummary.make(in: library, period: period, now: now, estimator: scheduler as? any MemoryEstimating)
+    }
     public func snapshot() async throws -> LibrarySnapshot { try await repository.read() }
 
-    @discardableResult public func createDeck(name: String) async throws -> Deck {
+    /// Validate everything, then commit the deck and all of its questions together.
+    @discardableResult public func createDeck(from draft: DeckCreationDraft, now: Date = Date()) async throws -> Deck {
+        guard UUID(uuidString: draft.id) != nil,
+              !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw EngramError.invalid("Give your deck a title before creating it.")
+        }
+        let document = DeckDocument.parse(draft.document)
+        if let issue = document.issues.first {
+            throw EngramError.invalid(issue.line > 0 ? "Line \(issue.line): \(issue.message)" : issue.message)
+        }
+        var library = try await repository.read()
+        let clean = try deckName(draft.deckName, in: library, excluding: draft.id)
+        if let existing = library.decks.first(where: { $0.id == draft.id }) {
+            guard !existing.deleted, existing.name == clean, existing.sourceDocument == draft.document else { throw EngramError.conflict }
+            return existing
+        }
+        var deck = Deck(id: draft.id, name: clean, createdAt: now, modifiedAt: now, sourceDocument: draft.document)
+        deck.documentFormatVersion = 2
+        library.decks.append(deck)
+        for (index, question) in document.questions.enumerated() {
+            let noteDraft = NoteDraft(deckID: deck.id, front: DeckDocument.cardText(question.front), back: DeckDocument.cardText(question.back))
+            _ = try CardRenderer.ordinals(for: noteDraft)
+            let note = Note(id: "\(deck.id)-note-\(index)", deckID: deck.id, kind: .basic,
+                front: noteDraft.front, back: noteDraft.back, modifiedAt: now)
+            library.notes.append(note)
+            library.cards.append(StudyCard(noteID: note.id, deckID: deck.id, ordinal: 0,
+                schedule: try scheduler.initialState(now: now, settings: library.settings)))
+        }
+        try await save(library)
+        return deck
+    }
+
+    /// Commit notebook blocks and their linked cards atomically. A stale editor cannot overwrite newer work.
+    public func saveNotebook(deckID: String, blocks: [NotebookBlock], expectedRevision: Int, originalBlocks: [NotebookBlock]? = nil, now: Date = Date()) async throws {
+        var library = try await repository.read()
+        guard let deckIndex = library.decks.firstIndex(where: { $0.id == deckID && !$0.deleted }) else { throw EngramError.missing("deck") }
+        let previous = NotebookDocument.blocks(for: library.decks[deckIndex], in: library)
+        guard library.revision == expectedRevision || originalBlocks == previous else {
+            throw EngramError.invalid("This notebook has newer saved changes. Your draft is kept on this device. Use Notebook options to reload the saved version after keeping any writing you need.")
+        }
+        guard Set(blocks.map(\.id)).count == blocks.count, blocks.allSatisfy({ !$0.id.isEmpty }),
+              blocks.filter({ $0.kind == .question }).count <= 1_000,
+              NotebookDocument.source(blocks).utf8.count <= DeckDocument.byteLimit else {
+            throw EngramError.invalid("Keep your notebook under 1 MB and 1,000 questions, with unique blocks.")
+        }
+        let priorIDs = Set(previous.compactMap(\.noteID))
+        let requestedIDs = blocks.compactMap(\.noteID)
+        guard Set(requestedIDs).count == requestedIDs.count, Set(requestedIDs).isSubset(of: priorIDs),
+              blocks.allSatisfy({ $0.kind == .question || $0.noteID == nil }) else { throw EngramError.conflict }
+        var saved = blocks
+        for index in saved.indices where saved[index].kind == .question {
+            let front = DeckDocument.cardText(saved[index].text)
+            let back = DeckDocument.cardText(saved[index].answer)
+            _ = try CardRenderer.ordinals(for: NoteDraft(deckID: deckID, front: front, back: back))
+            if let id = saved[index].noteID {
+                guard let ni = library.notes.firstIndex(where: { $0.id == id && !$0.deleted && $0.deckID == deckID }) else { throw EngramError.conflict }
+                if library.notes[ni].front != front || library.notes[ni].back != back {
+                    library.notes[ni].front = front; library.notes[ni].back = back; library.notes[ni].modifiedAt = now
+                    for ci in library.cards.indices where library.cards[ci].noteID == id { library.cards[ci].version += 1 }
+                }
+            } else {
+                let note = Note(deckID: deckID, kind: .basic, front: front, back: back, modifiedAt: now)
+                library.notes.append(note)
+                library.cards.append(StudyCard(noteID: note.id, deckID: deckID, ordinal: 0,
+                    schedule: try scheduler.initialState(now: now, settings: library.settings)))
+                saved[index].noteID = note.id
+            }
+        }
+        let removed = priorIDs.subtracting(requestedIDs)
+        for ni in library.notes.indices where removed.contains(library.notes[ni].id) { library.notes[ni].deleted = true }
+        for ci in library.cards.indices where removed.contains(library.cards[ci].noteID) {
+            library.cards[ci].retired = true; library.cards[ci].version += 1
+        }
+        library.decks[deckIndex].notebookBlocks = saved
+        library.decks[deckIndex].sourceDocument = NotebookDocument.source(saved)
+        library.decks[deckIndex].modifiedAt = now
+        invalidateSessionIfNeeded(&library)
+        try await save(library)
+    }
+
+    /// Keep materialized notebook text current after card edits, moves and deletions.
+    private func syncNotebooks(_ library: inout LibrarySnapshot, deckIDs: Set<String>) {
+        for index in library.decks.indices where deckIDs.contains(library.decks[index].id) {
+            let deck = library.decks[index]
+            guard deck.sourceDocument != nil || deck.notebookBlocks != nil else { continue }
+            let blocks = NotebookDocument.blocks(for: deck, in: library)
+            library.decks[index].notebookBlocks = blocks
+            library.decks[index].sourceDocument = NotebookDocument.source(blocks)
+        }
+    }
+
+    @discardableResult public func createDeck(name: String, now: Date = Date()) async throws -> Deck {
         var library = try await repository.read()
         let clean = try deckName(name, in: library)
-        let deck = Deck(name: clean); library.decks.append(deck)
+        let deck = Deck(name: clean, createdAt: now, modifiedAt: now); library.decks.append(deck)
         try await save(library); return deck
     }
     public func renameDeck(id: String, name: String) async throws {
@@ -25,7 +119,23 @@ public actor StudyService {
         for (_, replacement) in mappings {
             guard !library.decks.contains(where: { !$0.deleted && !affectedIDs.contains($0.id) && $0.name.caseInsensitiveCompare(replacement) == .orderedSame }) else { throw EngramError.invalid("Renaming would collide with an existing subdeck.") }
         }
-        for (index, replacement) in mappings { library.decks[index].name = replacement }
+        for (index, replacement) in mappings { library.decks[index].name = replacement; library.decks[index].modifiedAt = Date() }
+        try await save(library)
+    }
+    /// Cover assets participate in the existing media limits and native backup.
+    /// Retain replaced media: imported notes or source evidence may still reference it.
+    public func setDeckCover(id: String, jpeg: Data?, now: Date = Date()) async throws {
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }
+        if let jpeg {
+            guard jpeg.count <= 1_024 * 1_024, jpeg.starts(with: [0xFF, 0xD8, 0xFF]) else {
+                throw EngramError.invalid("Choose a JPEG cover smaller than 1 MB.")
+            }
+            let name = "engram-cover-\(UUID().uuidString).jpg"
+            library.media.append(MediaFile(name: name, data: jpeg))
+            library.decks[index].coverMediaName = name
+        } else { library.decks[index].coverMediaName = nil }
+        library.decks[index].modifiedAt = now
         try await save(library)
     }
     /// Caller presents a destructive confirmation. Tombstones retain historical evidence for backup.
@@ -60,6 +170,7 @@ public actor StudyService {
             library.cards.append(StudyCard(noteID: note.id, deckID: note.deckID, ordinal: ordinal,
                 schedule: try scheduler.initialState(now: now, settings: library.settings)))
         }
+        syncNotebooks(&library, deckIDs: Set([prior?.deckID, note.deckID].compactMap { $0 }))
         invalidateSessionIfNeeded(&library)
         try await save(library); return note
     }
@@ -67,6 +178,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard let index = library.notes.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("note") }
         library.notes[index].deleted = true
+        syncNotebooks(&library, deckIDs: [library.notes[index].deckID])
         for i in library.cards.indices where library.cards[i].noteID == id { library.cards[i].retired = true; library.cards[i].version += 1 }
         invalidateSessionIfNeeded(&library); try await save(library)
     }

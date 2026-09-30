@@ -24,6 +24,19 @@ public enum LibraryValidation {
               (0...23).contains(settings.dayStartsAtHour), TimeZone(identifier: settings.timeZoneID) != nil,
               settings.desiredRetention.isFinite, (0.7...0.99).contains(settings.desiredRetention) else { throw EngramError.invalid("Study settings are outside supported limits.") }
         var total = 0
+        let mediaNames = Set(library.media.map(\.name))
+        for deck in library.decks {
+            guard (deck.sourceDocument?.utf8.count ?? 0) <= DeckDocument.byteLimit else {
+                throw EngramError.invalid("A deck document exceeds the 1 MB limit.")
+            }
+            if let name = deck.coverMediaName {
+                try validateMediaName(name)
+                guard mediaNames.contains(name) else { throw EngramError.invalid("A deck cover is missing from the library.") }
+            }
+            guard [deck.createdAt, deck.modifiedAt].compactMap({ $0 }).allSatisfy({ $0.timeIntervalSince1970.isFinite }) else {
+                throw EngramError.invalid("A deck has an invalid date.")
+            }
+        }
         for media in library.media {
             try validateMediaName(media.name)
             guard media.data.count <= 50 * 1_024 * 1_024 else { throw EngramError.invalid("Media files must be 50 MB or smaller.") }

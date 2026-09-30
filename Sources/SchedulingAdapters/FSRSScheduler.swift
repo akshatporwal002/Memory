@@ -2,7 +2,7 @@ import Foundation
 import LearningCore
 import FSRS
 
-public struct FSRSScheduler: ImportedScheduleMapping {
+public struct FSRSScheduler: ImportedScheduleMapping, MemoryEstimating {
     public let identifier = "fsrs-6"
     public static let implementation = "swift-fsrs-4fbaf201"
     public init() {}
@@ -45,6 +45,23 @@ public struct FSRSScheduler: ImportedScheduleMapping {
         }
         return results
     }
+    public func recallProbability(state: ScheduleState, now: Date, settings: StudySettings) -> Double? {
+        guard state.schedulerID == identifier, state.schemaVersion == 1,
+              state.implementationVersion == Self.implementation, state.phase == .review,
+              now.timeIntervalSince1970.isFinite, (0.7...0.99).contains(settings.desiredRetention),
+              let card = try? JSONDecoder().decode(Card.self, from: state.payload),
+              card.state == .review, card.due == state.due, card.due.timeIntervalSince1970.isFinite,
+              let lastReview = card.lastReview, lastReview <= now,
+              card.stability.isFinite, card.stability > 0,
+              card.difficulty.isFinite, (1...10).contains(card.difficulty),
+              card.reps >= 0, card.lapses >= 0 else { return nil }
+        let engine = FSRS(parameters: FSRSParameters(requestRetention: settings.desiredRetention,
+            maximumInterval: 36_500, w: FSRSDefaults.defaultWv6, enableFuzz: false,
+            enableShortTerm: true, learningSteps: ["1m", "10m"], relearningSteps: ["10m"]))
+        let value = engine.getRetrievability(card: card, now: now).number
+        return value.isFinite && (0...1).contains(value) ? value : nil
+    }
+
     private func envelope(_ card: Card, settings: StudySettings) throws -> ScheduleState {
         let phase: LearningPhase
         switch card.state { case .new: phase = .new; case .learning: phase = .learning; case .review: phase = .review; case .relearning: phase = .relearning }

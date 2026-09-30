@@ -1,0 +1,63 @@
+# AWS Cloud Practitioner
+
+A short practice notebook for testing writing, cards, and review. Read each question, recall an answer, then reveal it. These are original study prompts based on the supplied course slides, not official exam questions.
+
+## Cloud foundations
+
+Think about which infrastructure tasks remain yours as you move from infrastructure services to managed applications.
+
+What does IaaS give you?: Computing, storage, and networking building blocks that you configure and manage.
+What does PaaS let you focus on?: Deploying and managing applications while the provider handles the underlying infrastructure.
+What does SaaS provide?: A finished application operated by its service provider.
+What makes a deployment hybrid?: It combines on-premises infrastructure with cloud services.
+
+## Regions and availability
+
+A Region identifies a geographical deployment area. Availability Zones provide separate failure boundaries within that area.
+
+What is an AWS Region?: A geographical area containing multiple Availability Zones.
+What is an Availability Zone?: One or more discrete data centers with redundant power, networking, and connectivity.
+Why deploy across multiple Availability Zones?: To reduce the impact of a failure affecting one zone.
+How are Availability Zones within a Region connected?: Through high-bandwidth, low-latency networking.
+
+## Identity and responsibility
+
+Distinguish permission management from infrastructure protection. A managed service changes the division of work, but does not remove the customer's responsibilities.
+
+What does an IAM policy define?: Which actions are allowed or denied on AWS resources.
+What does least privilege mean?: Grant only the permissions needed for the task.
+Why give an EC2 instance an IAM role?: So it can receive permissions to access AWS services on behalf of the application.
+Who patches the guest operating system on an EC2 instance?: The customer; AWS maintains the underlying physical infrastructure.
+
+## Compute and scaling
+
+Separate the job of running compute from the jobs of distributing traffic and adjusting capacity.
+
+What does Amazon EC2 provide?: Virtual machines that you can configure to run applications.
+What does AWS Lambda run?: Functions invoked on demand without requiring you to provision or manage servers.
+What does an Elastic Load Balancer do?: Distributes incoming traffic across application targets.
+What does an Auto Scaling group do?: Adjusts EC2 capacity to meet demand and replaces unhealthy instances.
+
+## Storage and databases
+
+Choose the storage model before choosing the service. Objects and relational records solve different problems.
+
+What kind of storage does Amazon S3 provide?: Object storage.
+What is an S3 bucket?: A container for objects.
+What is an S3 object key?: The identifier for an object within its bucket.
+What does Amazon RDS provide?: Managed relational databases, reducing infrastructure and database administration work.
+
+## Costs
+
+Estimating a future workload, exploring existing spend, and alerting against a budget are different tasks.
+
+Which tool estimates the cost of a planned AWS workload?: AWS Pricing Calculator.
+Which tool helps explore AWS spending and usage over time?: AWS Cost Explorer.
+Which service helps set budgets and send spending alerts?: AWS Budgets.
+Why inspect the AWS Cost and Usage Report?: To examine detailed cost and usage records for further analysis.
+
+## Source and practice
+
+Paraphrased from AWS Certified Cloud Practitioner Slides v44 by Stéphane Maarek. Relevant PDF pages are 22, 26, 34, 36, 43, 54, 60, 92, 130, 134-135, 174, 210, 398, 403, 405, and 411.
+
+Try editing one answer, adding your own question, moving a block, and completing a short review. This small sample is not a complete exam-preparation deck.

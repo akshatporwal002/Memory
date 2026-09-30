@@ -11,7 +11,7 @@ var targets: [Target] = [
     .target(name: "AnkiAdapters", dependencies: ["LearningCore", "CSQLite", "CArchive"]),
     .executableTarget(name: "EngramBenchmark", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"], path: "Tools/EngramBenchmark"),
     .testTarget(name: "AnkiAdapterTests", dependencies: ["AnkiAdapters", "LearningCore", "SchedulingAdapters"], resources: [.copy("Fixtures")]),
-    .testTarget(name: "EngramTests", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters"])
+    .testTarget(name: "EngramTests", dependencies: ["Features", "LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"])
 ]
 var products: [Product] = [
     .executable(name: "EngramBenchmark", targets: ["EngramBenchmark"]),
@@ -21,9 +21,7 @@ var products: [Product] = [
     .library(name: "PersistenceAdapters", targets: ["PersistenceAdapters"]),
     .library(name: "SchedulingAdapters", targets: ["SchedulingAdapters"])
 ]
-#if os(macOS)
-targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem"])]
+targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem"], resources: [.process("Resources")])]
 products += [.library(name: "DesignSystem", targets: ["DesignSystem"]), .library(name: "Features", targets: ["Features"])]
-#endif
 let package = Package(name: "Engram", platforms: [.iOS(.v17), .macOS(.v14)], products: products,
     dependencies: [.package(path: "Vendor/FSRS")], targets: targets)

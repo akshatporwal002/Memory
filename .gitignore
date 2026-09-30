@@ -5,3 +5,6 @@ DerivedData/
 xcuserdata/
 .DS_Store
 test-results/local/
+
+# Local simulator and absolute workspace preferences
+.xcodebuildmcp/

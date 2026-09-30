@@ -16,3 +16,8 @@ public protocol Scheduler: Sendable {
 public protocol ImportedScheduleMapping: Scheduler {
     func importState(due: Date, phase: LearningPhase, sourceValues: [String: String], settings: StudySettings) throws -> ScheduleState
 }
+
+/// Optional read-only estimate. Nil means the state cannot be estimated safely.
+public protocol MemoryEstimating: Sendable {
+    func recallProbability(state: ScheduleState, now: Date, settings: StudySettings) -> Double?
+}

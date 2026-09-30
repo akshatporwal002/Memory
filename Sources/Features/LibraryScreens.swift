@@ -4,16 +4,20 @@ import DesignSystem
 
 struct TodayView: View {
     @Bindable var model: EngramModel
+    var showsPageTitle = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: EngramSpacing.section) {
+                if showsPageTitle {
+                    Text("Today").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                }
                 Text(model.now.formatted(date: .complete, time: .omitted)).font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 Text("A little study,\na lasting memory.").font(theme.font(.hero)).accessibilityAddTraits(.isHeader)
                 if model.library.liveDecks.isEmpty {
                     EngramEmptyState(title: "Your first deck", message: "Save a question you want to remember. Your library stays on this device.")
-                    Button("Create a deck") { model.deckForm = DeckForm() }.buttonStyle(EngramButtonStyle())
+                    Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
                 } else {
                     VStack(alignment: .leading, spacing: EngramSpacing.regular) {
                         Text("READY WHEN YOU ARE").font(theme.font(.metadata))
@@ -32,10 +36,10 @@ struct TodayView: View {
                         Button { Task { await model.resumeReview() } } label: { Label("Resume saved session", systemImage: "arrow.uturn.forward") }
                             .buttonStyle(EngramButtonStyle(.secondary)).disabled(model.busy)
                     }
-                    HStack { Text("Your decks").font(theme.font(.section)); Spacer(); Button("New deck") { model.deckForm = DeckForm() } }
+                    HStack { Text("Your decks").font(theme.font(.section)); Spacer(); Button("New deck") { model.creationPresented = true } }
                     LazyVStack(spacing: 0) {
                         ForEach(model.library.liveDecks.prefix(6)) { deck in
-                            Button { model.selectedDeckID = deck.id; model.destination = .library } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
+                            Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
                             Divider()
                         }
                     }
@@ -74,6 +78,7 @@ struct DeckRow: View {
 
 struct LibraryView: View {
     @Bindable var model: EngramModel
+    var deckScoped = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
@@ -105,14 +110,16 @@ struct LibraryView: View {
             if model.library.liveDecks.isEmpty {
                 Spacer()
                 EngramEmptyState(title: "A home for your knowledge", message: "Create a deck, then add a question and answer.")
-                Button("Create a deck") { model.deckForm = DeckForm() }.buttonStyle(EngramButtonStyle())
+                Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
                 Spacer()
             } else {
                 List {
                     Section {
-                        Picker("Deck", selection: $model.selectedDeckID) {
-                            Text("All decks").tag(String?.none)
-                            ForEach(model.library.liveDecks) { Text($0.name).tag(Optional($0.id)) }
+                        if !deckScoped {
+                            Picker("Deck", selection: $model.selectedDeckID) {
+                                Text("All decks").tag(String?.none)
+                                ForEach(model.library.liveDecks) { Text($0.name).tag(Optional($0.id)) }
+                            }
                         }
                         if let deck = model.library.liveDecks.first(where: { $0.id == model.selectedDeckID }) {
                             DeckRow(model: model, deck: deck)
@@ -124,6 +131,9 @@ struct LibraryView: View {
                                     Button("Delete deck", role: .destructive) { model.deleteDeck = deck }
                                 }
                             }.disabled(model.busy)
+                            Button { model.notebookDeckID = deck.id } label: {
+                                Label("Open notebook", systemImage: "book.pages")
+                            }.frame(minHeight: EngramShape.touchTarget)
                         }
                     }
                     Section("\(model.visibleNotes.count) notes") {
@@ -173,7 +183,7 @@ struct LibraryView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                Button { model.deckForm = DeckForm() } label: { Label("New deck", systemImage: "folder.badge.plus") }
+                if !deckScoped { Button { model.creationPresented = true } label: { Label("New deck", systemImage: "folder.badge.plus") } }
                 Button { model.newNote() } label: { Label("Add card", systemImage: "plus") }
                     .disabled(model.library.liveDecks.isEmpty).keyboardShortcut("n", modifiers: .command)
             }
@@ -228,32 +238,5 @@ struct LibraryNoteDetail: View {
                 if !note.source.isEmpty { Text("Reference: " + note.source).font(theme.font(.metadata)).textSelection(.enabled) }
             }.frame(maxWidth: EngramShape.readingWidth, alignment: .leading).padding(EngramSpacing.section).frame(maxWidth: .infinity)
         }
-    }
-}
-
-struct ActivityView: View {
-    let model: EngramModel
-    @Environment(\.engramTheme) private var theme
-    var body: some View {
-        List {
-            Section("Today") {
-                LabeledContent("Reviews saved", value: String(model.todaysReviews.count))
-                LabeledContent("Cards reviewed", value: String(Set(model.todaysReviews.map(\.cardID)).count))
-            }
-            Section("Recent reviews") {
-                if model.library.activeReviews.isEmpty {
-                    EngramEmptyState(title: "Your learning, over time", message: "Reviews appear here after you study. There are no reviews yet.", symbol: "chart.bar.xaxis")
-                }
-                ForEach(model.library.activeReviews.sorted { $0.reviewedAt > $1.reviewedAt }.prefix(100)) { event in
-                    VStack(alignment: .leading, spacing: EngramSpacing.micro) {
-                        Text("\(event.rating.label) · \(model.deckName(event.deckID))").font(theme.font(.body))
-                        Text(event.reviewedAt.formatted(date: .abbreviated, time: .shortened)).font(theme.font(.metadata))
-                    }
-                }
-            }
-            if !model.library.importedReviews.isEmpty {
-                Section("Imported evidence") { Text("\(model.library.importedReviews.count) original Anki review records are preserved separately in your library and complete backups.") }
-            }
-        }.scrollContentBackground(.hidden)
     }
 }

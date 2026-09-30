@@ -1314,4 +1314,3 @@ Example:
 9. User performs well on recall questions but poorly on application questions.
 
 10. Engram records that the user remembers the facts but has weak application
-

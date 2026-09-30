@@ -17,7 +17,7 @@ struct EngramApp: App {
         }
         .defaultSize(width: 1180, height: 820)
         .windowResizability(.contentMinSize)
-        .commands { CommandGroup(replacing: .newItem) { } }
+        .commands { CommandGroup(replacing: .newItem) { }; ScreenshotCommands() }
         #else
         WindowGroup { ApplicationRoot() }
         #endif
@@ -39,9 +39,23 @@ private struct ApplicationRoot: View {
     @State private var recoveryError: String?
     @State private var confirmRecovery = false
     @State private var recoveryNotice: String?
+    @State private var screenshots = ScreenshotExportModel()
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         Group {
-            if let model { EngramRootView(model: model, portabilityAction: { portabilityPresented = true }) }
+            if let model {
+                Group {
+                    if screenshots.touring, let copy = screenshots.copy {
+                        ScreenshotTourView(export: screenshots, model: copy)
+                    } else {
+                        EngramRootView(model: model, portabilityAction: { portabilityPresented = true }, screenshotAction: { screenshots.prepare() })
+                    }
+                }
+                .sheet(isPresented: $screenshots.presented) { ScreenshotExportView(export: screenshots, source: model) }
+                #if os(macOS)
+                .focusedSceneValue(\.screenshotAction, canCapture(model) ? { screenshots.prepare() } : nil)
+                #endif
+            }
             else if let failure {
                 ScrollView { VStack(spacing: EngramSpacing.section) {
                     EngramEmptyState(title: "Your library could not open", message: failure, symbol: "externaldrive.badge.exclamationmark")
@@ -76,6 +90,12 @@ private struct ApplicationRoot: View {
             Button("OK") { recoveryNotice = nil }
         } message: { Text(recoveryNotice ?? "") }
         .task { if model == nil { await openLibrary() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .background { screenshots.cancel() } }
+    }
+    private func canCapture(_ model: EngramModel) -> Bool {
+        model.loaded && !model.busy && !screenshots.running && !screenshots.presented &&
+        !portabilityPresented && !model.editorPresented && !model.reviewPresented &&
+        !model.settingsPresented && !model.creationPresented && model.notebookDeckID == nil && model.deckForm == nil && model.deleteDeck == nil && model.deleteNote == nil
     }
     private func libraryLocation() throws -> URL {
         let base = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -138,3 +158,34 @@ private struct StartupRecoveryInspection: Sendable {
 #Preview("Native empty library · unverified on Windows") {
     EngramRootView(model: EngramModel(service: StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())))
 }
+
+#if os(iOS)
+#Preview("Library · populated · preview data only") {
+    LibraryLandingPreview()
+}
+
+private struct LibraryLandingPreview: View {
+    private static let defaults = UserDefaults(suiteName: "engram.preview.library")!
+    @State private var model: EngramModel = {
+        var snapshot = LibrarySnapshot()
+        let now = Date()
+        let names = ["AWS::Cloud Concepts", "AWS::Security", "AWS::Storage", "Biology", "Spanish", "Reading notes"]
+        for (index, name) in names.enumerated() {
+            let id = "preview-deck-\(index)"
+            snapshot.decks.append(Deck(id: id, name: name))
+            guard index < 5 else { continue }
+            for card in 0..<(index + 2) {
+                let noteID = "\(id)-\(card)"
+                snapshot.notes.append(Note(id: noteID, deckID: id, kind: .basic, front: "Preview question \(card + 1)", back: "Preview answer"))
+                snapshot.cards.append(StudyCard(id: noteID, noteID: noteID, deckID: id, ordinal: 0,
+                    schedule: ScheduleState(schedulerID: "preview", implementationVersion: "1",
+                        due: now.addingTimeInterval(index < 2 ? -600 : 86_400), phase: index == 2 ? .new : .review)))
+            }
+        }
+        let model = EngramModel(service: StudyService(repository: MemoryRepository(initial: snapshot), scheduler: FSRSScheduler()), defaults: defaults)
+        model.destination = .library
+        return model
+    }()
+    var body: some View { EngramRootView(model: model).defaultAppStorage(Self.defaults) }
+}
+#endif

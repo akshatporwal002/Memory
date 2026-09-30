@@ -35,8 +35,20 @@ public struct Deck: Codable, Identifiable, Equatable, Sendable {
     public var id: String
     public var name: String
     public var deleted: Bool
-    public init(id: String = UUID().uuidString, name: String, deleted: Bool = false) {
+    /// Optional so libraries written before deck presentation metadata still decode.
+    public var createdAt: Date?
+    public var modifiedAt: Date?
+    public var coverMediaName: String?
+    /// Notebook text, retained for portable reading alongside stable editable blocks.
+    public var sourceDocument: String?
+    public var notebookBlocks: [NotebookBlock]?
+    /// Missing means the original arrow-only document format.
+    public var documentFormatVersion: Int?
+    public init(id: String = UUID().uuidString, name: String, deleted: Bool = false,
+                createdAt: Date? = nil, modifiedAt: Date? = nil, coverMediaName: String? = nil, sourceDocument: String? = nil) {
         self.id = id; self.name = name; self.deleted = deleted
+        self.createdAt = createdAt; self.modifiedAt = modifiedAt; self.coverMediaName = coverMediaName
+        self.sourceDocument = sourceDocument
     }
 }
 public struct ImportOrigin: Codable, Equatable, Sendable {

@@ -5,7 +5,7 @@ options:
     iOS: "17.0"
     macOS: "14.0"
 packages:
-  EngramModules:
+  Engram:
     path: .
 settings:
   base:
@@ -18,10 +18,14 @@ targets:
   Engram-iOS:
     type: application
     platform: iOS
-    sources: [App]
+    sources:
+      - path: App
+        # Platform Info plists are build inputs, never app resources.
+        excludes: ["**/*.plist", "**/*.entitlements"]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.engram.study
+        DEVELOPMENT_TEAM: 56S6XAQ96Q
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         GENERATE_INFOPLIST_FILE: NO
@@ -29,6 +33,7 @@ targets:
       path: App/Info-iOS.plist
       properties:
         CFBundleDisplayName: Engram
+        NSPhotoLibraryAddUsageDescription: Save screenshots of Engram pages to Photos so you can review and share them.
         UTExportedTypeDeclarations: &engramTypes
           - UTTypeIdentifier: dev.engram.study.backup
             UTTypeDescription: Engram Complete Backup
@@ -54,24 +59,26 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
     dependencies:
-      - package: EngramModules
+      - package: Engram
         product: LearningCore
-      - package: EngramModules
+      - package: Engram
         product: AnkiAdapters
-      - package: EngramModules
+      - package: Engram
         product: Features
-      - package: EngramModules
+      - package: Engram
         product: DesignSystem
-      - package: EngramModules
+      - package: Engram
         product: StudyApplication
-      - package: EngramModules
+      - package: Engram
         product: PersistenceAdapters
-      - package: EngramModules
+      - package: Engram
         product: SchedulingAdapters
   Engram-macOS:
     type: application
     platform: macOS
-    sources: [App]
+    sources:
+      - path: App
+        excludes: ["**/*.plist", "**/*.entitlements"]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.engram.study.mac
@@ -90,19 +97,19 @@ targets:
         com.apple.security.app-sandbox: true
         com.apple.security.files.user-selected.read-write: true
     dependencies:
-      - package: EngramModules
+      - package: Engram
         product: LearningCore
-      - package: EngramModules
+      - package: Engram
         product: AnkiAdapters
-      - package: EngramModules
+      - package: Engram
         product: Features
-      - package: EngramModules
+      - package: Engram
         product: DesignSystem
-      - package: EngramModules
+      - package: Engram
         product: StudyApplication
-      - package: EngramModules
+      - package: Engram
         product: PersistenceAdapters
-      - package: EngramModules
+      - package: Engram
         product: SchedulingAdapters
 schemes:
   Engram-iOS:

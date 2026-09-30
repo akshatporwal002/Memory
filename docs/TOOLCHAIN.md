@@ -70,4 +70,3 @@ Start-Process .\tooling\swift-6.3.3.exe -WindowStyle Hidden -Wait -ArgumentList 
 - https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio
 
 The Swift manual documents the MSVC and Windows SDK requirements and notes that only the compiler matching the host architecture is essential.
-

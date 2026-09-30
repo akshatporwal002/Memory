@@ -25,6 +25,17 @@ public struct DeckForm: Identifiable {
     public var error: String?
     public var destination: EngramDestination = .today
     public var selectedDeckID: String?
+    public var libraryDeckRequest: String?
+    public var deckCreationDraft: DeckCreationDraft {
+        didSet {
+            if let data = try? JSONEncoder().encode(deckCreationDraft) {
+                defaults.set(data, forKey: "engram.deckCreationDraft.v1")
+            }
+        }
+    }
+    public var creationPresented = false
+    public var notebookFocusNoteID: String?
+    public var notebookDeckID: String?
     public var selectedNoteID: String?
     public var selectedCardID: String?
     /// Presentation-only memory prevents replaying the completion flourish on sheet re-entry.
@@ -44,8 +55,18 @@ public struct DeckForm: Identifiable {
 
     public init(service: StudyService, defaults: UserDefaults = .standard) {
         self.service = service; self.defaults = defaults
+        deckCreationDraft = defaults.data(forKey: "engram.deckCreationDraft.v1")
+            .flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
         theme = EngramTheme(rawValue: defaults.string(forKey: "engram.theme.v1") ?? "") ?? .warm
         appearance = EngramAppearance(rawValue: defaults.string(forKey: "engram.appearance.v1") ?? "") ?? .system
+    }
+    func notebookDraft(_ deckID: String) -> NotebookEditingDraft? {
+        defaults.data(forKey: "engram.notebookDraft." + deckID).flatMap { try? JSONDecoder().decode(NotebookEditingDraft.self, from: $0) }
+    }
+    func keepNotebookDraft(_ draft: NotebookEditingDraft?, deckID: String) {
+        let key = "engram.notebookDraft." + deckID
+        if let draft, let data = try? JSONEncoder().encode(draft) { defaults.set(data, forKey: key) }
+        else { defaults.removeObject(forKey: key) }
     }
     public var due: [StudyCard] { QueuePolicy.dueCards(in: library, deckID: nil, now: now) }
     public func due(in deck: Deck) -> [StudyCard] { QueuePolicy.dueCards(in: library, deckID: deck.id, now: now) }
@@ -95,10 +116,16 @@ public struct DeckForm: Identifiable {
         _ = await perform { try await $0.undo(sessionID: session.id, now: Date()) }
     }
     public func newNote(deckID: String? = nil) {
-        guard let id = deckID ?? selectedDeckID ?? library.liveDecks.first?.id else { deckForm = DeckForm(); return }
+        guard let id = deckID ?? selectedDeckID ?? library.liveDecks.first?.id else { creationPresented = true; return }
         draft = NoteDraft(deckID: id); editorPresented = true; error = nil
     }
-    public func edit(_ note: Note) { draft = NoteDraft(note: note); editorPresented = true; error = nil }
+    public func edit(_ note: Note) {
+        error = nil
+        if NotebookDocument.supports(note), let deck = library.liveDecks.first(where: { $0.id == note.deckID }),
+           deck.sourceDocument != nil || deck.notebookBlocks != nil {
+            notebookFocusNoteID = note.id; notebookDeckID = deck.id
+        } else { draft = NoteDraft(note: note); editorPresented = true }
+    }
     public func saveDraft() async {
         guard let draft else { return }
         if await perform({ _ = try await $0.saveNote(draft, now: Date()) }) { editorPresented = false; self.draft = nil }

@@ -23,3 +23,47 @@ private struct EngramNumericModifier: ViewModifier {
 extension View {
     func engramNumericTransition(value: Int) -> some View { modifier(EngramNumericModifier(value: value)) }
 }
+
+struct EngramTaskContainer<Content: View>: View {
+    var embedded: Bool
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        if embedded { content() } else { NavigationStack { content() } }
+    }
+}
+
+extension View {
+    @ViewBuilder func engramInlineTitle() -> some View {
+        #if os(iOS)
+        navigationBarTitleDisplayMode(.inline)
+        #else
+        self
+        #endif
+    }
+    @ViewBuilder func engramHideBack(_ hidden: Bool) -> some View {
+        #if os(iOS)
+        navigationBarBackButtonHidden(hidden)
+        #else
+        self
+        #endif
+    }
+}
+
+struct EngramTaskSizing: ViewModifier {
+    let embedded: Bool
+    let width: CGFloat
+    let height: CGFloat
+    @ViewBuilder func body(content: Content) -> some View {
+        if embedded { content } else { content.engramSheetSizing(idealWidth: width, minimumHeight: height) }
+    }
+}
+
+extension View {
+    @ViewBuilder func engramHideStudyTabs() -> some View {
+        #if os(iOS)
+        toolbar(.hidden, for: .tabBar)
+        #else
+        self
+        #endif
+    }
+}

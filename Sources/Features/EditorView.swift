@@ -4,6 +4,8 @@ import DesignSystem
 
 struct EditorView: View {
     @Bindable var model: EngramModel
+    var embedded = false
+    @State private var originalDraft: NoteDraft?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -13,10 +15,12 @@ struct EditorView: View {
     @State private var previewOrdinal = 0
     @State private var discardConfirmation = false
     @State private var tagsText = ""
+    @Environment(\.engramScreenshotCapture) private var capturing
+    @Environment(\.engramScreenshotEditorPreview) private var capturePreview
     @FocusState private var focus: Field?
     enum Field { case front, back }
     var body: some View {
-        NavigationStack {
+        EngramTaskContainer(embedded: embedded) {
             GeometryReader { geometry in
                 ScrollView {
                     VStack(alignment: .leading, spacing: EngramSpacing.section) {
@@ -38,9 +42,13 @@ struct EditorView: View {
                     }.padding(EngramSpacing.section).frame(maxWidth: 1200).frame(maxWidth: .infinity)
                 }
             }
+            .engramHideBack(model.draft != originalDraft)
             .navigationTitle(model.draft?.id == nil ? "New card" : "Edit card")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { discardConfirmation = true }.disabled(model.busy) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") {
+                    if model.draft != originalDraft { discardConfirmation = true }
+                    else { model.draft = nil; model.editorPresented = false; dismiss() }
+                }.disabled(model.busy) }
                 ToolbarItem(placement: .automatic) { ThemeMenu(model: model) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(model.busy ? "Saving…" : "Save") {
@@ -56,12 +64,15 @@ struct EditorView: View {
                 Button("Keep editing", role: .cancel) { }
             } message: { Text("Unsaved changes will be lost. The saved note and review history will not change.") }
             .engramCanvas().task {
+                originalDraft = model.draft
                 tagsText = model.draft?.tags.joined(separator: " ") ?? ""
-                if model.draft?.id == nil { focus = .front }
+                if model.draft?.id == nil && !capturing { focus = .front }
+                if capturing { previewMode = capturePreview }
             }
+            .onChange(of: capturePreview) { _, value in if capturing { previewMode = value } }
         }
-        .engramSheetSizing(idealWidth: 1050, minimumHeight: 600)
-        .interactiveDismissDisabled(model.draft != nil)
+        .modifier(EngramTaskSizing(embedded: embedded, width: 1050, height: 600))
+        .interactiveDismissDisabled(model.draft != originalDraft)
     }
     private func draftBinding<T>(_ path: WritableKeyPath<NoteDraft, T>, fallback: T) -> Binding<T> {
         Binding(get: { model.draft?[keyPath: path] ?? fallback }, set: { model.draft?[keyPath: path] = $0 })

@@ -108,4 +108,3 @@ AI generation/tutoring/grading, cumulative assessments, transcription/voice tuto
 The user-authorized work has produced native source and meaningful backend evidence. The remaining items above are acceptance gates, not a redefinition of the goal as source-only delivery.
 
 
-

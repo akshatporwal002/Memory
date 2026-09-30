@@ -4,6 +4,7 @@ import DesignSystem
 
 struct ReviewView: View {
     @Bindable var model: EngramModel
+    var embedded = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -11,29 +12,24 @@ struct ReviewView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AccessibilityFocusState private var answerFocused: Bool
     @State private var completionVisible = false
+    @State private var optionsPresented = false
     var body: some View {
-        NavigationStack {
+        EngramTaskContainer(embedded: embedded) {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     if let error = model.error { EngramInlineError(message: error).padding(EngramSpacing.regular) }
                     if let session = model.library.session, let item = session.current,
                        let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: EngramSpacing.section) {
-                                HStack {
-                                    Text(model.deckName(note.deckID)).font(theme.font(.metadata))
-                                    Spacer()
-                                    Text("\(session.completed) saved · \(session.queue.count) ready").font(theme.font(.metadata)).monospacedDigit()
-                                        .engramNumericTransition(value: session.completed)
-                                }.foregroundStyle(theme.palette(for: scheme).secondaryText)
-                                reviewContent(note: note, item: item)
-                                    .id(item.presentationID)
-                                    .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
+                        VStack(spacing: 0) {
+                            GeometryReader { viewport in
+                                ScrollView {
+                                    reviewContent(note: note, item: item,
+                                        minimumHeight: max(160, viewport.size.height - 2 * EngramSpacing.regular - 2 * EngramSpacing.section))
+                                        .id(item.presentationID)
+                                        .frame(maxWidth: EngramShape.readingWidth)
+                                        .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
+                                }
                             }
-                            .frame(maxWidth: EngramShape.readingWidth).padding(EngramSpacing.section).frame(maxWidth: .infinity)
-                            .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.presentationID)
-                        }
-                        .safeAreaInset(edge: .bottom, spacing: 0) {
                             controls(session: session, item: item, width: geometry.size.width)
                                 .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 .background(theme.palette(for: scheme).canvas)
@@ -41,57 +37,99 @@ struct ReviewView: View {
                     } else { completion }
                 }
             }
-            .navigationTitle("Review")
+            .navigationTitle(reviewTitle)
+            .engramInlineTitle().engramHideStudyTabs()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Exit review") { dismiss() }.keyboardShortcut(.escape, modifiers: []).disabled(model.busy) }
-                ToolbarItem(placement: .automatic) { ThemeMenu(model: model) }
+                if !embedded {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(action: leaveReview) { Label("Back", systemImage: "chevron.left") }
+                            .labelStyle(.iconOnly).keyboardShortcut(.escape, modifiers: []).disabled(model.busy)
+                    }
+                }
                 ToolbarItem(placement: .automatic) {
-                    Button { Task { await model.undo() } } label: { Label("Undo last grade", systemImage: "arrow.uturn.backward") }
-                        .keyboardShortcut("z", modifiers: .command).disabled(!model.canUndo || model.busy)
+                    Button { optionsPresented = true } label: { Label("Review options", systemImage: "ellipsis") }
                 }
             }
+            .onKeyPress(.escape) {
+                guard !model.busy else { return .ignored }
+                leaveReview(); return .handled
+            }
+            .onKeyPress(keys: ["z"], phases: .down) { key in
+                guard key.modifiers.contains(.command), model.canUndo, !model.busy else { return .ignored }
+                Task { await model.undo() }; return .handled
+            }
             .engramCanvas()
+            .sheet(isPresented: $optionsPresented) { reviewOptions }
             .onChange(of: model.library.session?.current?.revealedAt) { _, newValue in if newValue != nil { answerFocused = true } }
         }
-        .engramSheetSizing(idealWidth: 820, minimumHeight: 550)
+        .modifier(EngramTaskSizing(embedded: embedded, width: 820, height: 550))
         .interactiveDismissDisabled(model.busy)
     }
-    @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation) -> some View {
+    @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation, minimumHeight: CGFloat) -> some View {
         let rendered = Result { try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil) }
         switch rendered {
         case .success(let card):
             VStack(alignment: .leading, spacing: EngramSpacing.section) {
-                Text("QUESTION").font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 CardContentView(text: card.prompt, media: model.library.media)
                     .font(theme.font(card.prompt.count < 160 ? .prompt : .body))
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .contain).accessibilityLabel("Question")
                 if let answer = card.answer {
                     Divider()
-                    Text("ANSWER").font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-                        .accessibilityFocused($answerFocused)
                     CardContentView(text: answer, media: model.library.media).font(theme.font(.body))
+                        .accessibilityElement(children: .contain).accessibilityLabel("Answer")
+                        .accessibilityFocused($answerFocused)
                         .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
                     if let source = card.source, !source.isEmpty {
                         Text("Reference: \(source)").font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText).textSelection(.enabled)
                     }
-                } else {
-                    Text("Take a moment to recall.").font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 280, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
             .engramSurface()
             .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.revealedAt)
         case .failure(let error): EngramInlineError(message: error.localizedDescription)
         }
     }
-    @ViewBuilder private func controls(session: StudySession, item: ReviewPresentation, width: CGFloat) -> some View {
-        VStack(spacing: EngramSpacing.small) {
-            if item.revealedAt == nil {
-                EngramActionButton("Reveal answer", busy: model.busy) {
-                    Task { await model.reveal(sessionID: session.id, presentationID: item.presentationID) }
-                }.keyboardShortcut(.space, modifiers: [])
-                Text("Space to reveal").font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-            } else {
+    private var reviewTitle: String {
+        guard let item = model.library.session?.current else { return "Review complete" }
+        return model.deckName(item.card.deckID).components(separatedBy: "::").last ?? "Review"
+    }
+    private func leaveReview() { model.reviewPresented = false; dismiss() }
+
+    private var reviewOptions: some View {
+        NavigationStack {
+            Form {
+                Section("This session") {
+                    LabeledContent("Reviews saved", value: String(model.library.session?.completed ?? 0))
+                    LabeledContent("Cards ready", value: String(model.library.session?.queue.count ?? 0))
+                    Button {
+                        Task { await model.undo(); if model.error == nil { optionsPresented = false } }
+                    } label: { Label("Undo last grade", systemImage: "arrow.uturn.backward") }
+                        .keyboardShortcut("z", modifiers: .command).disabled(!model.canUndo || model.busy)
+                    if let error = model.error { EngramInlineError(message: error) }
+                }
+                Section("Appearance") {
+                    Picker("Theme", selection: $model.theme) {
+                        ForEach(EngramTheme.allCases) { Text($0.title).tag($0) }
+                    }
+                    Picker("Appearance", selection: $model.appearance) {
+                        ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) }
+                    }
+                }
+            }
+            .navigationTitle("Review options").engramInlineTitle()
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { optionsPresented = false } } }
+            .engramCanvas()
+        }
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+        .engramSheetSizing(idealWidth: 440, minimumHeight: 360)
+    }
+
+    private func controls(session: StudySession, item: ReviewPresentation, width: CGFloat) -> some View {
+        // Reserve the actual grade controls' height before reveal so the reading surface stays still.
+        ZStack(alignment: .bottom) {
+            VStack(spacing: EngramSpacing.small) {
                 Text("How well did you recall it?").font(theme.font(.metadata))
                 let columns = textSize.isAccessibilitySize ? 1 : width < 600 ? 2 : 4
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: EngramSpacing.small), count: columns), spacing: EngramSpacing.small) {
@@ -102,9 +140,17 @@ struct ReviewView: View {
                             Task { await model.grade(grade, sessionID: session.id, presentationID: item.presentationID) }
                         }
                         .keyboardShortcut(KeyEquivalent(Character(String(grade.rawValue))), modifiers: [])
-                        .disabled(model.busy || item.outcomes[grade] == nil)
+                        .disabled(item.revealedAt == nil || model.busy || item.outcomes[grade] == nil)
                     }
                 }
+            }
+            .opacity(item.revealedAt == nil ? 0 : 1)
+            .accessibilityHidden(item.revealedAt == nil)
+            .allowsHitTesting(item.revealedAt != nil)
+            if item.revealedAt == nil {
+                EngramActionButton("Reveal answer", busy: model.busy) {
+                    Task { await model.reveal(sessionID: session.id, presentationID: item.presentationID) }
+                }.keyboardShortcut(.space, modifiers: [])
             }
         }.frame(maxWidth: EngramShape.readingWidth)
     }
