@@ -8,3 +8,4 @@ test-results/local/
 
 # Local simulator and absolute workspace preferences
 .xcodebuildmcp/
+.gitnexus
