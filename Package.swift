@@ -2,6 +2,8 @@
 import PackageDescription
 
 var targets: [Target] = [
+    .target(name: "ChatGPTAuth"),
+    .testTarget(name: "ChatGPTAuthTests", dependencies: ["ChatGPTAuth"]),
     .target(name: "CSQLite", exclude: ["PROVENANCE.md"], cSettings: [.define("SQLITE_THREADSAFE", to: "1"), .define("SQLITE_OMIT_LOAD_EXTENSION")]),
     .target(name: "CArchive", exclude: ["LICENSE", "PROVENANCE.md"], cSettings: [.define("MINIZ_NO_ZLIB_COMPATIBLE_NAMES")]),
     .target(name: "LearningCore"),
@@ -14,6 +16,7 @@ var targets: [Target] = [
     .testTarget(name: "EngramTests", dependencies: ["Features", "LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"])
 ]
 var products: [Product] = [
+    .library(name: "ChatGPTAuth", targets: ["ChatGPTAuth"]),
     .executable(name: "EngramBenchmark", targets: ["EngramBenchmark"]),
     .library(name: "AnkiAdapters", targets: ["AnkiAdapters"]),
     .library(name: "LearningCore", targets: ["LearningCore"]),
@@ -21,7 +24,7 @@ var products: [Product] = [
     .library(name: "PersistenceAdapters", targets: ["PersistenceAdapters"]),
     .library(name: "SchedulingAdapters", targets: ["SchedulingAdapters"])
 ]
-targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem"], resources: [.process("Resources")])]
+targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem", "ChatGPTAuth"], resources: [.process("Resources")])]
 products += [.library(name: "DesignSystem", targets: ["DesignSystem"]), .library(name: "Features", targets: ["Features"])]
 let package = Package(name: "Engram", platforms: [.iOS(.v17), .macOS(.v14)], products: products,
     dependencies: [.package(path: "Vendor/FSRS")], targets: targets)

@@ -3,6 +3,7 @@ import Observation
 import LearningCore
 import StudyApplication
 import DesignSystem
+import ChatGPTAuth
 
 public enum EngramDestination: String, CaseIterable, Identifiable { case today, library, activity
     public var id: String { rawValue }
@@ -18,6 +19,7 @@ public struct DeckForm: Identifiable {
 
 /// Own once in the composition root. Theme, selection and sheets never own learning data.
 @MainActor @Observable public final class EngramModel {
+    public let chatGPT = ChatGPTConnection.live()
     public let service: StudyService
     public private(set) var library = LibrarySnapshot()
     public private(set) var loaded = false

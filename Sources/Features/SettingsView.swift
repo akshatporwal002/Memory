@@ -104,6 +104,10 @@ struct SettingsView: View {
                             Label("Open-source acknowledgements", systemImage: "doc.text.magnifyingglass")
                         }.buttonStyle(.bordered)
                     }
+
+                    SettingsSection(title: "ChatGPT", subtitle: "Optionally connect your ChatGPT account. Core study stays available offline.") {
+                        ChatGPTConnectionView(connection: model.chatGPT)
+                    }
                 }
                 .frame(maxWidth: 760, alignment: .leading)
                 .padding(.horizontal, EngramSpacing.page).padding(.vertical, EngramSpacing.section)
@@ -119,14 +123,14 @@ struct SettingsView: View {
                         changed = false; model.settingsPresented = false; dismiss()
                     }
                 }
-            }.disabled(model.busy) } }
+            }.disabled(model.busy || model.chatGPT.busy) } }
             .engramHideBack(changed)
             .engramCanvas()
             .task { settings = model.library.settings; changed = false }
             .onChange(of: settings) { _, value in changed = value != model.library.settings }
         }
         .modifier(EngramTaskSizing(embedded: embedded, width: 680, height: 640))
-        .interactiveDismissDisabled(model.busy || changed)
+        .interactiveDismissDisabled(model.busy || model.chatGPT.busy || changed)
     }
 
     private var acknowledgementsPage: some View {
