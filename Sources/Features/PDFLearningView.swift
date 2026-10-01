@@ -143,8 +143,10 @@ struct PDFLearningView: View {
                     DisclosureGroup("Edit wording") {
                         TextField("Question or heading", text: editing(item.id, keyPath: \.prompt), axis: .vertical)
                             .textFieldStyle(.plain).font(.headline).padding(.vertical, 8)
+                            .accessibilityLabel("Question or heading")
                         TextField("Answer or notes", text: editing(item.id, keyPath: \.answer), axis: .vertical)
                             .textFieldStyle(.plain).padding(.vertical, 8)
+                            .accessibilityLabel("Answer or notes")
                         Text("Your edits are marked as unverified. Source references stay available.").font(.caption).foregroundStyle(palette.secondaryText)
                     }
                     Button("Remove", role: .destructive) { flow.draft.items.removeAll { $0.id == item.id } }.font(.caption)
