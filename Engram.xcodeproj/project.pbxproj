@@ -12,12 +12,14 @@
 		13C4D006D2A1E8FBB6540011 /* PersistenceAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 9C7BA9F267ED9A16B01FB1F0 /* PersistenceAdapters */; };
 		17BCB0721146CB61992D958A /* EngramApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CABD5A954A145EA301B22905 /* EngramApp.swift */; };
 		1D503317D1DCC7FE2DA81E88 /* NativeScreenCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C962FFB8D16C4FC9F242ED9 /* NativeScreenCapture.swift */; };
+		298A7C4B7EF59B0DDCD8DA1C /* SettingsActivityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 869E3AD560952F3039FCA94F /* SettingsActivityUITests.swift */; };
 		35F2D796514A9E44C4F59C2D /* SchedulingAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 4E00E43E7FB2164C1118E889 /* SchedulingAdapters */; };
 		4930B92C954531CCB648EF64 /* Features in Frameworks */ = {isa = PBXBuildFile; productRef = 6270D145660CF13694B4E84B /* Features */; };
 		4B2AE09B57A596E9A775E6EE /* NativeScreenCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C962FFB8D16C4FC9F242ED9 /* NativeScreenCapture.swift */; };
 		4DCF42399164CFBE909B235D /* EngramApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CABD5A954A145EA301B22905 /* EngramApp.swift */; };
 		5567E394D9C29B7A84C914E1 /* AnkiAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 891B5CFEE4187FDA0072D580 /* AnkiAdapters */; };
 		57BE45B8003A9FF1D9E95B22 /* Features in Frameworks */ = {isa = PBXBuildFile; productRef = 8EE1A4ABCE40E55BCC5ACD16 /* Features */; };
+		5F5620A2F527B9F4B903F08A /* MinimalistStudyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C536B402C353E7F776D91A6 /* MinimalistStudyUITests.swift */; };
 		61264D5A35DE63E2D389257F /* StudyApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 9DBEF6B26BA684AD630202DE /* StudyApplication */; };
 		635EF16A0B5174DEE0B66224 /* Acknowledgements.txt in Resources */ = {isa = PBXBuildFile; fileRef = 4B1EA62CEC7F0E0110CF1040 /* Acknowledgements.txt */; };
 		65C3AC08DD7E4E9CC5935E0C /* PortabilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C55ADCD766E74C7DD36784F6 /* PortabilityView.swift */; };
@@ -35,12 +37,25 @@
 		E5820FC3D9D9F4A08EC2A7E2 /* AnkiAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 8B26062C5AC61106687E30B4 /* AnkiAdapters */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B4D03A0548F9458B1BD592DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6974E702704633D9605491C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 158D0ABAFDE885AED5280CF4;
+			remoteInfo = "Engram-iOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		0ECB2BDA6574B003D0401A32 /* Engram-UITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Engram-UITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		33BF4F0D385C63FFF324BB91 /* ScreenshotExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotExportView.swift; sourceTree = "<group>"; };
+		3C536B402C353E7F776D91A6 /* MinimalistStudyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalistStudyUITests.swift; sourceTree = "<group>"; };
 		4B1EA62CEC7F0E0110CF1040 /* Acknowledgements.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Acknowledgements.txt; sourceTree = "<group>"; };
 		5C962FFB8D16C4FC9F242ED9 /* NativeScreenCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScreenCapture.swift; sourceTree = "<group>"; };
-		64CFBF44911F057DC9C410A3 /* Memory */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Memory; path = .; sourceTree = SOURCE_ROOT; };
+		869E3AD560952F3039FCA94F /* SettingsActivityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsActivityUITests.swift; sourceTree = "<group>"; };
 		A8E5D53CED207A3A654FB4D4 /* Engram-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Engram-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AEE01BFDCC2240C886F702B9 /* Memory-minimalist-review */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Memory-minimalist-review"; path = .; sourceTree = SOURCE_ROOT; };
 		BE13E9DC30A6C4C1E51477A7 /* Engram-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Engram-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C55ADCD766E74C7DD36784F6 /* PortabilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortabilityView.swift; sourceTree = "<group>"; };
 		CABD5A954A145EA301B22905 /* EngramApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngramApp.swift; sourceTree = "<group>"; };
@@ -92,10 +107,21 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		4879D667E5DCB8E295D66715 /* EngramUITests */ = {
+			isa = PBXGroup;
+			children = (
+				3C536B402C353E7F776D91A6 /* MinimalistStudyUITests.swift */,
+				869E3AD560952F3039FCA94F /* SettingsActivityUITests.swift */,
+			);
+			name = EngramUITests;
+			path = Tests/EngramUITests;
+			sourceTree = "<group>";
+		};
 		7D624AAAFFAA7829983E9B07 = {
 			isa = PBXGroup;
 			children = (
 				063BB45D072F1B8CBFB1E934 /* App */,
+				4879D667E5DCB8E295D66715 /* EngramUITests */,
 				C30691FD0ABAD9DEC8133039 /* Packages */,
 				B62C45094E60FCB220425CA7 /* Products */,
 			);
@@ -106,6 +132,7 @@
 			children = (
 				A8E5D53CED207A3A654FB4D4 /* Engram-iOS.app */,
 				BE13E9DC30A6C4C1E51477A7 /* Engram-macOS.app */,
+				0ECB2BDA6574B003D0401A32 /* Engram-UITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -113,7 +140,7 @@
 		C30691FD0ABAD9DEC8133039 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				64CFBF44911F057DC9C410A3 /* Memory */,
+				AEE01BFDCC2240C886F702B9 /* Memory-minimalist-review */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -173,6 +200,24 @@
 			productReference = BE13E9DC30A6C4C1E51477A7 /* Engram-macOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F7B32054237331F8C1705E96 /* Engram-UITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 61D7A5F0BFABF382A907F2AB /* Build configuration list for PBXNativeTarget "Engram-UITests" */;
+			buildPhases = (
+				75EA5BE1D15C0CFA562511DD /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A3F30086FB041FB2E7AB9DAC /* PBXTargetDependency */,
+			);
+			name = "Engram-UITests";
+			packageProductDependencies = (
+			);
+			productName = "Engram-UITests";
+			productReference = 0ECB2BDA6574B003D0401A32 /* Engram-UITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -188,6 +233,10 @@
 					};
 					DE8DBA4CC927AD54CA82ECB5 = {
 						ProvisioningStyle = Automatic;
+					};
+					F7B32054237331F8C1705E96 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 158D0ABAFDE885AED5280CF4;
 					};
 				};
 			};
@@ -210,6 +259,7 @@
 			targets = (
 				158D0ABAFDE885AED5280CF4 /* Engram-iOS */,
 				DE8DBA4CC927AD54CA82ECB5 /* Engram-macOS */,
+				F7B32054237331F8C1705E96 /* Engram-UITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,7 +308,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		75EA5BE1D15C0CFA562511DD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F5620A2F527B9F4B903F08A /* MinimalistStudyUITests.swift in Sources */,
+				298A7C4B7EF59B0DDCD8DA1C /* SettingsActivityUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A3F30086FB041FB2E7AB9DAC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 158D0ABAFDE885AED5280CF4 /* Engram-iOS */;
+			targetProxy = B4D03A0548F9458B1BD592DE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		05CE15E29213F8CFF3AC10EB /* Release */ = {
@@ -321,6 +388,23 @@
 			};
 			name = Release;
 		};
+		2ED19BDD36AEB0077B301A7C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.engram.study.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Engram-iOS";
+			};
+			name = Debug;
+		};
 		47B34078AA8E42ACC12FCF89 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -337,6 +421,23 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.engram.study.mac;
 				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6A18FAA0C471399AFE1A2D0D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.engram.study.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Engram-iOS";
 			};
 			name = Release;
 		};
@@ -472,6 +573,15 @@
 			buildConfigurations = (
 				D2C723186FEF7569B2E76D42 /* Debug */,
 				47B34078AA8E42ACC12FCF89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		61D7A5F0BFABF382A907F2AB /* Build configuration list for PBXNativeTarget "Engram-UITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2ED19BDD36AEB0077B301A7C /* Debug */,
+				6A18FAA0C471399AFE1A2D0D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -206,13 +206,14 @@ struct ContextualAssistant: View {
         HStack(alignment: .center, spacing: 12) {
             if showsNavigation && narrow { navigationDock }
             else { Spacer(minLength: 0) }
-            assistantSurface(Button {
+            Button {
                 withAnimation(motion) { open = true }
                 composerFocused = true
             } label: {
-                Image(systemName: "sparkle").font(.system(size: 18, weight: .medium))
-                    .frame(width: 50, height: 50).contentShape(Rectangle()).foregroundStyle(palette.primaryText)
-            }.buttonStyle(.plain).accessibilityLabel("Ask the study assistant").accessibilityIdentifier("assistant-entry"), open: false)
+                assistantSurface(Image(systemName: "sparkle").font(.system(size: 18, weight: .medium))
+                    .frame(width: 50, height: 50).foregroundStyle(palette.primaryText), open: false)
+                    .contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityLabel("Ask the study assistant").accessibilityIdentifier("assistant-entry")
         }
     }
     @ViewBuilder private var navigationDock: some View {
