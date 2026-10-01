@@ -250,10 +250,13 @@ struct ContextualAssistant: View {
                 Text(deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
                 if !thread.isEmpty {
-                    Button { composerFocused = false; expanded.toggle() } label: { Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }.frame(width: 44, height: 44)
+                    Button { composerFocused = false; expanded.toggle() } label: {
+                        Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                            .frame(width: 44, height: 44).contentShape(Rectangle())
+                    }
                         .accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
                 }
-                Button(action: close) { Image(systemName: "xmark") }.frame(width: 44, height: 44)
+                Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle()) }
                     .accessibilityLabel("Close assistant")
             }
             .buttonStyle(.plain).frame(minHeight: 44)
@@ -312,11 +315,11 @@ struct ContextualAssistant: View {
                     .submitLabel(.send).onSubmit { send() }
                     .accessibilityLabel("Message the study assistant")
                     .accessibilityIdentifier("assistant-composer")
-                Button(action: send) { Image(systemName: "arrow.up").font(.headline).frame(width: 44, height: 44) }
+                Button(action: send) { Image(systemName: "arrow.up").font(.headline).frame(width: 44, height: 44).contentShape(Rectangle()) }
                     .disabled(busy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityLabel("Send message")
                 if thread.isEmpty {
-                    Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                    Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle()) }
                         .accessibilityLabel("Close assistant")
                 }
             }
