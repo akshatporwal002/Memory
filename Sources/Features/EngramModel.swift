@@ -22,6 +22,7 @@ public struct DeckForm: Identifiable {
     let voice = VoiceStudyController()
     let aiMarker = AIAnswerMarker()
     let pdfLearning = PDFLearningController()
+    var pdfLearningPresented = false
     public var answerFeedback: String?
     public var markingAnswer = false
     public let chatGPT = ChatGPTConnection.live()

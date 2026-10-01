@@ -70,8 +70,9 @@ struct PDFLearningView: View {
         .confirmationDialog("Discard the unfinished PDF learning draft?", isPresented: $discard, titleVisibility: .visible) {
             Button("Discard draft", role: .destructive) { flow.reset() }
         } message: { Text("Your saved decks and manual notebook draft are kept.") }
-        .onDisappear { flow.cancel() }
+        .onDisappear { flow.cancel(); model.pdfLearningPresented = false }
         .onAppear {
+            model.pdfLearningPresented = true
             #if DEBUG
             if !loadedFixture, ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-pdf-fixture") { loadedFixture = true; flow.reset(); flow.loadFixture() }
             #endif
