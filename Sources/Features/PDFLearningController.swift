@@ -119,7 +119,7 @@ struct PDFLearningDraft: Codable {
                     status = sample ? "Generating a small sample…" : "Generating batch \(index + 1) of \(groups.count)…"
                     var items: [PDFLearningItem]
                     #if DEBUG
-                    if fixture { items = Self.fixtureItems(passages: passages, brief: brief, count: count) }
+                    if fixture { try await Task.sleep(for: .milliseconds(800)); items = Self.fixtureItems(passages: passages, brief: brief, count: count) }
                     else { items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken()) }
                     #else
                     items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())
@@ -136,6 +136,7 @@ struct PDFLearningDraft: Codable {
                     items = items.map { var item = $0; item.id = UUID().uuidString; item.verified = false; item.userEdited = false; return item }
                     status = "Checking answers against the PDF…"
                     #if DEBUG
+                    if fixture { try await Task.sleep(for: .milliseconds(800)) }
                     let accepted = fixture ? Set(items.map(\.id)) : try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())
                     #else
                     let accepted = try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())

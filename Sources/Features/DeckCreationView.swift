@@ -14,6 +14,7 @@ struct LibraryCreateDeckView: View {
     @State private var showFolder = false
     @State private var parsed = DeckDocument.parse("")
     @State private var showPDF = false
+    @State private var pdfCreatedDeckID: String?
     private enum Field { case title, subject, document }
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var subjects: [String] {
@@ -36,7 +37,7 @@ struct LibraryCreateDeckView: View {
                     .accessibilityLabel("Deck title").accessibilityIdentifier("deck-title")
                 if showFolder || !model.deckCreationDraft.subject.isEmpty { subjectField }
                 Button(model.pdfLearning.draft.source == nil ? "Learn from a PDF" : "Resume PDF learning", systemImage: "doc.text") {
-                    focus = nil; showPDF = true
+                    focus = nil; pdfCreatedDeckID = nil; showPDF = true
                 }.accessibilityIdentifier("deck-pdf-learning")
                 HStack(alignment: .firstTextBaseline) {
                     Text("Question: answer")
@@ -82,8 +83,10 @@ struct LibraryCreateDeckView: View {
         .engramHideBack(model.busy)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
+              if !showPDF {
                 Button("Create", action: create).fontWeight(.semibold).disabled(!canCreate)
                     .accessibilityIdentifier("deck-create")
+              }
             }
             ToolbarItem(placement: .automatic) {
                 Menu {
@@ -107,7 +110,10 @@ struct LibraryCreateDeckView: View {
             focus = model.deckCreationDraft.title.isEmpty ? .title : .document
         }
         .onChange(of: model.deckCreationDraft.document) { _, value in parsed = DeckDocument.parse(value) }
-        .navigationDestination(isPresented: $showPDF) { PDFLearningView(model: model, created: created) }
+        .navigationDestination(isPresented: $showPDF) {
+            if let id = pdfCreatedDeckID { DeckOverviewView(model: model, deckID: id) }
+            else { PDFLearningView(model: model) { id in model.selectedDeckID = id; pdfCreatedDeckID = id } }
+        }
     }
 
     private var subjectField: some View {
