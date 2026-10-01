@@ -94,7 +94,7 @@ struct DeckMemoryPanel: View {
             .padding(16)
             .background(palette.surface, in: RoundedRectangle(cornerRadius: 16))
             .task(id: "\(model.library.revision)-\(deck.id)") {
-                outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
+                self.outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
             }
             .sheet(isPresented: $editingTarget) {
                 NavigationStack {
