@@ -25,7 +25,7 @@ struct NotebookView: View {
     @FocusState private var focusedBlock: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var palette: EngramPalette { theme.palette(for: scheme) }
-    private var progressKey: String { "engram.notebook.readingSection." + deckID }
+    private var progressKey: String { "engram.notebook.readingSection." + deckID + (writingOnly ? ".notes" : "") }
     private var removedCount: Int {
         guard let draft else { return 0 }
         return Set(draft.original.compactMap(\.noteID)).subtracting(draft.blocks.compactMap(\.noteID)).count
@@ -119,6 +119,7 @@ struct NotebookView: View {
             Button("Discard draft and reload", role: .destructive) { load(useDraft: false) }
         } message: { Text("This replaces your unsaved writing with the latest saved notes and cards.") }
         .onAppear {
+            model.activeContentDeckID = deckID; model.activeContentKind = writingOnly ? "notes" : "notebook"
             UserDefaults.standard.set(deckID, forKey: "engram.notebook.lastDeckID")
             if draft == nil { load(useDraft: true) }
             if let noteID = model.notebookFocusNoteID {
@@ -129,7 +130,8 @@ struct NotebookView: View {
                 proxyScrollTarget = blockID
                 model.notebookFocusBlockID = nil
             } else if proxyScrollTarget == nil {
-                proxyScrollTarget = UserDefaults.standard.string(forKey: progressKey)
+                let remembered = UserDefaults.standard.string(forKey: progressKey)
+                proxyScrollTarget = visibleBlocks.first { $0.id == remembered }?.id ?? visibleBlocks.first?.id
             }
         }
         .onChange(of: model.notebookFocusBlockID) { _, id in
@@ -141,7 +143,10 @@ struct NotebookView: View {
                 model.notebookFocusNoteID = nil
             }
         }
-        .onDisappear { persist() }
+        .onDisappear {
+            persist()
+            if model.activeContentDeckID == deckID { model.activeContentDeckID = nil; model.activeContentKind = nil }
+        }
         .task(id: draft) {
             do { try await Task.sleep(for: .milliseconds(350)); persist() } catch { }
         }
@@ -326,6 +331,7 @@ struct NotebookView: View {
         let blocks = NotebookDocument.blocks(for: deck, in: model.library)
         let cached = useDraft ? model.notebookDraft(deckID) : nil
         draft = cached ?? NotebookEditingDraft(blocks: blocks, original: blocks, revision: model.library.revision)
+        activeBlockID = visibleBlocks.first?.id
         saved = false; model.error = nil; persist()
     }
     private func persist() { model.keepNotebookDraft(draft?.changed == true ? draft : nil, deckID: deckID) }

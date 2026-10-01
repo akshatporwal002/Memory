@@ -100,7 +100,7 @@ private struct ApplicationRoot: View {
     private func canCapture(_ model: EngramModel) -> Bool {
         model.loaded && !model.busy && !screenshots.running && !screenshots.presented &&
         !portabilityPresented && !model.editorPresented && !model.reviewPresented &&
-        !model.settingsPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil && model.deckForm == nil && model.deleteDeck == nil && model.deleteNote == nil
+        !model.settingsPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil && model.activeContentDeckID == nil && model.deckForm == nil && model.deleteDeck == nil && model.deleteNote == nil
     }
     private func libraryLocation() throws -> URL {
         let base = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)

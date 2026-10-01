@@ -114,11 +114,11 @@ struct ContextualAssistant: View {
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var deckID: String? {
         if model.creationPresented && model.notebookDeckID == nil { return nil }
-        return model.questionsDeckID ?? model.notebookDeckID ?? (model.editorPresented ? model.draft?.deckID : nil) ?? (model.reviewPresented ? model.library.session?.deckID : nil) ?? selectedDeckID ?? model.selectedDeckID ?? model.library.liveDecks.first?.id
+        return model.activeContentDeckID ?? model.questionsDeckID ?? model.notebookDeckID ?? (model.editorPresented ? model.draft?.deckID : nil) ?? (model.reviewPresented ? model.library.session?.deckID : nil) ?? selectedDeckID ?? model.selectedDeckID ?? model.library.liveDecks.first?.id
     }
     private var deckName: String { deckID.map(model.deckName) ?? (model.creationPresented ? "New notebook" : "Your study material") }
     private var context: String {
-        let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.creationPresented ? "creation" : model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue
+        let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.creationPresented ? "creation" : model.activeContentKind ?? (model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue)
         return workflow + ":" + (deckID ?? "none")
     }
     private var thread: [AssistantMessage] { messages[context] ?? [] }
@@ -167,12 +167,17 @@ struct ContextualAssistant: View {
         .animation(motion, value: expanded)
         .animation(motion, value: thread.count)
         .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; close() }
+        #if DEBUG
+        .onChange(of: open) { old, new in
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing") { print("Engram assistant open: \(old) -> \(new), context: \(context)") }
+        }
+        #endif
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
     }
 
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.88) }
     private var showsNavigation: Bool {
-        !model.reviewPresented && !model.editorPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil
+        !model.reviewPresented && !model.editorPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil && model.activeContentDeckID == nil
     }
     @ViewBuilder private func glassContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         #if os(iOS)
@@ -206,7 +211,7 @@ struct ContextualAssistant: View {
                 composerFocused = true
             } label: {
                 Image(systemName: "sparkle").font(.system(size: 18, weight: .medium))
-                    .frame(width: 50, height: 50).foregroundStyle(palette.primaryText)
+                    .frame(width: 50, height: 50).contentShape(Rectangle()).foregroundStyle(palette.primaryText)
             }.buttonStyle(.plain).accessibilityLabel("Ask the study assistant").accessibilityIdentifier("assistant-entry"), open: false)
         }
     }
@@ -228,7 +233,7 @@ struct ContextualAssistant: View {
                     VStack(spacing: 3) {
                         Image(systemName: destination.symbol).font(.system(size: 18))
                         Text(destination.title).font(.caption2.weight(.medium))
-                    }.frame(maxWidth: .infinity, minHeight: 50)
+                    }.frame(maxWidth: .infinity, minHeight: 50).contentShape(Capsule())
                         .foregroundStyle(model.destination == destination ? (scheme == .dark ? palette.easyInk : palette.anchor) : palette.secondaryText)
                         .background(model.destination == destination ? palette.selection : .clear, in: Capsule())
                 }.buttonStyle(.plain).accessibilityIdentifier("tab-" + destination.rawValue)
@@ -407,10 +412,14 @@ struct ContextualAssistant: View {
     private func openSource(_ source: AssistantPassage) {
         if source.noteID != nil {
             model.notebookFocusNoteID = source.noteID
-            model.questionsDeckID = source.deckID
+            if model.activeContentDeckID != source.deckID || model.activeContentKind != "questions" {
+                model.questionsDeckID = source.deckID
+            }
         } else {
             model.notebookFocusBlockID = source.blockID
-            model.notebookWritingOnly = true; model.notebookDeckID = source.deckID
+            if model.activeContentDeckID != source.deckID || model.activeContentKind != "notes" {
+                model.notebookWritingOnly = true; model.notebookDeckID = source.deckID
+            }
         }
         close()
     }

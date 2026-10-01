@@ -143,7 +143,7 @@ public struct EngramRootView: View {
         .navigationTitle(usesPhoneTodayTitle && destination != .activity ? "" : destination.title)
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-              if model.activeDeckOverviewID == nil && model.notebookDeckID == nil && model.questionsDeckID == nil && !model.reviewPresented && !model.editorPresented && !model.creationPresented {
+              if model.activeDeckOverviewID == nil && model.activeContentDeckID == nil && model.notebookDeckID == nil && model.questionsDeckID == nil && !model.reviewPresented && !model.editorPresented && !model.creationPresented {
                 if let portabilityAction { Button(action: portabilityAction) { Label("Import and export", systemImage: "square.and.arrow.up.on.square") } }
                 Button { model.settingsPresented = true } label: { Label("Settings", systemImage: "gearshape") }
                 if let screenshotAction {

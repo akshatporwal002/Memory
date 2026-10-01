@@ -46,6 +46,8 @@ public struct DeckForm: Identifiable {
     public var notebookWritingOnly = false
     public var questionsDeckID: String?
     public var activeDeckOverviewID: String?
+    public var activeContentDeckID: String?
+    public var activeContentKind: String?
     public var selectedNoteID: String?
     public var selectedCardID: String?
     /// Presentation-only memory prevents replaying the completion flourish on sheet re-entry.

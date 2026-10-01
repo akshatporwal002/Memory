@@ -6,6 +6,8 @@ import DesignSystem
 struct DeckOverviewView: View {
     @Bindable var model: EngramModel
     let deckID: String
+    private enum ContentRoute: String, Identifiable { case questions, notes; var id: String { rawValue } }
+    @State private var contentRoute: ContentRoute?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
@@ -57,6 +59,12 @@ struct DeckOverviewView: View {
             }
         }
         .navigationTitle("").engramInlineTitle().engramCanvas()
+        .navigationDestination(item: $contentRoute) { route in
+            switch route {
+            case .questions: DeckQuestionsView(model: model, deckID: deckID)
+            case .notes: NotebookView(model: model, deckID: deckID, writingOnly: true)
+            }
+        }
         .onAppear { model.selectedDeckID = deckID; model.activeDeckOverviewID = deckID }
         .onDisappear { if model.activeDeckOverviewID == deckID { model.activeDeckOverviewID = nil } }
     }
@@ -64,7 +72,7 @@ struct DeckOverviewView: View {
     private var contentLinks: some View {
         Group {
             contentLink("Questions", detail: "\(notes.count) to explore", symbol: "rectangle.stack", identifier: "deck-questions") {
-                model.questionsDeckID = deckID
+                contentRoute = .questions
             }
             contentLink("Notes", detail: "Read and relearn", symbol: "book.pages", identifier: "deck-notes", action: openNotes)
         }
@@ -79,7 +87,7 @@ struct DeckOverviewView: View {
                 .contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityIdentifier(identifier)
     }
-    private func openNotes() { model.notebookWritingOnly = true; model.notebookDeckID = deckID }
+    private func openNotes() { contentRoute = .notes }
 }
 
 struct DeckQuestionsView: View {
@@ -127,8 +135,13 @@ struct DeckQuestionsView: View {
             .onAppear {
                 if let id = model.notebookFocusNoteID { proxy.scrollTo(id, anchor: .top); model.notebookFocusNoteID = nil }
             }
+            .onChange(of: model.notebookFocusNoteID) { _, id in
+                if let id { proxy.scrollTo(id, anchor: .top); model.notebookFocusNoteID = nil }
+            }
         }
         .navigationTitle("Questions").engramInlineTitle().engramCanvas().engramHideStudyTabs()
+        .onAppear { model.activeContentDeckID = deckID; model.activeContentKind = "questions" }
+        .onDisappear { if model.activeContentDeckID == deckID { model.activeContentDeckID = nil; model.activeContentKind = nil } }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { model.newNote(deckID: deckID) } label: { Label("Add question", systemImage: "plus") }
@@ -158,7 +171,8 @@ struct QuestionReadingView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(question.choices) { choice in
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text(choice.id + ")").frame(width: 24, alignment: .leading)
+                            Text(choice.id + ")").fixedSize(horizontal: true, vertical: false)
+                                .frame(minWidth: 24, alignment: .leading)
                             Text(choice.text).frame(maxWidth: .infinity, alignment: .leading)
                             if choice.id == question.correctID { Image(systemName: "checkmark").font(.caption.weight(.semibold)).accessibilityHidden(true) }
                         }
