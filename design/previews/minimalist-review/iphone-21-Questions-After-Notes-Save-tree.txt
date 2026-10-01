@@ -1,0 +1,122 @@
+Attributes: Application, 0x103e51670, pid: 60011, label: 'Engram'
+Element subtree:
+ →Application, 0x103e51670, pid: 60011, label: 'Engram'
+    Window (Main), 0x103e47560, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103e33190, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103e32740, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x103e1cbd0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x103e32a90, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x103e2c250, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103e2bb80, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103e2b800, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x103e25da0, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x103e16400, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x103e1dd40, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x103e24cd0, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x103e1e400, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'Questions'
+                              Button, 0x103e519d0, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x103e50fa0, {{160.7, 73.8}, {80.7, 20.3}}, label: 'Questions'
+                              Button, 0x103e159c0, {{346.0, 66.0}, {36.0, 36.0}}, label: 'Add question'
+                            Other, 0x103e51300, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103e32040, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x103e32e00, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x103e202f0, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x103e16ad0, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x103e25020, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x103e33500, {{0.0, 116.0}, {402.0, 1573.0}}
+                                        Other, 0x103e24960, {{24.0, 140.0}, {354.0, 1512.3}}
+                                          StaticText, 0x103e18d10, {{24.0, 140.0}, {160.3, 18.0}}, label: 'AWS Cloud Practitioner'
+                                          StaticText, 0x103e1a840, {{24.0, 188.0}, {334.7, 42.3}}, identifier: 'question-ui-card-0', label: '1. Which service delivers cached content close to users?'
+                                          StaticText, 0x103e24610, {{24.0, 248.3}, {121.3, 18.0}}, identifier: 'question-ui-card-0', label: 'A), Amazon EC2'
+                                            StaticText, 0x103e20660, {{24.0, 248.3}, {15.7, 18.0}}, label: 'A)'
+                                            StaticText, 0x103e1b660, {{58.0, 248.3}, {87.3, 18.0}}, label: 'Amazon EC2'
+                                          StaticText, 0x103e18970, {{24.0, 278.3}, {352.7, 18.0}}, identifier: 'question-ui-card-0', label: 'B), Amazon CloudFront', value: Correct answer
+                                            StaticText, 0x103e21820, {{24.0, 278.3}, {15.3, 18.0}}, label: 'B)'
+                                            StaticText, 0x103e23450, {{58.0, 278.3}, {135.7, 18.0}}, label: 'Amazon CloudFront'
+                                            Image, 0x103e1cf50, {{366.0, 283.3}, {10.7, 10.3}}, identifier: 'checkmark', label: 'Selected', Selected
+                                          StaticText, 0x103e52460, {{24.0, 308.3}, {139.3, 18.0}}, identifier: 'question-ui-card-0', label: 'C), AWS CloudTrail'
+                                            StaticText, 0x103e34270, {{24.0, 308.3}, {16.0, 18.0}}, label: 'C)'
+                                            StaticText, 0x103e19740, {{58.0, 308.3}, {105.3, 18.0}}, label: 'AWS CloudTrail'
+                                          StaticText, 0x103e23b00, {{24.0, 338.3}, {122.7, 18.0}}, identifier: 'question-ui-card-0', label: 'D), Amazon RDS'
+                                            StaticText, 0x103e20d60, {{24.0, 338.3}, {16.3, 18.0}}, label: 'D)'
+                                            StaticText, 0x103e27960, {{58.0, 338.3}, {88.7, 18.0}}, label: 'Amazon RDS'
+                                          StaticText, 0x103e22630, {{24.0, 374.3}, {67.3, 18.0}}, identifier: 'question-ui-card-0', label: 'Answer B'
+                                          StaticText, 0x103e222b0, {{24.0, 400.3}, {341.3, 40.0}}, identifier: 'question-ui-card-0', label: 'B) Amazon CloudFront. It caches content at edge locations, reducing latency and origin load.'
+                                          Button, 0x103e21480, {{24.0, 467.3}, {74.3, 14.3}}, identifier: 'question-ui-card-0', label: 'Edit question'
+                                          Button, 0x103e21f40, {{334.0, 452.3}, {44.0, 44.0}}, identifier: 'question-ui-card-0', label: 'Question 1 actions'
+                                            Button, 0x103e19e00, {{334.0, 452.3}, {44.0, 44.0}}
+                                              Image, 0x103e17510, {{348.3, 472.7}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          StaticText, 0x103e230c0, {{24.0, 538.7}, {230.7, 20.3}}, identifier: 'question-ui-card-1', label: '2. What is cloud computing?'
+                                          StaticText, 0x103e1d9d0, {{24.0, 577.0}, {53.7, 18.0}}, identifier: 'question-ui-card-1', label: 'Answer'
+                                          StaticText, 0x103e19ab0, {{24.0, 603.0}, {305.0, 18.0}}, identifier: 'question-ui-card-1', label: 'On-demand access to computing resources.'
+                                          Button, 0x103e34910, {{24.0, 648.0}, {74.3, 14.3}}, identifier: 'question-ui-card-1', label: 'Edit question'
+                                          Button, 0x103e17860, {{334.0, 633.0}, {44.0, 44.0}}, identifier: 'question-ui-card-1', label: 'Question 2 actions'
+                                            Button, 0x103e14c20, {{334.0, 633.0}, {44.0, 44.0}}
+                                              Image, 0x103e182a0, {{348.3, 653.3}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          StaticText, 0x103e1b2d0, {{24.0, 719.3}, {302.7, 42.3}}, identifier: 'question-ui-card-2', label: '3. Who manages the guest operating system on Amazon EC2?'
+                                          StaticText, 0x103e17f40, {{24.0, 779.7}, {66.3, 18.0}}, identifier: 'question-ui-card-2', label: 'A), AWS'
+                                            StaticText, 0x103e1a160, {{24.0, 779.7}, {15.7, 18.0}}, label: 'A)'
+                                            StaticText, 0x103e185f0, {{58.0, 779.7}, {32.3, 18.0}}, label: 'AWS'
+                                          StaticText, 0x103e1a4c0, {{24.0, 809.7}, {352.7, 18.0}}, identifier: 'question-ui-card-2', label: 'B), The customer', value: Correct answer
+                                            StaticText, 0x103e33f20, {{24.0, 809.7}, {15.3, 18.0}}, label: 'B)'
+                                            StaticText, 0x103e28050, {{58.0, 809.7}, {95.0, 18.0}}, label: 'The customer'
+                                            Image, 0x103e527c0, {{366.0, 814.7}, {10.7, 10.3}}, identifier: 'checkmark', label: 'Selected', Selected
+                                          StaticText, 0x103e17bb0, {{24.0, 839.7}, {178.7, 18.0}}, identifier: 'question-ui-card-2', label: 'C), The internet provider'
+                                            StaticText, 0x103e1af40, {{24.0, 839.7}, {16.0, 18.0}}, label: 'C)'
+                                            StaticText, 0x103e1c850, {{58.0, 839.7}, {144.7, 18.0}}, label: 'The internet provider'
+                                          StaticText, 0x103e1abd0, {{24.0, 869.7}, {224.7, 18.0}}, identifier: 'question-ui-card-2', label: 'D), The hardware manufacturer'
+                                            StaticText, 0x103e171a0, {{24.0, 869.7}, {16.3, 18.0}}, label: 'D)'
+                                            StaticText, 0x103e1e780, {{58.0, 869.7}, {190.7, 18.0}}, label: 'The hardware manufacturer'
+                                          StaticText, 0x103e1ff90, {{24.0, 905.7}, {67.3, 18.0}}, identifier: 'question-ui-card-2', label: 'Answer B'
+                                          StaticText, 0x103e22d20, {{24.0, 931.7}, {326.7, 62.0}}, identifier: 'question-ui-card-2', label: 'B) The customer. AWS manages the underlying infrastructure; customers patch and secure the guest operating system.'
+                                          Button, 0x103e1c4f0, {{24.0, 1020.3}, {74.3, 14.7}}, identifier: 'question-ui-card-2', label: 'Edit question'
+                                          Button, 0x103e20a00, {{334.0, 1005.7}, {44.0, 44.0}}, identifier: 'question-ui-card-2', label: 'Question 3 actions'
+                                            Button, 0x103e345c0, {{334.0, 1005.7}, {44.0, 44.0}}
+                                              Image, 0x103e1eb00, {{348.3, 1026.0}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          StaticText, 0x103e19080, {{24.0, 1092.0}, {354.0, 45.7}}, identifier: 'question-ui-card-3', label: '4. What is the difference between elasticity and scalability?'
+                                          StaticText, 0x103e52b60, {{24.0, 1155.7}, {53.7, 18.0}}, identifier: 'question-ui-card-3', label: 'Answer'
+                                          StaticText, 0x103e52ec0, {{24.0, 1181.7}, {315.7, 64.0}}, identifier: 'question-ui-card-3', label: 'Elasticity adjusts capacity to current demand. Scalability is the ability to handle increasing demand by adding capacity.'
+                                          Button, 0x103e1f1d0, {{24.0, 1272.7}, {74.3, 14.3}}, identifier: 'question-ui-card-3', label: 'Edit question'
+                                          Button, 0x103e323c0, {{334.0, 1257.7}, {44.0, 44.0}}, identifier: 'question-ui-card-3', label: 'Question 4 actions'
+                                            Button, 0x103e15d20, {{334.0, 1257.7}, {44.0, 44.0}}
+                                              Image, 0x103e16770, {{348.3, 1278.0}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          StaticText, 0x103e16070, {{24.0, 1344.0}, {346.7, 42.3}}, identifier: 'question-ui-card-4', label: '5. Which tool can alert you when spending exceeds a planned amount?'
+                                          StaticText, 0x103e520f0, {{24.0, 1404.3}, {352.7, 18.0}}, identifier: 'question-ui-card-4', label: 'A), AWS Budgets', value: Correct answer
+                                            StaticText, 0x103e1e0a0, {{24.0, 1404.3}, {15.7, 18.0}}, label: 'A)'
+                                            StaticText, 0x103e1ee60, {{58.0, 1404.3}, {93.3, 18.0}}, label: 'AWS Budgets'
+                                            Image, 0x103e16e50, {{366.0, 1409.3}, {10.7, 10.3}}, identifier: 'checkmark', label: 'Selected', Selected
+                                          StaticText, 0x103e256e0, {{24.0, 1434.3}, {156.0, 18.0}}, identifier: 'question-ui-card-4', label: 'B), Amazon Route 53'
+                                            StaticText, 0x103e34fe0, {{24.0, 1434.3}, {15.3, 18.0}}, label: 'B)'
+                                            StaticText, 0x103e35a50, {{58.0, 1434.3}, {122.0, 18.0}}, label: 'Amazon Route 53'
+                                          StaticText, 0x103e471f0, {{24.0, 1464.3}, {139.3, 18.0}}, identifier: 'question-ui-card-4', label: 'C), AWS CloudTrail'
+                                            StaticText, 0x103e26470, {{24.0, 1464.3}, {16.0, 18.0}}, label: 'C)'
+                                            StaticText, 0x103e267d0, {{58.0, 1464.3}, {105.3, 18.0}}, label: 'AWS CloudTrail'
+                                          StaticText, 0x103e26b30, {{24.0, 1494.3}, {169.7, 18.0}}, identifier: 'question-ui-card-4', label: 'D), Amazon CloudFront'
+                                            StaticText, 0x103e26110, {{24.0, 1494.3}, {16.3, 18.0}}, label: 'D)'
+                                            StaticText, 0x103e2b4a0, {{58.0, 1494.3}, {135.7, 18.0}}, label: 'Amazon CloudFront'
+                                          StaticText, 0x103e34c80, {{24.0, 1530.3}, {68.0, 18.0}}, identifier: 'question-ui-card-4', label: 'Answer A'
+                                          StaticText, 0x103e47fa0, {{24.0, 1556.3}, {350.0, 40.0}}, identifier: 'question-ui-card-4', label: 'A) AWS Budgets. Configure cost or usage budgets and alerts to track spending against your plan.'
+                                          Button, 0x103e356f0, {{24.0, 1623.3}, {74.3, 14.3}}, identifier: 'question-ui-card-4', label: 'Edit question'
+                                          Button, 0x103e478c0, {{334.0, 1608.3}, {44.0, 44.0}}, identifier: 'question-ui-card-4', label: 'Question 5 actions'
+                                            Button, 0x103e49820, {{334.0, 1608.3}, {44.0, 44.0}}
+                                              Image, 0x103e49f00, {{348.3, 1628.7}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                      Other, 0x103e49ba0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                        Other, 0x103e4a270, {{396.0, 119.0}, {3.0, 306.7}}
+                                      Other, 0x103e4a940, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                        Other, 0x103e4a5e0, {{396.0, 119.0}, {3.0, 306.7}}
+                            Other, 0x103e26e90, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103e4c190, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103e4ac90, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x103e494b0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103e275d0, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x103e14f80, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x103e27230, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103e15660, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103e15300, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x103e51670, pid: 60011, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x107933560, pid: 60011, label: 'Engram'
+  }

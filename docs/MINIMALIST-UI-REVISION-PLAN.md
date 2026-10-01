@@ -1,6 +1,6 @@
 # Minimalist UI revision
 
-Status: implementation started on `akshat/minimalist-ui-revision`, based on `a17776a`. Continue the native SwiftUI app; the React Native migration discussion is set aside.
+Status: implemented, reviewed and pushed on `akshat/minimalist-ui-revision`, based on `a17776a`. Continue the native SwiftUI app; the React Native migration discussion is set aside.
 
 Active-goal cleanup requirement: keep Windows awake with a temporary PowerShell `SetThreadExecutionState` helper during work (display may turn off). Stop the helper and restore the normal sleep behavior before ending the task, including a blocked/error ending. Helper automatically expires after five hours. Do not change saved Windows power-plan settings.
 
@@ -44,15 +44,15 @@ Contents reference clarified by the user during implementation: a tightly groupe
 
 ## Implementation checklist
 
-- [ ] Today: recover the earlier layout and prominent large green study area from Git history. Restore its hierarchy and working review/resume actions; replace the recently introduced notebook-led Today composition.
-- [ ] Deck detail: remove the contrasting white wrapper around Memory Outlook and integrate its chart and retention controls directly into the page. Preserve above/below-target counts and per-deck retention settings.
-- [ ] Deck navigation: replace Open notebook with two equal Questions and Notes actions, side by side at normal phone sizes and stacked when text size requires it. Move the inline question/note listing into these destinations so deck detail stays focused.
-- [ ] Deck actions: place a gear menu in the top-right toolbar instead of the plus. Keep adding questions, editing, renaming and other existing actions accessible through appropriate menu entries.
-- [ ] Questions: render numbered, bold question text; separate A), B), C) options on individual lines, using smaller italic text. Highlight the correct option in green. Place the explanation with the correct answer, with a green answer reference and legible explanation text. Support non-MCQ content and existing edit actions.
-- [ ] Notes: show note content with a compact contents rail at the top right. Inactive sections are closely spaced dashes; only the current section exposes its title, in orange. Tapping a dash navigates and scrolling updates the active section. Do not stretch the rail across the page; maintain usable hit targets without enlarging its visual footprint.
-- [ ] AI entry: move the small assistant control beside the bottom navigation bar and give it the same native glass styling. Keep it available in relevant study, deck creation, question and note workflows.
-- [ ] AI presentation: smoothly morph from the entry into a compact composer, then grow into a response panel with an optional expansion control. Position the composer directly above the keyboard when typing. Use a distinct theme-compatible tinted surface so the assistant is visibly separate from content; support dismissal, interrupted transitions and Reduce Motion.
-- [ ] Verify content, navigation, keyboard layout, light/dark themes, larger text and existing study functionality. Build for iPhone before the Mac design review.
+- [x] Today: recover the earlier layout and prominent large green study area from Git history. Restore its hierarchy and working review/resume actions; replace the recently introduced notebook-led Today composition.
+- [x] Deck detail: remove the contrasting white wrapper around Memory Outlook and integrate its chart and retention controls directly into the page. Preserve above/below-target counts and per-deck retention settings.
+- [x] Deck navigation: replace Open notebook with two equal Questions and Notes actions, side by side at normal phone sizes and stacked when text size requires it. Move the inline question/note listing into these destinations so deck detail stays focused.
+- [x] Deck actions: place a gear menu in the top-right toolbar instead of the plus. Keep adding questions, editing, renaming and other existing actions accessible through appropriate menu entries.
+- [x] Questions: render numbered, bold question text; separate A), B), C) options on individual lines, using smaller italic text. Highlight the correct option in green. Place the explanation with the correct answer, with a green answer reference and legible explanation text. Support non-MCQ content and existing edit actions.
+- [x] Notes: show note content with a compact contents rail at the top right. Inactive sections are closely spaced dashes; only the current section exposes its title, in orange. Tapping a dash navigates and scrolling updates the active section. Do not stretch the rail across the page; maintain usable hit targets without enlarging its visual footprint.
+- [x] AI entry: move the small assistant control beside the bottom navigation bar and give it the same native glass styling. Keep it available in relevant study, deck creation, question and note workflows.
+- [x] AI presentation: smoothly morph from the entry into a compact composer, then grow into a response panel with an optional expansion control. Position the composer directly above the keyboard when typing. Use a distinct theme-compatible tinted surface so the assistant is visibly separate from content; support dismissal, interrupted transitions and Reduce Motion.
+- [x] Verify content, navigation, keyboard layout, light/dark themes, larger text and existing study functionality. Build for iPhone before the Mac design review.
 
 ## Mac Codex review brief
 
@@ -65,3 +65,8 @@ Review Today, deck detail/chart, Questions, Notes/contents rail and AI closed/co
 ## Unattended prerequisites
 
 No additional design answers are required. Keep the Mac powered, awake, connected and logged in. Keep its login keychain unlocked for signing. If device installation is requested afterward, the iPhone must also be reachable and available for launch. A macOS authorization prompt may still require the user; report that exact blocker if it occurs.
+
+## Completion
+
+The Mac accepted source revision `fddc39a` after four iPhone tests and one iPad test passed with zero failures. All eight initial findings were corrected. See [validation](MINIMALIST-UI-VALIDATION.md) for screenshot evidence and coverage limits. The Windows keep-awake helper has exited; normal sleep behavior is restored.
+

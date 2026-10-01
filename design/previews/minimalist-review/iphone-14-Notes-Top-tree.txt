@@ -1,0 +1,81 @@
+Attributes: Application, 0x103748da0, pid: 60011, label: 'Engram'
+Element subtree:
+ →Application, 0x103748da0, pid: 60011, label: 'Engram'
+    Window (Main), 0x10376a340, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x10374da10, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103733810, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x103764b20, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x103751b50, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x103724250, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x1037377b0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x1037570d0, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x103768460, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x103768580, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x1037686a0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x1037687c0, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x1037688e0, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'Notes'
+                              Button, 0x103768a00, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x103768b20, {{72.0, 73.8}, {47.3, 20.3}}, label: 'Notes'
+                              Button, 0x103768c40, {{213.0, 66.0}, {41.3, 36.0}}, label: 'Contents'
+                              Other, 0x103768d60, {{270.3, 66.0}, {43.3, 36.0}}, label: 'Edit'
+                                Other, 0x103768e80, {{270.3, 66.0}, {43.3, 36.0}}
+                                  Button, 0x103768fa0, {{270.3, 66.0}, {43.3, 36.0}}, label: 'Edit'
+                              Other, 0x1037690c0, {{329.7, 66.0}, {52.3, 36.0}}, label: 'Save'
+                                Other, 0x1037691e0, {{329.7, 66.0}, {52.3, 36.0}}
+                                  Button, 0x103769300, {{329.7, 66.0}, {52.3, 36.0}}, label: 'Save', Disabled
+                            Other, 0x103769420, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103769540, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x103769660, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x103769780, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x1037698a0, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x103760dc0, {{0.0, -1418.0}, {402.0, 2124.0}}
+                                        Other, 0x103760ee0, {{24.0, -798.0}, {266.0, 1479.3}}
+                                          StaticText, 0x103761000, {{24.0, -798.0}, {167.0, 26.3}}, label: 'AWS CloudFront'
+                                          StaticText, 0x103761120, {{24.0, -757.7}, {266.0, 399.7}}, label: 'CloudFront is a content delivery network. It caches content at edge locations close to users, reducing latency and the number of requests reaching the origin. The origin can be an S3 bucket or a web server.
+
+An edge location is not an Availability Zone. Edge locations deliver cached content; Availability Zones provide isolated infrastructure within a Region. Remember this distinction when choosing an answer about global content delivery.'
+                                          StaticText, 0x103761420, {{24.0, -319.7}, {210.7, 26.3}}, label: 'Shared responsibility'
+                                          StaticText, 0x103761540, {{24.0, -279.3}, {257.0, 425.0}}, label: 'AWS protects the infrastructure that runs its services. Customers protect their data and configure access to the services they use. The boundary changes with the service: managing an EC2 guest operating system is a customer responsibility, while an S3 customer configures access to stored objects.
+
+Use least privilege when granting permissions. IAM policies define allowed actions on resources. CloudTrail records account activity, helping you investigate who performed an action.'
+                                          StaticText, 0x103761860, {{24.0, 184.0}, {156.7, 26.3}}, label: 'Cost and billing'
+                                          StaticText, 0x103761980, {{24.0, 224.3}, {262.7, 374.3}}, label: 'AWS Budgets helps you compare spending against a planned amount and configure alerts. Cost Explorer helps you investigate spending patterns over time. Pricing Calculator estimates costs before you deploy.
+
+Choose the service that matches the question: an estimate before deployment, an analysis of past spending, or an alert when costs cross a limit. These are different needs and should not be treated as interchangeable.'
+                                          Button, 0x103761c60, {{24.0, 637.0}, {147.3, 44.3}}, label: 'Add writing'
+                                            Image, 0x103761d80, {{42.0, 652.3}, {14.0, 14.0}}, identifier: 'plus', label: 'Add'
+                                            StaticText, 0x103761ea0, {{42.0, 649.0}, {113.3, 20.3}}, label: 'Add writing'
+                                      Other, 0x103761fc0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x1037620e0, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Image, 0x103762200, {{-120.0, -166.0}, {642.0, 332.0}}, identifier: 'AdditionalDimmingOverlay'
+                                        Other, 0x103762320, {{0.0, 0.0}, {402.0, 106.0}}
+                                        Other, 0x103762440, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103762560, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x103762680, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x1037627a0, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x1037628c0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x1037629e0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103762b00, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x103762c20, {{369.0, 116.0}, {30.0, 590.0}}, label: 'Vertical scroll bar, 4 pages', value: 100%
+                                        Other, 0x103762d40, {{396.0, 491.0}, {3.0, 212.0}}
+                                      Other, 0x103762e60, {{369.0, 116.0}, {30.0, 590.0}}, label: 'Vertical scroll bar, 4 pages', value: 100%
+                                        Other, 0x103762f80, {{396.0, 491.0}, {3.0, 212.0}}
+                                    Other, 0x1037630a0, {{284.0, 124.0}, {110.0, 72.0}}, identifier: 'notes-contents-rail', label: 'Notes contents', value: Cost and billing
+                                      StaticText, 0x1037631c0, {{284.0, 124.0}, {110.0, 72.0}}, label: 'Cost and billing'
+                                    StaticText, 0x1037632e0, {{16.0, 722.0}, {72.0, 18.0}}, label: 'Up to date'
+                            Other, 0x103763400, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103763520, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103763640, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x103763760, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103763880, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x1037639a0, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x103763ac0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103763be0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103763d00, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x103748da0, pid: 60011, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x10376b920, pid: 60011, label: 'Engram'
+  }

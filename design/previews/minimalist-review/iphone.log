@@ -1,0 +1,718 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Engram.xcodeproj -scheme Engram-iOS -destination id=E75C5BB1-19D3-4085-9BFA-B296E40DFBE9 -derivedDataPath /private/tmp/engram-minimalist-recheck-derived -packageAuthorizationProvider netrc CODE_SIGNING_ALLOWED=NO -parallel-testing-enabled NO -resultBundlePath /private/tmp/engram-minimalist-review-evidence/final-fddc39a/iphone.xcresult "-only-testing:Engram-UITests/MinimalistStudyUITests" "-only-testing:Engram-UITests/MinimalistReviewerUITests/testPhoneRetentionNotesAndSave" test
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  Engram: /tmp/engram-minimalist-recheck
+  FluidAudio: https://github.com/FluidInference/FluidAudio.git @ 8145085
+  FSRS: /tmp/engram-minimalist-recheck/Vendor/FSRS @ local
+
+Writing result bundle at path:
+	/private/tmp/engram-minimalist-review-evidence/final-fddc39a/iphone.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (27 targets)
+    Target 'Engram-UITests' in project 'Engram'
+        ➜ Explicit dependency on target 'Engram-iOS' in project 'Engram'
+    Target 'Engram-iOS' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'AnkiAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'Features' in project 'Engram'
+        ➜ Explicit dependency on target 'DesignSystem' in project 'Engram'
+        ➜ Explicit dependency on target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'PersistenceAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'SchedulingAdapters' in project 'Engram'
+    Target 'SchedulingAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'SchedulingAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'FSRS' in project 'FSRS'
+    Target 'SchedulingAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'FSRS' in project 'FSRS'
+    Target 'FSRS' in project 'FSRS'
+        ➜ Explicit dependency on target 'FSRS' in project 'FSRS'
+    Target 'FSRS' in project 'FSRS' (no dependencies)
+    Target 'PersistenceAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'PersistenceAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+    Target 'PersistenceAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+    Target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+    Target 'DesignSystem' in project 'Engram'
+        ➜ Explicit dependency on target 'DesignSystem' in project 'Engram'
+    Target 'Features' in project 'Engram'
+        ➜ Explicit dependency on target 'Features' in project 'Engram'
+        ➜ Explicit dependency on target 'Engram_Features' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'DesignSystem' in project 'Engram'
+        ➜ Explicit dependency on target 'ChatGPTAuth' in project 'Engram'
+        ➜ Explicit dependency on target 'FluidAudio' in project 'FluidAudio'
+    Target 'Features' in project 'Engram'
+        ➜ Explicit dependency on target 'Engram_Features' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'DesignSystem' in project 'Engram'
+        ➜ Explicit dependency on target 'ChatGPTAuth' in project 'Engram'
+        ➜ Explicit dependency on target 'FluidAudio' in project 'FluidAudio'
+    Target 'FluidAudio' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'FluidAudio' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'FluidAudio_FluidAudio' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'FastClusterWrapper' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'MachTaskSelfWrapper' in project 'FluidAudio'
+    Target 'FluidAudio' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'FluidAudio_FluidAudio' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'FastClusterWrapper' in project 'FluidAudio'
+        ➜ Explicit dependency on target 'MachTaskSelfWrapper' in project 'FluidAudio'
+    Target 'MachTaskSelfWrapper' in project 'FluidAudio' (no dependencies)
+    Target 'FastClusterWrapper' in project 'FluidAudio' (no dependencies)
+    Target 'FluidAudio_FluidAudio' in project 'FluidAudio' (no dependencies)
+    Target 'ChatGPTAuth' in project 'Engram' (no dependencies)
+    Target 'DesignSystem' in project 'Engram' (no dependencies)
+    Target 'StudyApplication' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+    Target 'Engram_Features' in project 'Engram' (no dependencies)
+    Target 'AnkiAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'AnkiAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'CSQLite' in project 'Engram'
+        ➜ Explicit dependency on target 'CArchive' in project 'Engram'
+    Target 'AnkiAdapters' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'CSQLite' in project 'Engram'
+        ➜ Explicit dependency on target 'CArchive' in project 'Engram'
+    Target 'CArchive' in project 'Engram' (no dependencies)
+    Target 'CSQLite' in project 'Engram' (no dependencies)
+    Target 'LearningCore' in project 'Engram'
+        ➜ Explicit dependency on target 'LearningCore' in project 'Engram'
+    Target 'LearningCore' in project 'Engram' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache
+
+SwiftDriver Features normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Features -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.SwiftFileList -DSWIFT_PACKAGE -DDEBUG -DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE -DXcode -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -package-name engram_minimalist_recheck -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_const_extract_protocols.json -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/MachTaskSelfWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/FastClusterWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources -Xcc -DSWIFT_PACKAGE -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-Swift.h -working-directory /tmp/engram-minimalist-recheck/Engram.xcodeproj -experimental-emit-module-separately -disable-cmo
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ Features (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+
+EmitSwiftModule normal arm64 (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    
+
+SwiftCompile normal arm64 Compiling\ ContextualAssistant.swift /tmp/engram-minimalist-recheck/Sources/Features/ContextualAssistant.swift (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+SwiftCompile normal arm64 /tmp/engram-minimalist-recheck/Sources/Features/ContextualAssistant.swift (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for Features (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+
+SwiftDriver\ Compilation\ Requirements Features normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Features -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.SwiftFileList -DSWIFT_PACKAGE -DDEBUG -DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE -DXcode -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -package-name engram_minimalist_recheck -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_const_extract_protocols.json -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/MachTaskSelfWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/FastClusterWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources -Xcc -DSWIFT_PACKAGE -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-Swift.h -working-directory /tmp/engram-minimalist-recheck/Engram.xcodeproj -experimental-emit-module-separately -disable-cmo
+
+Copy /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftsourceinfo (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftsourceinfo /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Copy /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.abi.json (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.abi.json /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+SwiftDriver Engram-UITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Engram_UITests -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-generated-files.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-own-target-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-ea7a719aec9e7de3aa46df333755abc8-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-project-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests-Swift.h -working-directory /tmp/engram-minimalist-recheck -experimental-emit-module-separately -disable-cmo
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ Engram_UITests (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+EmitSwiftModule normal arm64 (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    
+
+SwiftCompile normal arm64 Compiling\ MinimalistReviewerUITests.swift /tmp/engram-minimalist-recheck/Tests/EngramUITests/MinimalistReviewerUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+SwiftCompile normal arm64 /tmp/engram-minimalist-recheck/Tests/EngramUITests/MinimalistReviewerUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    
+
+SwiftCompile normal arm64 Compiling\ MinimalistStudyUITests.swift /tmp/engram-minimalist-recheck/Tests/EngramUITests/MinimalistStudyUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+SwiftCompile normal arm64 /tmp/engram-minimalist-recheck/Tests/EngramUITests/MinimalistStudyUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling MinimalistStudyUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+SwiftDriverJobDiscovery normal arm64 Compiling MinimalistReviewerUITests.swift (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+SwiftDriver\ Compilation Engram-UITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Engram_UITests -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-generated-files.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-own-target-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-ea7a719aec9e7de3aa46df333755abc8-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-project-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests-Swift.h -working-directory /tmp/engram-minimalist-recheck -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for Engram_UITests (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+SwiftDriver\ Compilation\ Requirements Engram-UITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Engram_UITests -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-generated-files.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-own-target-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-ea7a719aec9e7de3aa46df333755abc8-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests-project-headers.hmap -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests-Swift.h -working-directory /tmp/engram-minimalist-recheck -experimental-emit-module-separately -disable-cmo
+
+Copy /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram_UITests.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.abi.json (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.abi.json /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram_UITests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram_UITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftsourceinfo (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftsourceinfo /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram_UITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling ContextualAssistant.swift (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+
+SwiftDriver\ Compilation Features normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck/Engram.xcodeproj
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Features -Onone @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.SwiftFileList -DSWIFT_PACKAGE -DDEBUG -DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE -DXcode -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/engram-minimalist-recheck-derived/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/engram-minimalist-recheck-derived/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -sdk-module-cache-path /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/engram-minimalist-recheck-derived/ModuleCache.noindex/Session.modulevalidation -package-name engram_minimalist_recheck -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_const_extract_protocols.json -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/MachTaskSelfWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/SourcePackages/checkouts/FluidAudio/Sources/FastClusterWrapper/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources-normal/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources/arm64 -Xcc -I/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/DerivedSources -Xcc -DSWIFT_PACKAGE -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-Swift.h -working-directory /tmp/engram-minimalist-recheck/Engram.xcodeproj -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.o normal (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -r -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -F/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -filelist /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.LinkFileList -nostdlib -Xlinker -object_path_lto -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_lto.o -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-linker-args.resp -o /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.o
+
+ExtractAppIntentsMetadata (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Features --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier engram-minimalist-recheck.Features --output /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.appintents --target-triple arm64-apple-ios17.0-simulator --binary-file /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.o --dependency-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features_dependency_info.dat --stringsdata-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.SwiftFileList --metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Features.DependencyMetadataFileList --static-metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Features.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.SwiftConstValuesFileList --force --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-02 04:01:20.020 appintentsmetadataprocessor[59996:34977316] Starting appintentsmetadataprocessor export
+2026-10-02 04:01:20.045 appintentsmetadataprocessor[59996:34977316] Extracted no relevant App Intents symbols, skipping writing output
+
+RegisterExecutionPolicyException /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.o (in target 'Features' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Package.swift')
+    cd /tmp/engram-minimalist-recheck
+    builtin-RegisterExecutionPolicyException /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Features.o
+
+Ld /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS.debug.dylib normal (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -filelist /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS.LinkFileList -install_name @rpath/Engram-iOS.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram_iOS.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram_iOS-linker-args.resp -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -lc++ -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -ltext_processing_rs -o /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS.debug.dylib -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/LearningCore.build/Objects-normal/arm64/LearningCore.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/LearningCore.build/Objects-normal/arm64/LearningCore-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/AnkiAdapters.build/Objects-normal/arm64/AnkiAdapters.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/AnkiAdapters.build/Objects-normal/arm64/AnkiAdapters-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Features.build/Objects-normal/arm64/Features-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/StudyApplication.build/Objects-normal/arm64/StudyApplication.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/StudyApplication.build/Objects-normal/arm64/StudyApplication-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/DesignSystem.build/Objects-normal/arm64/DesignSystem.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/DesignSystem.build/Objects-normal/arm64/DesignSystem-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/ChatGPTAuth.build/Objects-normal/arm64/ChatGPTAuth.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/ChatGPTAuth.build/Objects-normal/arm64/ChatGPTAuth-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/FluidAudio.build/Debug-iphonesimulator/FluidAudio.build/Objects-normal/arm64/FluidAudio.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/FluidAudio.build/Debug-iphonesimulator/FluidAudio.build/Objects-normal/arm64/FluidAudio-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/PersistenceAdapters.build/Objects-normal/arm64/PersistenceAdapters.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/PersistenceAdapters.build/Objects-normal/arm64/PersistenceAdapters-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/SchedulingAdapters.build/Objects-normal/arm64/SchedulingAdapters.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/SchedulingAdapters.build/Objects-normal/arm64/SchedulingAdapters-linker-args.resp -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/FSRS.build/Debug-iphonesimulator/FSRS.build/Objects-normal/arm64/FSRS.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/FSRS.build/Debug-iphonesimulator/FSRS.build/Objects-normal/arm64/FSRS-linker-args.resp
+
+ConstructStubExecutorLinkFileList /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS-ExecutorLinkFileList-normal-arm64.txt (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    construct-stub-executor-link-file-list /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+
+Ld /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS normal (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS-ExecutorLinkFileList-normal-arm64.txt /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS.debug.dylib -o /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS
+
+ExtractAppIntentsMetadata (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Engram_iOS --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier dev.engram.study --output /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app --target-triple arm64-apple-ios17.0-simulator --binary-file /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS --dependency-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS_dependency_info.dat --stringsdata-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS.SwiftFileList --metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS.DependencyMetadataFileList --static-metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Engram-iOS.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/Objects-normal/arm64/Engram-iOS.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-02 04:01:20.563 appintentsmetadataprocessor[60001:34977354] Starting appintentsmetadataprocessor export
+2026-10-02 04:01:20.565 appintentsmetadataprocessor[60001:34977354] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app (in target 'Engram-iOS' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Engram-iOS.debug.dylib --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Frameworks --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/PlugIns --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/SystemExtensions --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-iOS.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-iOS.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+Ld /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Engram-UITests normal (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/Developer/Library/Frameworks -filelist /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests.swiftmodule @/tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram_UITests-linker-args.resp -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport -o /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Engram-UITests
+
+ExtractAppIntentsMetadata (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Engram_UITests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier dev.engram.study.uitests --output /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Engram-UITests --dependency-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests_dependency_info.dat --stringsdata-file /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.SwiftFileList --metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests.DependencyMetadataFileList --static-metadata-file-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Engram-UITests.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/Objects-normal/arm64/Engram-UITests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-02 04:01:20.762 appintentsmetadataprocessor[60004:34977367] Starting appintentsmetadataprocessor export
+2026-10-02 04:01:20.764 appintentsmetadataprocessor[60004:34977367] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest (in target 'Engram-UITests' from project 'Engram' at path '/tmp/engram-minimalist-recheck/Engram.xcodeproj')
+    cd /tmp/engram-minimalist-recheck
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Engram-UITests --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Frameworks --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/PlugIns --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/SystemExtensions --scan-folder /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/engram-minimalist-recheck-derived/Build/Products/Debug-iphonesimulator/Engram-UITests-Runner.app/PlugIns/Engram-UITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/engram-minimalist-recheck-derived/Build/Intermediates.noindex/Engram.build/Debug-iphonesimulator/Engram-UITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+2026-10-02 04:01:22.070393+1000 Engram-UITests-Runner[60005:34977517] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-02 04:01:22.613.
+Test Suite 'Engram-UITests.xctest' started at 2026-10-02 04:01:22.613.
+Test Suite 'MinimalistReviewerUITests' started at 2026-10-02 04:01:22.613.
+Test Case '-[Engram_UITests.MinimalistReviewerUITests testPhoneRetentionNotesAndSave]' started.
+    t =     0.00s Start Test at 2026-10-02 04:01:22.614
+    t =     0.03s Set Up
+    t =     0.03s Open dev.engram.study
+    t =     0.03s     Launch dev.engram.study
+2026-10-02 04:01:22.855 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:01:22.855 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     0.85s         Setting up automation session
+    t =     1.52s         Wait for dev.engram.study to idle
+    t =     3.02s Waiting 15.0s for "Start review" Button to exist
+    t =     4.11s     Checking `Expect predicate `existsNoRetry == 1` for object "Start review" Button`
+    t =     4.11s         Checking existence of `"Start review" Button`
+    t =     4.23s Checking existence of `"tab-library" Button`
+    t =     4.25s Checking existence of `"tab-library" Button`
+    t =     4.27s Tap "tab-library" Button
+    t =     4.27s     Wait for dev.engram.study to idle
+    t =     4.28s     Find the "tab-library" Button
+    t =     4.30s     Check for interrupting elements affecting "tab-library" Button
+    t =     4.32s     Synthesize event
+    t =     4.62s     Wait for dev.engram.study to idle
+    t =     5.57s Waiting 5.0s for "library-deck-ui-deck" Button to exist
+    t =     6.65s     Checking `Expect predicate `existsNoRetry == 1` for object "library-deck-ui-deck" Button`
+    t =     6.65s         Checking existence of `"library-deck-ui-deck" Button`
+    t =     6.69s Tap "library-deck-ui-deck" Button
+    t =     6.69s     Wait for dev.engram.study to idle
+    t =     6.69s     Find the "library-deck-ui-deck" Button
+    t =     6.71s     Check for interrupting elements affecting "library-deck-ui-deck" Button
+    t =     6.74s     Synthesize event
+    t =     7.03s     Wait for dev.engram.study to idle
+    t =     8.05s Waiting 5.0s for "deck-actions" Button to exist
+    t =     9.14s     Checking `Expect predicate `existsNoRetry == 1` for object "deck-actions" Button`
+    t =     9.14s         Checking existence of `"deck-actions" Button`
+    t =     9.21s Tap Button (First Match)
+    t =     9.21s     Wait for dev.engram.study to idle
+    t =     9.21s     Find the Button (First Match)
+    t =     9.25s     Check for interrupting elements affecting "deck-memory-outlook" Button
+    t =     9.28s     Synthesize event
+    t =     9.57s     Wait for dev.engram.study to idle
+    t =    10.05s Find the Target Application 'dev.engram.study'
+    t =    10.20s Added attachment named '10-Target-Settings'
+    t =    10.20s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    10.44s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    10.51s Added attachment named '10-Target-Settings-tree'
+    t =    10.51s Tap Switch (First Match)
+    t =    10.51s     Wait for dev.engram.study to idle
+    t =    10.52s     Find the Switch (First Match)
+    t =    10.58s     Check for interrupting elements affecting "0" Switch
+    t =    10.62s     Synthesize event
+    t =    10.92s     Wait for dev.engram.study to idle
+    t =    12.22s Waiting 3.0s for Slider (First Match) to exist
+    t =    13.29s     Checking `Expect predicate `existsNoRetry == 1` for object Slider (First Match)`
+    t =    13.29s         Checking existence of `Slider (First Match)`
+    t =    13.39s Set normalized position of Slider (First Match) to 0.90
+    t =    13.39s     Wait for dev.engram.study to idle
+    t =    13.39s     Find the Slider (First Match)
+    t =    13.45s     Check for interrupting elements affecting "Desired retention" Slider
+    t =    13.50s     Synthesize event
+    t =    14.18s     Wait for dev.engram.study to idle
+    t =    15.25s Find the Target Application 'dev.engram.study'
+    t =    15.42s Added attachment named '11-Target-Adjusted'
+    t =    15.42s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    15.68s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    15.75s Added attachment named '11-Target-Adjusted-tree'
+    t =    15.75s Tap "Save" Button
+    t =    15.75s     Wait for dev.engram.study to idle
+    t =    15.76s     Find the "Save" Button
+    t =    15.81s     Check for interrupting elements affecting "Save" Button
+    t =    15.85s     Synthesize event
+    t =    16.16s     Wait for dev.engram.study to idle
+    t =    16.95s Find the Target Application 'dev.engram.study'
+    t =    17.07s Added attachment named '12-Target-Saved'
+    t =    17.07s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    17.22s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    17.27s Added attachment named '12-Target-Saved-tree'
+    t =    17.27s Swipe up Target Application 'dev.engram.study'
+    t =    17.27s     Wait for dev.engram.study to idle
+    t =    17.27s     Find the Target Application 'dev.engram.study'
+    t =    17.29s     Check for interrupting elements affecting "Engram" Application
+    t =    17.32s     Synthesize event
+    t =    17.75s     Wait for dev.engram.study to idle
+    t =    18.37s Find the Target Application 'dev.engram.study'
+    t =    18.53s Added attachment named '13-Deck-Links-Scrolled'
+    t =    18.53s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    18.69s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    18.73s Added attachment named '13-Deck-Links-Scrolled-tree'
+    t =    18.73s Tap "deck-notes" Button
+    t =    18.73s     Wait for dev.engram.study to idle
+    t =    18.83s     Find the "deck-notes" Button
+    t =    18.87s     Check for interrupting elements affecting "deck-notes" Button
+    t =    18.91s     Synthesize event
+    t =    19.20s     Wait for dev.engram.study to idle
+    t =    20.02s Waiting 5.0s for "Notes" NavigationBar to exist
+    t =    21.10s     Checking `Expect predicate `existsNoRetry == 1` for object "Notes" NavigationBar`
+    t =    21.11s         Checking existence of `"Notes" NavigationBar`
+    t =    21.17s Find the Target Application 'dev.engram.study'
+    t =    21.30s Added attachment named '14-Notes-Top'
+    t =    21.30s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    21.43s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    21.49s Added attachment named '14-Notes-Top-tree'
+    t =    21.49s Waiting 3.0s for "notes-contents-rail" Any to exist
+    t =    22.57s     Checking `Expect predicate `existsNoRetry == 1` for object "notes-contents-rail" Any`
+    t =    22.57s         Checking existence of `"notes-contents-rail" Any`
+    t =    22.63s Tap "notes-contents-rail" Any[0.00, 0.00] -> (70.0, 53.0)
+    t =    22.63s     Wait for dev.engram.study to idle
+    t =    22.63s     Find the "notes-contents-rail" Any
+    t =    22.68s     Check for interrupting elements affecting "notes-contents-rail" Other
+    t =    22.74s     Synthesize event
+    t =    22.74s         Find the "notes-contents-rail" Other
+    t =    22.79s         Find the "notes-contents-rail" Other
+    t =    22.85s         Find the "notes-contents-rail" Other
+    t =    23.18s     Wait for dev.engram.study to idle
+    t =    23.41s Find the Target Application 'dev.engram.study'
+    t =    23.57s Added attachment named '15-Notes-Rail-Jump'
+    t =    23.57s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    23.68s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    23.74s Added attachment named '15-Notes-Rail-Jump-tree'
+    t =    23.74s Find the "notes-contents-rail" Other
+    t =    23.79s Swipe up Target Application 'dev.engram.study'
+    t =    23.79s     Wait for dev.engram.study to idle
+    t =    23.79s     Find the Target Application 'dev.engram.study'
+    t =    23.82s     Check for interrupting elements affecting "Engram" Application
+    t =    23.86s     Synthesize event
+    t =    24.28s     Wait for dev.engram.study to idle
+    t =    25.03s Find the Target Application 'dev.engram.study'
+    t =    25.19s Added attachment named '16-Notes-Scrolled'
+    t =    25.20s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    25.32s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    25.38s Added attachment named '16-Notes-Scrolled-tree'
+    t =    25.38s Tap "Edit" Button
+    t =    25.38s     Wait for dev.engram.study to idle
+    t =    25.38s     Find the "Edit" Button
+    t =    25.41s     Check for interrupting elements affecting "Edit" Button
+    t =    25.45s     Synthesize event
+    t =    25.76s     Wait for dev.engram.study to idle
+    t =    26.90s Find the Target Application 'dev.engram.study'
+    t =    27.05s Added attachment named '17-Notes-Editing'
+    t =    27.05s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    27.19s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    27.25s Added attachment named '17-Notes-Editing-tree'
+    t =    27.26s Get all elements bound by index for: Elements matching predicate 'label == "Notebook writing"'
+    t =    27.29s Find the TextField (Element at index 0)
+    t =    27.33s Find the TextField (Element at index 1)
+    t =    27.39s Find the "Notebook writing" TextField
+    t =    27.43s Find the TextField (Element at index 2)
+    t =    27.48s Find the "Notebook writing" TextField
+    t =    27.52s Find the "Notebook writing" TextField
+    t =    27.56s Find the Target Application 'dev.engram.study'
+    t =    27.60s Tap "Notebook writing" TextField
+    t =    27.60s     Wait for dev.engram.study to idle
+    t =    27.60s     Find the "Notebook writing" TextField
+    t =    27.64s     Check for interrupting elements affecting "Notebook writing" TextField
+    t =    27.68s     Synthesize event
+    t =    27.97s     Wait for dev.engram.study to idle
+    t =    28.12s Type ' Reviewer saved pr...' into "Notebook writing" TextField
+    t =    28.12s     Wait for dev.engram.study to idle
+    t =    28.14s     Find the "Notebook writing" TextField
+    t =    28.20s     Check for interrupting elements affecting "Notebook writing" TextField
+    t =    28.25s     Synthesize event
+    t =    28.81s     Wait for dev.engram.study to idle
+    t =    28.82s Find the Target Application 'dev.engram.study'
+    t =    28.96s Added attachment named '18-Notes-Editing-Keyboard'
+    t =    28.96s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    29.19s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    29.27s Added attachment named '18-Notes-Editing-Keyboard-tree'
+    t =    29.27s Tap "Save" Button
+    t =    29.27s     Wait for dev.engram.study to idle
+    t =    30.22s     Find the "Save" Button
+    t =    30.30s     Check for interrupting elements affecting "Save" Button
+    t =    30.35s     Synthesize event
+    t =    30.66s     Wait for dev.engram.study to idle
+    t =    31.40s Find the Target Application 'dev.engram.study'
+    t =    31.56s Added attachment named '19-Notes-Saved'
+    t =    31.56s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    31.70s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    31.77s Added attachment named '19-Notes-Saved-tree'
+    t =    31.77s Tap Button (First Match)
+    t =    31.77s     Wait for dev.engram.study to idle
+    t =    31.77s     Find the Button (First Match)
+    t =    31.80s     Check for interrupting elements affecting "BackButton" Button
+    t =    31.84s     Synthesize event
+    t =    32.15s     Wait for dev.engram.study to idle
+    t =    32.98s Find the Target Application 'dev.engram.study'
+    t =    33.13s Added attachment named '20-Notes-Back-State'
+    t =    33.13s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    33.28s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    33.33s Added attachment named '20-Notes-Back-State-tree'
+    t =    33.33s Checking existence of `"deck-questions" Button`
+    t =    33.37s Find the "deck-questions" Button
+    t =    33.41s Tap "deck-questions" Button
+    t =    33.41s     Wait for dev.engram.study to idle
+    t =    33.41s     Find the "deck-questions" Button
+    t =    33.45s     Check for interrupting elements affecting "deck-questions" Button
+    t =    33.48s     Synthesize event
+    t =    33.78s     Wait for dev.engram.study to idle
+    t =    34.18s Find the Target Application 'dev.engram.study'
+    t =    34.33s Added attachment named '21-Questions-After-Notes-Save'
+    t =    34.33s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    34.52s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    34.58s Added attachment named '21-Questions-After-Notes-Save-tree'
+    t =    34.58s Checking existence of `"Answer B" StaticText`
+    t =    34.62s Swipe up Target Application 'dev.engram.study'
+    t =    34.62s     Wait for dev.engram.study to idle
+    t =    34.62s     Find the Target Application 'dev.engram.study'
+    t =    34.65s     Check for interrupting elements affecting "Engram" Application
+    t =    34.69s     Synthesize event
+    t =    35.11s     Wait for dev.engram.study to idle
+    t =    37.19s Swipe up Target Application 'dev.engram.study'
+    t =    37.20s     Wait for dev.engram.study to idle
+    t =    37.20s     Find the Target Application 'dev.engram.study'
+    t =    37.24s     Check for interrupting elements affecting "Engram" Application
+    t =    37.29s     Synthesize event
+    t =    37.71s     Wait for dev.engram.study to idle
+    t =    38.37s Find the Target Application 'dev.engram.study'
+    t =    38.54s Added attachment named '22-Questions-Last-After-Save'
+    t =    38.54s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    38.69s Requesting snapshot of accessibility hierarchy for app with pid 60011
+    t =    38.76s Added attachment named '22-Questions-Last-After-Save-tree'
+    t =    38.76s Checking existence of `"5. Which tool can alert you when spending exceeds a planned amount?" StaticText`
+    t =    38.80s Tear Down
+Test Case '-[Engram_UITests.MinimalistReviewerUITests testPhoneRetentionNotesAndSave]' passed (39.163 seconds).
+Test Suite 'MinimalistReviewerUITests' passed at 2026-10-02 04:02:01.778.
+	 Executed 1 test, with 0 failures (0 unexpected) in 39.163 (39.165) seconds
+Test Suite 'MinimalistStudyUITests' started at 2026-10-02 04:02:01.779.
+Test Case '-[Engram_UITests.MinimalistStudyUITests testAssistantKeyboardResponseAndExpansion]' started.
+    t =     0.00s Start Test at 2026-10-02 04:02:01.781
+    t =     0.03s Set Up
+    t =     0.04s Open dev.engram.study
+    t =     0.04s     Launch dev.engram.study
+    t =     0.04s         Terminate dev.engram.study:60011
+2026-10-02 04:02:02.849 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:02:02.849 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.29s         Setting up automation session
+    t =     2.12s         Wait for dev.engram.study to idle
+    t =     3.73s Waiting 15.0s for "assistant-entry" Button to exist
+    t =     4.79s     Checking `Expect predicate `existsNoRetry == 1` for object "assistant-entry" Button`
+    t =     4.79s         Checking existence of `"assistant-entry" Button`
+    t =     4.89s Tap "assistant-entry" Button
+    t =     4.89s     Wait for dev.engram.study to idle
+    t =     4.90s     Find the "assistant-entry" Button
+    t =     4.92s     Check for interrupting elements affecting "assistant-entry" Button
+    t =     4.95s     Synthesize event
+    t =     5.24s     Wait for dev.engram.study to idle
+    t =     6.17s Checking existence of `"assistant-composer" TextField`
+    t =     6.20s Waiting 5.0s for "assistant-composer" TextField to exist
+    t =     7.23s     Checking `Expect predicate `existsNoRetry == 1` for object "assistant-composer" TextField`
+    t =     7.24s         Checking existence of `"assistant-composer" TextField`
+    t =     7.26s Tap "assistant-composer" TextField
+    t =     7.26s     Wait for dev.engram.study to idle
+    t =     7.27s     Find the "assistant-composer" TextField
+    t =     7.28s     Check for interrupting elements affecting "assistant-composer" TextField
+    t =     7.33s     Synthesize event
+    t =     7.62s     Wait for dev.engram.study to idle
+    t =     8.35s Type 'Explain CloudFront' into "assistant-composer" TextField
+    t =     8.35s     Wait for dev.engram.study to idle
+    t =     8.35s     Find the "assistant-composer" TextField
+    t =     8.37s     Check for interrupting elements affecting "assistant-composer" TextField
+    t =     8.41s     Synthesize event
+    t =     8.91s     Wait for dev.engram.study to idle
+    t =     8.93s Find the Target Application 'dev.engram.study'
+    t =     9.09s Added attachment named 'Assistant-Keyboard'
+    t =     9.09s Checking existence of `Keyboard (First Match)`
+    t =     9.10s Find the "assistant-composer" TextField
+    t =     9.11s Find the Keyboard (First Match)
+    t =     9.13s Tap "Send message" Button
+    t =     9.13s     Wait for dev.engram.study to idle
+    t =     9.13s     Find the "Send message" Button
+    t =     9.17s     Check for interrupting elements affecting "arrow.up" Button
+    t =     9.21s     Synthesize event
+    t =     9.50s     Wait for dev.engram.study to idle
+    t =    10.25s Waiting 5.0s for "Expand assistant" Button to exist
+    t =    11.33s     Checking `Expect predicate `existsNoRetry == 1` for object "Expand assistant" Button`
+    t =    11.33s         Checking existence of `"Expand assistant" Button`
+    t =    11.38s Find the Target Application 'dev.engram.study'
+    t =    11.50s Added attachment named 'Assistant-Response'
+    t =    11.50s Tap "Expand assistant" Button
+    t =    11.50s     Wait for dev.engram.study to idle
+    t =    11.50s     Find the "Expand assistant" Button
+    t =    11.53s     Check for interrupting elements affecting "arrow.up.left.and.arrow.down.right" Button
+    t =    11.56s     Synthesize event
+    t =    11.85s     Wait for dev.engram.study to idle
+    t =    12.59s Waiting 5.0s for "Collapse assistant" Button to exist
+    t =    13.67s     Checking `Expect predicate `existsNoRetry == 1` for object "Collapse assistant" Button`
+    t =    13.67s         Checking existence of `"Collapse assistant" Button`
+    t =    13.72s Find the Target Application 'dev.engram.study'
+    t =    13.84s Added attachment named 'Assistant-Expanded'
+    t =    13.85s Tap "Close assistant" Button
+    t =    13.85s     Wait for dev.engram.study to idle
+    t =    13.85s     Find the "Close assistant" Button
+    t =    13.88s     Check for interrupting elements affecting "xmark" Button
+    t =    13.91s     Synthesize event
+    t =    14.19s     Wait for dev.engram.study to idle
+    t =    14.53s Waiting 5.0s for "assistant-entry" Button to exist
+    t =    15.55s     Checking `Expect predicate `existsNoRetry == 1` for object "assistant-entry" Button`
+    t =    15.55s         Checking existence of `"assistant-entry" Button`
+    t =    15.60s Find the "tab-library" Button
+    t =    15.63s Tear Down
+Test Case '-[Engram_UITests.MinimalistStudyUITests testAssistantKeyboardResponseAndExpansion]' passed (15.916 seconds).
+Test Case '-[Engram_UITests.MinimalistStudyUITests testDarkAndLargeTextLayout]' started.
+    t =     0.00s Start Test at 2026-10-02 04:02:17.698
+    t =     0.03s Set Up
+    t =     0.04s Open dev.engram.study
+    t =     0.04s     Launch dev.engram.study
+    t =     0.04s         Terminate dev.engram.study:60113
+2026-10-02 04:02:18.818 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:02:18.818 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.34s         Setting up automation session
+    t =     2.13s         Wait for dev.engram.study to idle
+    t =     3.81s Waiting 15.0s for "assistant-entry" Button to exist
+    t =     4.84s     Checking `Expect predicate `existsNoRetry == 1` for object "assistant-entry" Button`
+    t =     4.84s         Checking existence of `"assistant-entry" Button`
+    t =     4.93s Find the Target Application 'dev.engram.study'
+    t =     5.05s Added attachment named 'Today-Dark-Large'
+    t =     5.05s Tap "tab-library" Button
+    t =     5.05s     Wait for dev.engram.study to idle
+    t =     5.05s     Find the "tab-library" Button
+    t =     5.08s     Check for interrupting elements affecting "tab-library" Button
+    t =     5.13s     Synthesize event
+    t =     5.43s     Wait for dev.engram.study to idle
+    t =     6.45s Waiting 5.0s for "library-deck-ui-deck" Button to exist
+    t =     7.47s     Checking `Expect predicate `existsNoRetry == 1` for object "library-deck-ui-deck" Button`
+    t =     7.47s         Checking existence of `"library-deck-ui-deck" Button`
+    t =     7.54s Tap "library-deck-ui-deck" Button
+    t =     7.54s     Wait for dev.engram.study to idle
+    t =     7.54s     Find the "library-deck-ui-deck" Button
+    t =     7.57s     Check for interrupting elements affecting "library-deck-ui-deck" Button
+    t =     7.61s     Synthesize event
+    t =     7.90s     Wait for dev.engram.study to idle
+    t =     8.99s Find the Target Application 'dev.engram.study'
+    t =     9.15s Added attachment named 'Deck-Dark-Large'
+    t =     9.15s Swipe up Target Application 'dev.engram.study'
+    t =     9.16s     Wait for dev.engram.study to idle
+    t =     9.16s     Find the Target Application 'dev.engram.study'
+    t =     9.19s     Check for interrupting elements affecting "Engram" Application
+    t =     9.23s     Synthesize event
+    t =     9.66s     Wait for dev.engram.study to idle
+    t =    12.06s Tap "deck-questions" Button
+    t =    12.06s     Wait for dev.engram.study to idle
+    t =    12.06s     Find the "deck-questions" Button
+    t =    12.12s     Check for interrupting elements affecting "deck-questions" Button
+    t =    12.18s     Synthesize event
+    t =    12.49s     Wait for dev.engram.study to idle
+    t =    12.96s Waiting 5.0s for "Questions" NavigationBar to exist
+    t =    14.01s     Checking `Expect predicate `existsNoRetry == 1` for object "Questions" NavigationBar`
+    t =    14.04s         Checking existence of `"Questions" NavigationBar`
+    t =    14.09s Find the Target Application 'dev.engram.study'
+    t =    14.23s Added attachment named 'Questions-Dark-Large'
+    t =    14.23s Tear Down
+Test Case '-[Engram_UITests.MinimalistStudyUITests testDarkAndLargeTextLayout]' passed (14.530 seconds).
+Test Case '-[Engram_UITests.MinimalistStudyUITests testDeckQuestionsAndNotesNavigation]' started.
+    t =     0.00s Start Test at 2026-10-02 04:02:32.229
+    t =     0.03s Set Up
+    t =     0.03s Open dev.engram.study
+    t =     0.03s     Launch dev.engram.study
+    t =     0.03s         Terminate dev.engram.study:60124
+2026-10-02 04:02:33.319 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:02:33.319 xcodebuild[59970:34977094] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     2.14s         Setting up automation session
+    t =     3.23s         Wait for dev.engram.study to idle
+    t =     5.75s Waiting 15.0s for "Start review" Button to exist
+    t =     6.77s     Checking `Expect predicate `existsNoRetry == 1` for object "Start review" Button`
+    t =     6.77s         Checking existence of `"Start review" Button`
+    t =     6.90s Find the Target Application 'dev.engram.study'
+    t =     7.03s Added attachment named 'Today-Green-Study'
+    t =     7.03s Tap "tab-library" Button
+    t =     7.03s     Wait for dev.engram.study to idle
+    t =     7.03s     Find the "tab-library" Button
+    t =     7.06s     Check for interrupting elements affecting "tab-library" Button
+    t =     7.09s     Synthesize event
+    t =     7.39s     Wait for dev.engram.study to idle
+    t =     8.42s Waiting 5.0s for "library-deck-ui-deck" Button to exist
+    t =     9.44s     Checking `Expect predicate `existsNoRetry == 1` for object "library-deck-ui-deck" Button`
+    t =     9.44s         Checking existence of `"library-deck-ui-deck" Button`
+    t =     9.50s Tap "library-deck-ui-deck" Button
+    t =     9.51s     Wait for dev.engram.study to idle
+    t =     9.51s     Find the "library-deck-ui-deck" Button
+    t =     9.54s     Check for interrupting elements affecting "library-deck-ui-deck" Button
+    t =     9.57s     Synthesize event
+    t =     9.86s     Wait for dev.engram.study to idle
+    t =    10.99s Waiting 5.0s for "deck-actions" Button to exist
+    t =    12.01s     Checking `Expect predicate `existsNoRetry == 1` for object "deck-actions" Button`
+    t =    12.02s         Checking existence of `"deck-actions" Button`
+    t =    12.12s Checking existence of `"deck-questions" Button`
+    t =    12.15s Checking existence of `"deck-notes" Button`
+    t =    12.19s Find the Target Application 'dev.engram.study'
+    t =    12.33s Added attachment named 'Deck-Flat-Outlook'
+    t =    12.33s Checking existence of `"7 days" StaticText`
+    t =    12.37s Tap "deck-questions" Button
+    t =    12.37s     Wait for dev.engram.study to idle
+    t =    12.37s     Find the "deck-questions" Button
+    t =    12.41s     Check for interrupting elements affecting "deck-questions" Button
+    t =    12.45s     Synthesize event
+    t =    12.75s     Wait for dev.engram.study to idle
+    t =    13.39s Waiting 5.0s for "Questions" NavigationBar to exist
+    t =    14.41s     Checking `Expect predicate `existsNoRetry == 1` for object "Questions" NavigationBar`
+    t =    14.41s         Checking existence of `"Questions" NavigationBar`
+    t =    14.47s Checking existence of `"Answer B" StaticText`
+    t =    14.52s Checking existence of `"1. Which service delivers cached content close to users?" StaticText`
+    t =    14.56s Find the Target Application 'dev.engram.study'
+    t =    14.70s Added attachment named 'Questions-Structured-MCQ'
+    t =    14.70s Tap Button (First Match)
+    t =    14.70s     Wait for dev.engram.study to idle
+    t =    14.70s     Find the Button (First Match)
+    t =    14.72s     Check for interrupting elements affecting "BackButton" Button
+    t =    14.77s     Synthesize event
+    t =    15.07s     Wait for dev.engram.study to idle
+    t =    15.81s Tap "deck-notes" Button
+    t =    15.81s     Wait for dev.engram.study to idle
+    t =    15.81s     Find the "deck-notes" Button
+    t =    15.87s     Check for interrupting elements affecting "deck-notes" Button
+    t =    15.91s     Synthesize event
+    t =    16.21s     Wait for dev.engram.study to idle
+    t =    16.85s Waiting 5.0s for "Notes" NavigationBar to exist
+    t =    17.91s     Checking `Expect predicate `existsNoRetry == 1` for object "Notes" NavigationBar`
+    t =    17.91s         Checking existence of `"Notes" NavigationBar`
+    t =    17.96s Checking existence of `"Answer B" StaticText`
+    t =    18.00s Find the Target Application 'dev.engram.study'
+    t =    18.14s Added attachment named 'Notes-Compact-Contents'
+    t =    18.15s Checking existence of `"notes-contents-rail" Any`
+    t =    18.20s Tap "notes-contents-rail" Any[0.90, 0.66]
+    t =    18.20s     Wait for dev.engram.study to idle
+    t =    18.20s     Find the "notes-contents-rail" Any
+    t =    18.26s     Check for interrupting elements affecting "notes-contents-rail" Other
+    t =    18.32s     Synthesize event
+    t =    18.32s         Find the "notes-contents-rail" Other
+    t =    18.38s         Find the "notes-contents-rail" Other
+    t =    18.44s         Find the "notes-contents-rail" Other
+    t =    18.79s     Wait for dev.engram.study to idle
+    t =    20.04s Checking `Expect predicate `value == "Shared responsibility"` for object "notes-contents-rail" Other`
+    t =    20.05s     Find the "notes-contents-rail" Other
+    t =    20.11s Find the Target Application 'dev.engram.study'
+    t =    20.25s Added attachment named 'Notes-Rail-Jump'
+    t =    20.25s Swipe up Target Application 'dev.engram.study'
+    t =    20.25s     Wait for dev.engram.study to idle
+    t =    20.25s     Find the Target Application 'dev.engram.study'
+    t =    20.29s     Check for interrupting elements affecting "Engram" Application
+    t =    20.33s     Synthesize event
+    t =    20.75s     Wait for dev.engram.study to idle
+    t =    21.48s Find the Target Application 'dev.engram.study'
+    t =    21.62s Added attachment named 'Notes-Scrolled-Contents'
+    t =    21.62s Tap Button (First Match)
+    t =    21.62s     Wait for dev.engram.study to idle
+    t =    21.63s     Find the Button (First Match)
+    t =    21.66s     Check for interrupting elements affecting "BackButton" Button
+    t =    21.70s     Synthesize event
+    t =    22.01s     Wait for dev.engram.study to idle
+    t =    22.80s Waiting 5.0s for "deck-questions" Button to exist
+    t =    23.84s     Checking `Expect predicate `existsNoRetry == 1` for object "deck-questions" Button`
+    t =    23.84s         Checking existence of `"deck-questions" Button`
+    t =    23.89s Tear Down
+Test Case '-[Engram_UITests.MinimalistStudyUITests testDeckQuestionsAndNotesNavigation]' passed (24.242 seconds).
+Test Suite 'MinimalistStudyUITests' passed at 2026-10-02 04:02:56.471.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 54.688 (54.692) seconds
+Test Suite 'Engram-UITests.xctest' passed at 2026-10-02 04:02:56.473.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 93.852 (93.860) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 04:02:56.476.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 93.852 (93.863) seconds
+2026-10-02 04:02:56.886 xcodebuild[59970:34977094] [MT] IDETestOperationsObserverDebug: 96.094 elapsed -- Testing started completed.
+2026-10-02 04:02:56.886 xcodebuild[59970:34977094] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 04:02:56.886 xcodebuild[59970:34977094] [MT] IDETestOperationsObserverDebug: 96.094 sec, +96.094 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/engram-minimalist-review-evidence/final-fddc39a/iphone.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

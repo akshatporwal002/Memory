@@ -1,0 +1,155 @@
+Attributes: Application, 0x10341d990, pid: 60427, label: 'Engram'
+Element subtree:
+ →Application, 0x10341d990, pid: 60427, label: 'Engram'
+    Window (Main), 0x103419ec0, {{0.0, 0.0}, {1032.0, 1376.0}}
+      Other, 0x10341ac80, {{0.0, 0.0}, {1032.0, 1376.0}}
+        Other, 0x10341a240, {{0.0, 0.0}, {1032.0, 1376.0}}
+          Other, 0x10341a5a0, {{0.0, 0.0}, {1032.0, 1376.0}}
+            Other, 0x103419450, {{0.0, 0.0}, {1032.0, 1376.0}}
+              Other, 0x103419b20, {{0.0, 0.0}, {1032.0, 1376.0}}
+                Other, 0x10341afe0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                  Other, 0x10341a900, {{0.0, 0.0}, {1032.0, 1376.0}}
+                    Other, 0x10341b340, {{10.0, 32.0}, {240.0, 1334.0}}
+                      Other, 0x10341b6a0, {{10.0, 32.0}, {240.0, 1334.0}}
+                        Other, 0x10341ba30, {{10.0, 32.0}, {240.0, 1334.0}}
+                          NavigationBar, 0x10341cec0, {{10.0, 32.0}, {240.0, 54.0}}, identifier: 'Engram'
+                            StaticText, 0x10341c120, {{105.2, 43.8}, {61.5, 20.5}}, label: 'Engram'
+                            Button, 0x10341d250, {{191.5, 36.0}, {54.5, 36.0}}, label: 'Hide Sidebar'
+                          Other, 0x10341e040, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10341e3b0, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x10341dcb0, {{10.0, 32.0}, {240.0, 1334.0}}
+                                Other, 0x10341e720, {{10.0, 32.0}, {240.0, 1334.0}}
+                                  CollectionView, 0x10341ea70, {{10.0, 32.0}, {240.0, 1334.0}}, label: 'Sidebar'
+                                    Other, 0x10341ede0, {{-6.0, -2582.0}, {272.0, 2878.0}}
+                                    Other, 0x10341f150, {{10.0, 32.0}, {240.0, 108.8}}
+                                    Cell, 0x10341f4c0, {{26.0, 86.0}, {208.0, 44.0}}
+                                      Other, 0x10341f830, {{26.0, 86.0}, {208.0, 44.0}}
+                                      Other, 0x10341fb80, {{26.0, 86.0}, {208.0, 44.0}}
+                                        Other, 0x10341fee0, {{26.0, 86.0}, {208.0, 44.0}}
+                                          Other, 0x103420240, {{26.0, 86.0}, {208.0, 44.0}}
+                                            StaticText, 0x1034205d0, {{26.0, 86.0}, {208.0, 44.0}}, label: 'Engram'
+                                    Cell, 0x103420920, {{26.0, 130.0}, {208.0, 52.0}}
+                                      Other, 0x103420ca0, {{26.0, 130.0}, {208.0, 52.0}}
+                                      Other, 0x103421030, {{26.0, 130.0}, {208.0, 52.0}}
+                                        Other, 0x1034213a0, {{26.0, 130.0}, {208.0, 52.0}}
+                                          Other, 0x1034216f0, {{26.0, 130.0}, {208.0, 52.0}}
+                                            Image, 0x103421a80, {{42.5, 144.5}, {23.5, 23.5}}, identifier: 'sun.max', label: 'Brightness Higher'
+                                            StaticText, 0x103421dd0, {{26.0, 130.0}, {208.0, 52.0}}, label: 'Today'
+                                    Cell, 0x103422120, {{26.0, 182.0}, {208.0, 52.0}}, Focused, Selected
+                                      Other, 0x103422490, {{26.0, 182.0}, {208.0, 52.0}}
+                                        Other, 0x1034227f0, {{26.0, 182.0}, {208.0, 52.0}}
+                                          Other, 0x103422b70, {{26.0, 182.0}, {208.0, 52.0}}
+                                      Other, 0x103422f00, {{26.0, 182.0}, {208.0, 52.0}}
+                                        Other, 0x103423280, {{26.0, 182.0}, {208.0, 52.0}}
+                                          Other, 0x103423620, {{26.0, 182.0}, {208.0, 52.0}}
+                                            Image, 0x103423970, {{41.0, 195.0}, {26.5, 26.0}}, identifier: 'rectangle.stack', label: 'rectangle.stack', Selected
+                                            StaticText, 0x103423cd0, {{26.0, 182.0}, {208.0, 52.0}}, label: 'Library', Selected
+                                    Cell, 0x103424040, {{26.0, 234.0}, {208.0, 52.0}}
+                                      Other, 0x1034243d0, {{26.0, 234.0}, {208.0, 52.0}}
+                                      Other, 0x103424770, {{26.0, 234.0}, {208.0, 52.0}}
+                                        Other, 0x103424ad0, {{26.0, 234.0}, {208.0, 52.0}}
+                                          Other, 0x103424e60, {{26.0, 234.0}, {208.0, 52.0}}
+                                            Image, 0x1034251e0, {{42.0, 250.0}, {24.0, 20.0}}, identifier: 'chart.bar.xaxis', label: 'chart.bar.xaxis'
+                                            StaticText, 0x103425540, {{26.0, 234.0}, {208.0, 52.0}}, label: 'Activity'
+                                    Other, 0x1034258b0, {{-6.0, 296.0}, {272.0, 2786.5}}
+                                    Cell, 0x103425c10, {{26.0, 296.0}, {208.0, 44.0}}
+                                      Other, 0x103425f90, {{26.0, 296.0}, {208.0, 44.0}}
+                                      Other, 0x103426330, {{26.0, 296.0}, {208.0, 44.0}}
+                                        Other, 0x103426690, {{26.0, 296.0}, {208.0, 44.0}}
+                                          Other, 0x103427170, {{26.0, 296.0}, {208.0, 44.0}}
+                                            StaticText, 0x1034274f0, {{26.0, 296.0}, {208.0, 44.0}}, label: 'On this device'
+                                    Cell, 0x103427850, {{26.0, 340.0}, {208.0, 64.5}}
+                                      Other, 0x103427bd0, {{26.0, 340.0}, {208.0, 64.5}}
+                                      Other, 0x103427f20, {{26.0, 340.0}, {208.0, 64.5}}
+                                        Other, 0x103428280, {{26.0, 340.0}, {208.0, 64.5}}
+                                          Other, 0x103428600, {{26.0, 340.0}, {208.0, 64.5}}
+                                            Button, 0x103428970, {{26.0, 340.0}, {208.0, 64.5}}, label: 'AWS Cloud Practitioner'
+                                              Image, 0x103428cd0, {{41.0, 359.5}, {26.0, 25.5}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                              StaticText, 0x103429030, {{41.0, 351.0}, {125.0, 42.5}}, label: 'AWS Cloud Practitioner'
+                                    Other, 0x1034293b0, {{217.0, 86.0}, {30.0, 1258.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                      Other, 0x103429730, {{244.0, 1346.0}, {3.0, 7.0}}
+                                    Other, 0x103429a90, {{217.0, 86.0}, {30.0, 1258.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                      Other, 0x103429e10, {{244.0, 1346.0}, {3.0, 7.0}}
+                          Other, 0x103705590, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x1037179a0, {{10.0, 32.0}, {240.0, 1334.0}}
+                      Other, 0x103716700, {{10.0, 32.0}, {240.0, 1334.0}}
+                        Other, 0x103716820, {{10.0, 32.0}, {240.0, 1334.0}}
+                          Other, 0x10371a360, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10371a480, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x10371a5a0, {{10.0, 32.0}, {240.0, 1334.0}}
+                                Other, 0x10371a6c0, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10371a7e0, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x10371a900, {{10.0, 32.0}, {240.0, 1334.0}}
+                    Other, 0x10371aa20, {{0.0, 0.0}, {1032.0, 1376.0}}
+                      Other, 0x10371ab40, {{0.0, 0.0}, {1032.0, 1376.0}}
+                        NavigationBar, 0x10371ac60, {{0.0, 32.0}, {1032.0, 54.0}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                          Other, 0x10371ad80, {{274.0, 36.0}, {84.5, 36.0}}, label: 'All decks'
+                            Other, 0x10371aea0, {{274.0, 36.0}, {84.5, 36.0}}
+                              Button, 0x10371afc0, {{274.0, 36.0}, {84.5, 36.0}}, label: 'All decks'
+                          Other, 0x10371b0e0, {{970.0, 36.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                            Other, 0x10371b200, {{970.0, 36.0}, {48.0, 36.0}}
+                              Button, 0x10371b320, {{970.0, 36.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                                Button, 0x10371b440, {{970.0, 36.0}, {48.0, 36.0}}
+                                  Image, 0x10371b560, {{982.5, 42.5}, {23.5, 23.0}}, identifier: 'gearshape', label: 'gearshape'
+                        Other, 0x10371b680, {{0.0, 0.0}, {1032.0, 1376.0}}
+                          Other, 0x10371b7a0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                            Other, 0x10371b8c0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                              Other, 0x10371b9e0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                                ScrollView, 0x10371bb00, {{0.0, 0.0}, {1032.0, 1376.0}}
+                                  Other, 0x10371bc20, {{0.0, 0.0}, {1032.0, 140.8}}
+                                  Other, 0x10371bd40, {{0.0, 86.0}, {1032.0, 800.5}}
+                                    StaticText, 0x10371be60, {{305.0, 110.0}, {298.5, 33.5}}, label: 'AWS Cloud Practitioner'
+                                    StaticText, 0x10371bf80, {{305.0, 151.5}, {115.0, 18.0}}, label: '5 cards · 3 ready'
+                                    StaticText, 0x10371c0a0, {{305.0, 206.2}, {167.0, 26.5}}, identifier: 'deck-memory-outlook', label: 'Memory outlook'
+                                    Button, 0x10371c1c0, {{880.5, 210.5}, {96.5, 18.0}}, identifier: 'deck-memory-outlook', label: 'Target 90%'
+                                      StaticText, 0x10371c2e0, {{880.5, 210.5}, {80.0, 18.0}}, label: 'Target 90%'
+                                      Image, 0x1038299d0, {{970.5, 214.5}, {6.0, 10.5}}, identifier: 'chevron.right', label: 'Forward'
+                                    StaticText, 0x10382a610, {{305.0, 255.5}, {59.0, 33.5}}, identifier: 'deck-memory-outlook', label: '95%'
+                                    StaticText, 0x103829650, {{371.0, 270.5}, {165.0, 14.5}}, identifier: 'deck-memory-outlook', label: 'average estimated recall now'
+                                    Other, 0x10382ae70, {{305.0, 303.0}, {672.0, 150.0}}, identifier: 'deck-memory-outlook', label: 'Estimated recall 95 percent today, against a 90 percent target; curve assumes no reviews for seven days'
+                                      Other, 0x103822b50, {{329.0, 317.5}, {648.0, 1.0}}, value: 90
+                                      Other, 0x10381f2b0, {{329.0, 303.0}, {92.6, 150.0}}, label: '0 to 1', value: 95
+                                      Other, 0x103831010, {{421.6, 303.0}, {92.6, 150.0}}, label: '1 to 2', value: 93
+                                      Other, 0x1038309d0, {{514.1, 303.0}, {92.6, 150.0}}, label: '2 to 3', value: 92
+                                      Other, 0x1038305b0, {{606.7, 303.0}, {92.6, 150.0}}, label: '3 to 4', value: 90
+                                      Other, 0x10382b220, {{699.3, 303.0}, {92.6, 150.0}}, label: '4 to 5', value: 89
+                                      Other, 0x103828590, {{791.9, 303.0}, {92.6, 150.0}}, label: '5 to 6', value: 88
+                                      Other, 0x1038289b0, {{884.4, 303.0}, {92.6, 150.0}}, label: '6 to 7', value: 87
+                                      Other, 0x103827a10, {{977.0, 303.0}, {92.6, 150.0}}, label: '7 to 8', value: 86
+                                    StaticText, 0x10382b640, {{333.0, 467.0}, {34.0, 14.5}}, identifier: 'deck-memory-outlook', label: 'Today'
+                                    StaticText, 0x103813e20, {{940.0, 467.0}, {37.0, 14.5}}, identifier: 'deck-memory-outlook', label: '7 days'
+                                    StaticText, 0x103830020, {{305.0, 512.5}, {142.5, 14.5}}, identifier: 'deck-memory-outlook', label: '4 above · 0 below · 1 new'
+                                    Button, 0x10382f9e0, {{305.0, 554.0}, {163.5, 18.0}}, identifier: 'deck-memory-outlook', label: 'View individual cards'
+                                      Button, 0x103831430, {{305.0, 554.0}, {163.5, 18.0}}
+                                        Image, 0x103831550, {{308.0, 556.5}, {7.5, 13.0}}, identifier: 'chevron.right', label: 'Forward'
+                                        StaticText, 0x103831670, {{308.0, 554.0}, {160.5, 18.0}}, label: 'View individual cards'
+                                    StaticText, 0x103831790, {{305.0, 599.0}, {622.0, 30.5}}, identifier: 'deck-memory-outlook', label: 'FSRS estimates for studied cards. The curve assumes no further reviews; learning and unsupported cards are excluded from the average.'
+                                    Button, 0x103831a70, {{305.0, 657.5}, {672.0, 44.5}}, identifier: 'deck-study', label: 'Study deck'
+                                      StaticText, 0x103831b90, {{321.0, 669.5}, {88.5, 20.5}}, label: 'Study deck'
+                                      Image, 0x103831cb0, {{943.0, 673.5}, {16.0, 13.0}}, identifier: 'arrow.right', label: 'Right'
+                                    Button, 0x103831dd0, {{305.0, 758.5}, {326.0, 92.0}}, identifier: 'deck-questions', label: 'Questions, 5 to explore'
+                                      Image, 0x103831ef0, {{306.0, 765.5}, {24.0, 23.5}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                      StaticText, 0x103832010, {{305.0, 800.2}, {81.0, 20.5}}, label: 'Questions'
+                                      Image, 0x103832130, {{620.5, 806.0}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                      StaticText, 0x103832250, {{305.0, 830.8}, {67.5, 14.5}}, label: '5 to explore'
+                                    Button, 0x103832370, {{651.0, 758.5}, {326.0, 92.0}}, identifier: 'deck-notes', label: 'Notes, Read and relearn'
+                                      Image, 0x103832490, {{652.0, 765.0}, {19.0, 24.5}}, identifier: 'book.pages', label: 'book.pages'
+                                      StaticText, 0x1038325b0, {{651.0, 800.8}, {47.5, 20.5}}, label: 'Notes'
+                                      Image, 0x1038326d0, {{966.5, 806.5}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                      StaticText, 0x1038327f0, {{651.0, 831.2}, {96.0, 14.5}}, label: 'Read and relearn'
+                                  Other, 0x103832910, {{999.0, 86.0}, {30.0, 1186.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x103832a30, {{1026.0, 859.5}, {3.0, 409.5}}
+                                  Other, 0x103832b50, {{999.0, 86.0}, {30.0, 1186.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x103832c70, {{1026.0, 859.5}, {3.0, 409.5}}
+                        Other, 0x103832d90, {{0.0, 0.0}, {1032.0, 1376.0}}
+                          Other, 0x103832eb0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                  Other, 0x103832fd0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                    Other, 0x1038330f0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                Button, 0x103833210, {{966.0, 1298.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+Path to element:
+ →Application, 0x10341d990, pid: 60427, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x10342abc0, pid: 60427, label: 'Engram'
+  }

@@ -1,0 +1,130 @@
+Attributes: Application, 0x103928f10, pid: 60427, label: 'Engram'
+Element subtree:
+ →Application, 0x103928f10, pid: 60427, label: 'Engram'
+    Window (Main), 0x10392a160, {{0.0, 0.0}, {1032.0, 1376.0}}
+      Other, 0x103928830, {{0.0, 0.0}, {1032.0, 1376.0}}
+        Other, 0x10392af30, {{0.0, 0.0}, {1032.0, 1376.0}}
+          Other, 0x103928bb0, {{0.0, 0.0}, {1032.0, 1376.0}}
+            Other, 0x10391e110, {{0.0, 0.0}, {1032.0, 1376.0}}
+              Other, 0x10392b2a0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                Other, 0x10392b620, {{0.0, 0.0}, {1032.0, 1376.0}}
+                  Other, 0x10392b970, {{0.0, 0.0}, {1032.0, 1376.0}}
+                    Other, 0x103822b50, {{10.0, 32.0}, {240.0, 1334.0}}
+                      Other, 0x10381f2b0, {{10.0, 32.0}, {240.0, 1334.0}}
+                        Other, 0x10382b720, {{10.0, 32.0}, {240.0, 1334.0}}
+                          NavigationBar, 0x10382b300, {{10.0, 32.0}, {240.0, 54.0}}, identifier: 'Engram'
+                            StaticText, 0x10382aee0, {{105.2, 43.8}, {61.5, 20.5}}, label: 'Engram'
+                            Button, 0x10382a610, {{191.5, 36.0}, {54.5, 36.0}}, label: 'Hide Sidebar'
+                          Other, 0x1038299d0, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x103827a10, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x1038289b0, {{10.0, 32.0}, {240.0, 1334.0}}
+                                Other, 0x103828590, {{10.0, 32.0}, {240.0, 1334.0}}
+                                  CollectionView, 0x103813e20, {{10.0, 32.0}, {240.0, 1334.0}}, label: 'Sidebar'
+                                    Other, 0x10382bd60, {{-6.0, -2582.0}, {272.0, 2878.0}}
+                                    Other, 0x10382be80, {{10.0, 32.0}, {240.0, 108.8}}
+                                    Cell, 0x10382aa30, {{26.0, 86.0}, {208.0, 44.0}}
+                                      Other, 0x10382ab50, {{26.0, 86.0}, {208.0, 44.0}}
+                                      Other, 0x103829430, {{26.0, 86.0}, {208.0, 44.0}}
+                                        Other, 0x103829550, {{26.0, 86.0}, {208.0, 44.0}}
+                                          Other, 0x103829670, {{26.0, 86.0}, {208.0, 44.0}}
+                                            StaticText, 0x103829df0, {{26.0, 86.0}, {208.0, 44.0}}, label: 'Engram'
+                                    Cell, 0x103829f10, {{26.0, 130.0}, {208.0, 52.0}}, Focused, Selected
+                                      Other, 0x10382a030, {{26.0, 130.0}, {208.0, 52.0}}
+                                        Other, 0x10392bcc0, {{26.0, 130.0}, {208.0, 52.0}}
+                                          Other, 0x103705590, {{26.0, 130.0}, {208.0, 52.0}}
+                                      Other, 0x1037179a0, {{26.0, 130.0}, {208.0, 52.0}}
+                                        Other, 0x103718d50, {{26.0, 130.0}, {208.0, 52.0}}
+                                          Other, 0x103716700, {{26.0, 130.0}, {208.0, 52.0}}
+                                            Image, 0x103716820, {{42.0, 144.0}, {24.0, 24.0}}, identifier: 'sun.max', label: 'Brightness Higher', Selected
+                                            StaticText, 0x103719170, {{26.0, 130.0}, {208.0, 52.0}}, label: 'Today', Selected
+                                    Cell, 0x103719290, {{26.0, 182.0}, {208.0, 52.0}}
+                                      Other, 0x1037193b0, {{26.0, 182.0}, {208.0, 52.0}}
+                                      Other, 0x1037194d0, {{26.0, 182.0}, {208.0, 52.0}}
+                                        Other, 0x1037195f0, {{26.0, 182.0}, {208.0, 52.0}}
+                                          Other, 0x103718130, {{26.0, 182.0}, {208.0, 52.0}}
+                                            Image, 0x103718250, {{41.0, 195.5}, {26.0, 25.5}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                            StaticText, 0x103718370, {{26.0, 182.0}, {208.0, 52.0}}, label: 'Library'
+                                    Cell, 0x103718490, {{26.0, 234.0}, {208.0, 52.0}}
+                                      Other, 0x1037185b0, {{26.0, 234.0}, {208.0, 52.0}}
+                                      Other, 0x1037186d0, {{26.0, 234.0}, {208.0, 52.0}}
+                                        Other, 0x1037187f0, {{26.0, 234.0}, {208.0, 52.0}}
+                                          Other, 0x103718910, {{26.0, 234.0}, {208.0, 52.0}}
+                                            Image, 0x103718a30, {{42.0, 250.0}, {24.0, 20.0}}, identifier: 'chart.bar.xaxis', label: 'chart.bar.xaxis'
+                                            StaticText, 0x1037199d0, {{26.0, 234.0}, {208.0, 52.0}}, label: 'Activity'
+                                    Other, 0x103719af0, {{-6.0, 296.0}, {272.0, 2786.5}}
+                                    Cell, 0x103719c10, {{26.0, 296.0}, {208.0, 44.0}}
+                                      Other, 0x103719d30, {{26.0, 296.0}, {208.0, 44.0}}
+                                      Other, 0x103719e50, {{26.0, 296.0}, {208.0, 44.0}}
+                                        Other, 0x10371a360, {{26.0, 296.0}, {208.0, 44.0}}
+                                          Other, 0x10371a480, {{26.0, 296.0}, {208.0, 44.0}}
+                                            StaticText, 0x10371a5a0, {{26.0, 296.0}, {208.0, 44.0}}, label: 'On this device'
+                                    Cell, 0x10371a6c0, {{26.0, 340.0}, {208.0, 64.5}}
+                                      Other, 0x10371a7e0, {{26.0, 340.0}, {208.0, 64.5}}
+                                      Other, 0x10371a900, {{26.0, 340.0}, {208.0, 64.5}}
+                                        Other, 0x10371aa20, {{26.0, 340.0}, {208.0, 64.5}}
+                                          Other, 0x10371ab40, {{26.0, 340.0}, {208.0, 64.5}}
+                                            Button, 0x10371ac60, {{26.0, 340.0}, {208.0, 64.5}}, label: 'AWS Cloud Practitioner'
+                                              Image, 0x10371ad80, {{41.0, 359.5}, {26.0, 25.5}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                              StaticText, 0x10371aea0, {{41.0, 351.0}, {125.0, 42.5}}, label: 'AWS Cloud Practitioner'
+                                    Other, 0x10371afc0, {{217.0, 86.0}, {30.0, 1258.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                      Other, 0x10371b0e0, {{244.0, 1346.0}, {3.0, 7.0}}
+                                    Other, 0x10371b200, {{217.0, 86.0}, {30.0, 1258.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                      Other, 0x10371b320, {{244.0, 1346.0}, {3.0, 7.0}}
+                          Other, 0x10371b440, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10371b560, {{10.0, 32.0}, {240.0, 1334.0}}
+                      Other, 0x10371b680, {{10.0, 32.0}, {240.0, 1334.0}}
+                        Other, 0x10371b7a0, {{10.0, 32.0}, {240.0, 1334.0}}
+                          Other, 0x10371b8c0, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10371b9e0, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x10371bb00, {{10.0, 32.0}, {240.0, 1334.0}}
+                                Other, 0x10371bc20, {{10.0, 32.0}, {240.0, 1334.0}}
+                            Other, 0x10371bd40, {{10.0, 32.0}, {240.0, 1334.0}}
+                              Other, 0x10371be60, {{10.0, 32.0}, {240.0, 1334.0}}
+                    Other, 0x10371c050, {{0.0, 0.0}, {1032.0, 1376.0}}
+                      Other, 0x10371c170, {{0.0, 0.0}, {1032.0, 1376.0}}
+                        NavigationBar, 0x10371c290, {{0.0, 32.0}, {1032.0, 106.0}}, identifier: 'Today'
+                          Button, 0x10371c3b0, {{861.0, 36.0}, {43.5, 36.0}}, label: 'Import and export'
+                          Button, 0x10371c4d0, {{920.5, 36.0}, {41.5, 36.0}}, label: 'Settings'
+                          Button, 0x10371c5f0, {{978.0, 36.0}, {40.0, 36.0}}, identifier: 'screenshot-menu', label: 'More'
+                          StaticText, 0x10371c710, {{270.0, 89.5}, {95.5, 41.0}}, label: 'Today'
+                        Other, 0x10371c830, {{0.0, 0.0}, {1032.0, 1376.0}}
+                          Other, 0x10371c950, {{0.0, 0.0}, {1032.0, 1376.0}}
+                            Other, 0x10371ca70, {{0.0, 0.0}, {1032.0, 1376.0}}
+                              Other, 0x10371cb90, {{0.0, 0.0}, {1032.0, 1376.0}}
+                                ScrollView, 0x10371ccb0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                                  Other, 0x10371cdd0, {{0.0, 0.0}, {1032.0, 140.8}}
+                                  Other, 0x10371cef0, {{0.0, 138.0}, {1032.0, 698.0}}
+                                    StaticText, 0x10371d010, {{274.0, 162.0}, {158.5, 18.0}}, label: 'Friday, 2 October 2026'
+                                    StaticText, 0x10371d130, {{274.0, 204.0}, {267.0, 82.0}}, label: 'A little study,
+a lasting memory.'
+                                    StaticText, 0x10371d250, {{298.0, 334.0}, {164.5, 18.0}}, label: 'READY WHEN YOU ARE'
+                                    StaticText, 0x10371d370, {{298.0, 368.0}, {19.0, 41.0}}, label: '3'
+                                    StaticText, 0x10371d490, {{298.0, 425.0}, {194.5, 26.5}}, label: 'cards available now'
+                                    StaticText, 0x10371d5b0, {{298.0, 467.5}, {215.0, 18.0}}, label: '1 new · 2 due, within daily limits'
+                                    Button, 0x10371d6d0, {{298.0, 501.5}, {126.0, 44.5}}, label: 'Start review'
+                                    StaticText, 0x10371d7f0, {{274.0, 594.0}, {109.0, 26.5}}, label: 'Your decks'
+                                    Button, 0x10371d910, {{932.0, 597.0}, {76.0, 20.5}}, label: 'New deck'
+                                    Other, 0x10371da30, {{274.0, 644.5}, {734.0, 80.5}}
+                                      Button, 0x10371db50, {{274.0, 644.5}, {734.0, 80.5}}, label: 'AWS Cloud Practitioner, 2 due · 1 new'
+                                        Image, 0x10371dc70, {{274.0, 663.0}, {44.0, 44.0}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                        StaticText, 0x10371dd90, {{334.0, 660.5}, {237.0, 26.5}}, label: 'AWS Cloud Practitioner'
+                                        StaticText, 0x10371deb0, {{334.0, 691.0}, {90.0, 18.0}}, label: '2 due · 1 new'
+                                        Image, 0x10371dfd0, {{1001.5, 679.5}, {6.0, 10.5}}, identifier: 'chevron.right', label: 'Forward'
+                                    StaticText, 0x10371e0f0, {{274.0, 749.5}, {168.5, 20.5}}, label: '3 reviews saved today'
+                                    StaticText, 0x10371e210, {{274.0, 794.0}, {637.0, 18.0}}, label: 'Each installation has its own library. Export a backup to protect your cards and review history.'
+                                  Other, 0x10371e330, {{999.0, 86.0}, {30.0, 1186.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10371e450, {{1026.0, 785.5}, {3.0, 483.5}}
+                                  Other, 0x10371e570, {{999.0, 86.0}, {30.0, 1186.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10371e690, {{1026.0, 785.5}, {3.0, 483.5}}
+                        Other, 0x10371e7b0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                          Other, 0x10371e8d0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                  Other, 0x10371e9f0, {{0.0, 0.0}, {1032.0, 1376.0}}
+                    Other, 0x10371eb10, {{0.0, 0.0}, {1032.0, 1376.0}}
+                Button, 0x10371ec30, {{966.0, 1298.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+Path to element:
+ →Application, 0x103928f10, pid: 60427, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x103419450, pid: 60427, label: 'Engram'
+  }

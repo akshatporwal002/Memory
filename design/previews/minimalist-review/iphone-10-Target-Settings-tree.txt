@@ -1,0 +1,150 @@
+Attributes: Application, 0x103e14580, pid: 60011, label: 'Engram'
+Element subtree:
+ →Application, 0x103e14580, pid: 60011, label: 'Engram'
+    Window (Main), 0x103e141f0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103e14f80, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103e15300, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x103e14c20, {{-402.0, -874.0}, {1206.0, 2622.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup'
+          Other, 0x103e148d0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x103e15660, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x103e159c0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103e15d20, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103e16070, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x103e16400, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x103e16770, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x103e16ad0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x103e16e50, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x103e171a0, {{0.0, 62.0}, {402.0, 54.0}}, identifier: '_TtGC7SwiftUI29PresentationHosting'
+                              Button, 0x103e17510, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              Other, 0x103e17860, {{334.0, 66.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                                Other, 0x103e17bb0, {{334.0, 66.0}, {48.0, 36.0}}
+                                  Button, 0x103e17f40, {{334.0, 66.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                                    Button, 0x103e182a0, {{334.0, 66.0}, {48.0, 36.0}}
+                                      Image, 0x103e185f0, {{346.3, 72.7}, {23.3, 23.0}}, identifier: 'gearshape', label: 'gearshape'
+                            Other, 0x103e18970, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103e18d10, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x103e19080, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x103e193e0, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x103e19740, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x103e19ab0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x103e19e00, {{0.0, 116.0}, {402.0, 816.0}}
+                                        StaticText, 0x103e1a160, {{24.0, 140.0}, {298.3, 33.7}}, label: 'AWS Cloud Practitioner'
+                                        StaticText, 0x103e1a4c0, {{24.0, 181.7}, {115.0, 18.0}}, label: '5 cards · 3 ready'
+                                        StaticText, 0x103e1a840, {{24.0, 236.5}, {166.7, 26.3}}, identifier: 'deck-memory-outlook', label: 'Memory outlook'
+                                        Button, 0x103e1abd0, {{281.3, 240.7}, {96.7, 18.0}}, identifier: 'deck-memory-outlook', label: 'Target 90%'
+                                          StaticText, 0x103e1af40, {{281.3, 240.7}, {79.7, 18.0}}, label: 'Target 90%'
+                                          Image, 0x103e1b2d0, {{371.3, 244.7}, {6.0, 10.3}}, identifier: 'chevron.right', label: 'Forward'
+                                        StaticText, 0x103e1b660, {{24.0, 285.7}, {59.0, 33.7}}, identifier: 'deck-memory-outlook', label: '95%'
+                                        StaticText, 0x103e1c160, {{90.0, 301.0}, {165.0, 14.3}}, identifier: 'deck-memory-outlook', label: 'average estimated recall now'
+                                        Other, 0x103e1c4f0, {{24.0, 333.3}, {354.0, 150.0}}, identifier: 'deck-memory-outlook', label: 'Estimated recall 95 percent today, against a 90 percent target; curve assumes no reviews for seven days'
+                                          Other, 0x103e1c850, {{48.0, 347.8}, {330.0, 1.0}}, value: 90
+                                          Other, 0x103e1cbd0, {{48.0, 333.3}, {47.1, 150.0}}, label: '0 to 1', value: 95
+                                          Other, 0x103e1cf50, {{95.1, 333.3}, {47.1, 150.0}}, label: '1 to 2', value: 93
+                                          Other, 0x103e1d2e0, {{142.3, 333.3}, {47.1, 150.0}}, label: '2 to 3', value: 92
+                                          Other, 0x103e1d650, {{189.4, 333.3}, {47.1, 150.0}}, label: '3 to 4', value: 90
+                                          Other, 0x103e1d9d0, {{236.6, 333.3}, {47.1, 150.0}}, label: '4 to 5', value: 89
+                                          Other, 0x103e1dd40, {{283.7, 333.3}, {47.1, 150.0}}, label: '5 to 6', value: 88
+                                          Other, 0x103e1e0a0, {{330.9, 333.3}, {47.1, 150.0}}, label: '6 to 7', value: 87
+                                          Other, 0x103e1e400, {{378.0, 333.3}, {47.1, 150.0}}, label: '7 to 8', value: 86
+                                        StaticText, 0x103e1e780, {{52.0, 497.3}, {34.0, 14.3}}, identifier: 'deck-memory-outlook', label: 'Today'
+                                        StaticText, 0x103e1eb00, {{341.3, 497.3}, {36.7, 14.3}}, identifier: 'deck-memory-outlook', label: '7 days'
+                                        StaticText, 0x103e1ee60, {{24.0, 542.7}, {142.3, 14.3}}, identifier: 'deck-memory-outlook', label: '4 above · 0 below · 1 new'
+                                        Button, 0x103e1f1d0, {{24.0, 584.0}, {163.0, 18.0}}, identifier: 'deck-memory-outlook', label: 'View individual cards'
+                                          Button, 0x103e1f550, {{24.0, 584.0}, {163.0, 18.0}}
+                                            Image, 0x103e1f8b0, {{26.7, 586.3}, {7.3, 13.0}}, identifier: 'chevron.right', label: 'Forward'
+                                            StaticText, 0x103e1fc20, {{26.7, 584.0}, {160.3, 18.0}}, label: 'View individual cards'
+                                        StaticText, 0x103e1ff90, {{24.0, 629.0}, {351.3, 46.3}}, identifier: 'deck-memory-outlook', label: 'FSRS estimates for studied cards. The curve assumes no further reviews; learning and unsupported cards are excluded from the average.'
+                                        Button, 0x103e202f0, {{24.0, 703.3}, {354.0, 44.3}}, identifier: 'deck-study', label: 'Study deck'
+                                          StaticText, 0x103e20660, {{40.0, 715.3}, {88.3, 20.3}}, label: 'Study deck'
+                                          Image, 0x103e20a00, {{344.0, 719.0}, {16.0, 13.0}}, identifier: 'arrow.right', label: 'Right'
+                                        Button, 0x103e20d60, {{24.0, 804.0}, {167.0, 92.0}}, identifier: 'deck-questions', label: 'Questions, 5 to explore'
+                                          Image, 0x103e210e0, {{25.0, 811.0}, {23.7, 23.3}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                          StaticText, 0x103e21480, {{24.0, 845.7}, {80.7, 20.3}}, label: 'Questions'
+                                          Image, 0x103e21820, {{180.7, 851.3}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                          StaticText, 0x103e21ba0, {{24.0, 876.0}, {67.3, 14.3}}, label: '5 to explore'
+                                        Button, 0x103e21f40, {{211.0, 804.0}, {167.0, 92.0}}, identifier: 'deck-notes', label: 'Notes, Read and relearn'
+                                          Image, 0x103e222b0, {{212.0, 810.3}, {19.0, 24.7}}, identifier: 'book.pages', label: 'book.pages'
+                                          StaticText, 0x103e22630, {{211.0, 846.3}, {47.3, 20.3}}, label: 'Notes'
+                                          Image, 0x103e229b0, {{367.7, 852.0}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                          StaticText, 0x103e22d20, {{211.0, 876.7}, {96.0, 14.3}}, label: 'Read and relearn'
+                                      Other, 0x103e230c0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                                        Other, 0x103e23450, {{396.0, 119.0}, {3.0, 527.7}}
+                                      Other, 0x103e237b0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                                        Other, 0x103e23b00, {{396.0, 119.0}, {3.0, 527.7}}
+                            Other, 0x103e24610, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103e24960, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103e24cd0, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x103e25020, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103e25370, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x103e256e0, {{21.0, 777.0}, {99.3, 50.0}}, identifier: 'tab-today', label: 'Today'
+                Image, 0x103e25a50, {{61.0, 784.3}, {19.3, 19.3}}, identifier: 'sun.max', label: 'Brightness Higher'
+                StaticText, 0x103e25da0, {{54.5, 807.8}, {32.3, 13.3}}, label: 'Today'
+              Button, 0x103e26110, {{120.3, 777.0}, {99.3, 50.0}}, identifier: 'tab-library', label: 'Library', Selected
+                Image, 0x103e26470, {{159.3, 783.3}, {21.3, 21.0}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                StaticText, 0x103e267d0, {{151.0, 808.7}, {38.0, 13.3}}, label: 'Library'
+              Button, 0x103e26b30, {{219.7, 777.0}, {99.3, 50.0}}, identifier: 'tab-activity', label: 'Activity'
+                Image, 0x103e26e90, {{259.7, 785.7}, {19.7, 16.3}}, identifier: 'chart.bar.xaxis', label: 'chart.bar.xaxis'
+                StaticText, 0x103e27230, {{249.0, 806.3}, {40.7, 13.3}}, label: 'Activity'
+              Button, 0x103e275d0, {{336.0, 777.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+      Other, 0x103e27960, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103e27ce0, {{-402.0, -874.0}, {1206.0, 2622.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup'
+        Other, 0x103e28050, {{3.1, 408.5}, {395.8, 462.4}}
+          Button, 0x103e283f0, {{163.6, 403.5}, {74.8, 24.6}}, label: 'Sheet Grabber', value: Half screen
+          Other, 0x103e28770, {{3.1, 408.5}, {395.8, 462.4}}
+            Other, 0x103e28ad0, {{3.1, 408.5}, {395.8, 462.4}}
+              Other, 0x103e28e40, {{3.1, 408.5}, {395.8, 462.4}}
+                Other, 0x103e291b0, {{3.1, 408.5}, {395.8, 462.4}}
+                  Other, 0x103e29530, {{3.1, 408.5}, {395.8, 462.4}}
+                    NavigationBar, 0x103e298c0, {{3.1, 424.2}, {395.8, 104.4}}, identifier: 'Desired retention'
+                      Other, 0x103e29c40, {{22.8, 428.2}, {67.6, 35.4}}, label: 'Cancel'
+                        Other, 0x103e29fb0, {{22.8, 428.2}, {67.6, 35.4}}
+                          Button, 0x103e2a330, {{22.8, 428.2}, {67.6, 35.4}}, label: 'Cancel'
+                      Other, 0x103e2a6b0, {{325.7, 428.2}, {53.5, 35.4}}, label: 'Save'
+                        Other, 0x103e2aa20, {{325.7, 428.2}, {53.5, 35.4}}
+                          Button, 0x103e2ada0, {{325.7, 428.2}, {53.5, 35.4}}, label: 'Save'
+                      StaticText, 0x103e2b140, {{18.8, 481.0}, {268.8, 40.0}}, label: 'Desired retention'
+                    Other, 0x103e2b4a0, {{3.1, 408.5}, {395.8, 462.4}}
+                      Other, 0x103e2b800, {{3.1, 408.5}, {395.8, 462.4}}
+                        Other, 0x103e2bb80, {{3.1, 408.5}, {395.8, 462.4}}
+                          Other, 0x103e2bef0, {{3.1, 408.5}, {395.8, 462.4}}
+                            CollectionView, 0x103e2c250, {{3.1, 408.5}, {395.8, 462.4}}
+                              Other, 0x103e2c5c0, {{-12.7, -396.3}, {427.3, 1961.7}}
+                              Cell, 0x103e2c910, {{18.8, 528.6}, {364.3, 51.2}}
+                                Other, 0x103e2cc90, {{18.8, 528.6}, {364.3, 51.2}}
+                                  Other, 0x103e2d000, {{18.8, 528.6}, {364.3, 51.2}}
+                                Other, 0x103e2d370, {{18.8, 528.6}, {364.3, 51.2}}
+                                  Other, 0x103e2d6e0, {{18.8, 528.6}, {364.3, 51.2}}
+                                    Other, 0x103e2da30, {{18.8, 528.6}, {364.3, 51.2}}
+                                      Switch, 0x103e2e530, {{18.8, 528.6}, {364.3, 51.2}}, label: 'Custom target for this deck', value: 0
+                                        StaticText, 0x103e2e8b0, {{34.6, 544.2}, {204.8, 20.0}}, label: 'Custom target for this deck'
+                                        Switch, 0x103e2ec00, {{307.3, 540.4}, {62.0, 27.6}}, value: 0
+                              Cell, 0x103e2ef70, {{18.8, 579.8}, {364.3, 60.7}}
+                                Other, 0x103e2f2e0, {{18.8, 579.8}, {364.3, 60.7}}
+                                Other, 0x103e2f650, {{18.8, 579.8}, {364.3, 60.7}}
+                                  Other, 0x103e2f9c0, {{18.8, 579.8}, {364.3, 60.7}}
+                                    Other, 0x103e2fd20, {{18.8, 579.8}, {364.3, 60.7}}
+                                      StaticText, 0x103e30070, {{18.8, 579.8}, {364.3, 60.7}}, label: 'Higher retention schedules more reviews. This setting affects future reviews; it does not rewrite earlier results.'
+                              Other, 0x103e303d0, {{366.4, 461.6}, {29.5, 353.9}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                Other, 0x103e30760, {{393.0, 813.8}, {3.0, 6.9}}
+                              Other, 0x103e30ad0, {{366.4, 461.6}, {29.5, 353.9}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                Other, 0x103e30e40, {{393.0, 813.8}, {3.0, 6.9}}
+                    Other, 0x103e31980, {{3.1, 408.5}, {395.8, 462.4}}
+                      Other, 0x103e31cd0, {{3.1, 408.5}, {395.8, 462.4}}
+          Other, 0x103e32040, {{3.1, 408.5}, {395.8, 462.4}}
+            Other, 0x103e323c0, {{3.1, 408.5}, {395.8, 462.4}}
+              Other, 0x103e32740, {{3.1, 408.5}, {395.8, 462.4}}
+                Other, 0x103e32a90, {{3.1, 408.5}, {395.8, 462.4}}
+                  Other, 0x103e32e00, {{3.1, 408.5}, {395.8, 462.4}}
+                    Other, 0x103e33190, {{3.1, 408.5}, {395.8, 462.4}}
+                Other, 0x103e33500, {{3.1, 408.5}, {395.8, 462.4}}
+                  Other, 0x103e33870, {{3.1, 408.5}, {395.8, 462.4}}
+    Window, 0x103e33bb0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103e33f20, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103e34270, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x103e14580, pid: 60011, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x103e345c0, pid: 60011, label: 'Engram'
+  }

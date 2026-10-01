@@ -1,0 +1,91 @@
+Attributes: Application, 0x103a320d0, pid: 60011, label: 'Engram'
+Element subtree:
+ →Application, 0x103a320d0, pid: 60011, label: 'Engram'
+    Window (Main), 0x103a2fbf0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103a39310, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103a39430, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x103a2f7d0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x103a2c9c0, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x103a39550, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103a39670, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103a39790, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x103a398b0, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x103a399d0, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x103a39af0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x103a39c10, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x103a39d30, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'Notes'
+                              Button, 0x103a39e50, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x103a39f70, {{72.0, 73.8}, {47.3, 20.3}}, label: 'Notes'
+                              Button, 0x103a3a090, {{145.7, 66.0}, {41.3, 36.0}}, label: 'Contents'
+                              Other, 0x103a3a1b0, {{203.0, 66.0}, {110.7, 36.0}}, label: 'Done editing'
+                                Other, 0x103a35e10, {{203.0, 66.0}, {110.7, 36.0}}
+                                  Button, 0x103a35f30, {{203.0, 66.0}, {110.7, 36.0}}, label: 'Done editing'
+                              Other, 0x103a36050, {{329.7, 66.0}, {52.3, 36.0}}, label: 'Save'
+                                Other, 0x103a36170, {{329.7, 66.0}, {52.3, 36.0}}
+                                  Button, 0x103a36290, {{329.7, 66.0}, {52.3, 36.0}}, label: 'Save', Disabled
+                            Other, 0x103a363b0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103a364d0, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x103a365f0, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x103a36710, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x103a36830, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x103a36950, {{0.0, -1406.0}, {402.0, 2112.0}}
+                                        Other, 0x103a31330, {{24.0, -786.0}, {266.0, 1467.3}}
+                                          StaticText, 0x103a31450, {{24.0, -773.0}, {49.0, 18.0}}, label: 'Writing'
+                                          Button, 0x103a31570, {{246.0, -786.0}, {44.0, 44.0}}, label: 'Options for writing block'
+                                            Button, 0x103a31690, {{246.0, -786.0}, {44.0, 44.0}}
+                                              Image, 0x103a317b0, {{260.3, -765.7}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          TextField, 0x103a318d0, {{0.0, 0.0}, {0.0, 0.0}}, label: 'Notebook writing', value: # AWS CloudFront
+C...
+                                            Other, 0x103a31be0, {{24.0, -393.0}, {266.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                              Other, 0x103a31d00, {{27.0, -366.0}, {260.0, 3.0}}
+                                          StaticText, 0x103a31e20, {{24.0, -298.7}, {49.0, 18.0}}, label: 'Writing'
+                                          Button, 0x103a31f40, {{246.0, -311.7}, {44.0, 44.0}}, label: 'Options for writing block'
+                                            Button, 0x103a3b8d0, {{246.0, -311.7}, {44.0, 44.0}}
+                                              Image, 0x103a3b9f0, {{260.3, -291.3}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          TextField, 0x103a3bb10, {{24.0, 0.0}, {266.0, 136.3}}, label: 'Notebook writing', value: # Shared responsib...
+                                            Other, 0x103a3be50, {{24.0, 103.3}, {266.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                              Other, 0x103a3bf70, {{27.0, 130.3}, {260.0, 3.0}}
+                                          StaticText, 0x103a3c090, {{24.0, 197.7}, {49.0, 18.0}}, label: 'Writing'
+                                          Button, 0x103a3c1b0, {{246.0, 184.7}, {44.0, 44.0}}, label: 'Options for writing block'
+                                            Button, 0x103a3c2d0, {{246.0, 184.7}, {44.0, 44.0}}
+                                              Image, 0x103a3c3f0, {{260.3, 205.0}, {15.7, 3.3}}, identifier: 'ellipsis', label: 'More'
+                                          TextField, 0x103a3c510, {{24.0, 236.7}, {266.0, 352.0}}, label: 'Notebook writing', value: # Cost and billing...
+                                            Other, 0x103a3c810, {{24.0, 555.7}, {266.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                              Other, 0x103a3c930, {{27.0, 582.7}, {260.0, 3.0}}
+                                          Button, 0x103a3ca50, {{24.0, 637.0}, {150.7, 44.3}}, label: 'Add writing'
+                                            Image, 0x103a3cb70, {{42.0, 652.0}, {17.3, 14.7}}, identifier: 'text.alignleft', label: 'Align Left'
+                                            StaticText, 0x103a3cc90, {{42.0, 649.0}, {116.7, 20.3}}, label: 'Add writing'
+                                      Other, 0x103a3cdb0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x103a3ced0, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Image, 0x103a3cff0, {{-120.0, -166.0}, {642.0, 332.0}}, identifier: 'AdditionalDimmingOverlay'
+                                        Other, 0x103a3d110, {{0.0, 0.0}, {402.0, 106.0}}
+                                        Other, 0x103a3d230, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103a3d350, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x103a3d470, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103a3d590, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x103a3d6b0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103a3d7d0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x103a3d8f0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x103a3da10, {{369.0, 116.0}, {30.0, 590.0}}, label: 'Vertical scroll bar, 4 pages', value: 100%
+                                        Other, 0x103a3db30, {{396.0, 490.0}, {3.0, 213.0}}
+                                      Other, 0x103a3dc50, {{369.0, 116.0}, {30.0, 590.0}}, label: 'Vertical scroll bar, 4 pages', value: 100%
+                                        Other, 0x103a3dd70, {{396.0, 490.0}, {3.0, 213.0}}
+                                    Other, 0x103a3de90, {{284.0, 124.0}, {110.0, 72.0}}, identifier: 'notes-contents-rail', label: 'Notes contents', value: Cost and billing
+                                      StaticText, 0x103a3dfb0, {{284.0, 124.0}, {110.0, 72.0}}, label: 'Cost and billing'
+                                    StaticText, 0x103a3e0d0, {{16.0, 722.0}, {72.0, 18.0}}, label: 'Up to date'
+                            Other, 0x103a3e1f0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x103a3e310, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x103a3e430, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x103a3e550, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x103a3e670, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x103a3e790, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x103a3e8b0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x103a3e9d0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x103a3eaf0, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x103a320d0, pid: 60011, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x103a194f0, pid: 60011, label: 'Engram'
+  }

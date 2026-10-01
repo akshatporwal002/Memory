@@ -1,0 +1,88 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Engram.xcodeproj -scheme Engram-iOS -destination id=C9DD5AAC-E456-4648-BCF3-A50DD6D8FFF3 -derivedDataPath /private/tmp/engram-minimalist-recheck-derived -packageAuthorizationProvider netrc CODE_SIGNING_ALLOWED=NO -parallel-testing-enabled NO -resultBundlePath /private/tmp/engram-minimalist-review-evidence/final-fddc39a/ipad.xcresult "-only-testing:Engram-UITests/MinimalistReviewerUITests/testTabletRouteProbe" test-without-building
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  FSRS: /tmp/engram-minimalist-recheck/Vendor/FSRS @ local
+  Engram: /tmp/engram-minimalist-recheck
+  FluidAudio: https://github.com/FluidInference/FluidAudio.git @ 8145085
+
+Writing result bundle at path:
+	/private/tmp/engram-minimalist-review-evidence/final-fddc39a/ipad.xcresult
+
+2026-10-02 04:02:44.415596+1000 Engram-UITests-Runner[60406:34981623] [Default] Running tests...
+2026-10-02 04:02:44.541587+1000 Engram-UITests-Runner[60406:34981623] [UIKit App Config] Update the Info.plist: Launch screens will soon be required.
+2026-10-02 04:02:44.544719+1000 Engram-UITests-Runner[60406:34981733] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-10-02 04:02:44.586161+1000 Engram-UITests-Runner[60406:34981733] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-02 04:02:47.321.
+Test Suite 'Engram-UITests.xctest' started at 2026-10-02 04:02:47.321.
+Test Suite 'MinimalistReviewerUITests' started at 2026-10-02 04:02:47.321.
+Test Case '-[Engram_UITests.MinimalistReviewerUITests testTabletRouteProbe]' started.
+    t =     0.00s Start Test at 2026-10-02 04:02:47.322
+    t =     0.32s Set Up
+    t =     0.33s Open dev.engram.study
+    t =     0.33s     Launch dev.engram.study
+2026-10-02 04:02:48.037 xcodebuild[60126:34978852] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:02:48.037 xcodebuild[60126:34978852] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.97s         Setting up automation session
+    t =     2.89s         Wait for dev.engram.study to idle
+    t =     5.14s Waiting 15.0s for "Start review" Button to exist
+    t =     6.22s     Checking `Expect predicate `existsNoRetry == 1` for object "Start review" Button`
+    t =     6.22s         Checking existence of `"Start review" Button`
+    t =     6.37s Checking existence of `"tab-library" Button`
+    t =     6.42s Find the Target Application 'dev.engram.study'
+    t =     6.65s Added attachment named '40-Tablet-Today'
+    t =     6.65s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =     6.88s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =     6.95s Added attachment named '40-Tablet-Today-tree'
+    t =     6.95s Find the Button (First Match)
+    t =     7.02s Tap "AWS Cloud Practitioner, 2 due · 1 new" Button
+    t =     7.03s     Wait for dev.engram.study to idle
+    t =     7.03s     Find the "AWS Cloud Practitioner, 2 due · 1 new" Button
+    t =     7.08s     Check for interrupting elements affecting "AWS Cloud Practitioner, 2 due · 1 new" Button
+    t =     7.13s         Wait for com.apple.springboard to idle
+    t =     7.22s     Synthesize event
+    t =     7.61s     Wait for dev.engram.study to idle
+    t =     7.73s Find the Target Application 'dev.engram.study'
+    t =     8.05s Added attachment named '41-Tablet-Deck-Route'
+    t =     8.05s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =     8.30s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =     8.38s Added attachment named '41-Tablet-Deck-Route-tree'
+    t =     8.38s Checking existence of `"deck-questions" Button`
+    t =     8.43s Checking existence of `"assistant-entry" Button`
+    t =     8.48s Tap "assistant-entry" Button
+    t =     8.48s     Wait for dev.engram.study to idle
+    t =     8.71s     Find the "assistant-entry" Button
+    t =     8.76s     Check for interrupting elements affecting "assistant-entry" Button
+    t =     8.81s         Wait for com.apple.springboard to idle
+    t =     8.83s     Synthesize event
+    t =     9.13s     Wait for dev.engram.study to idle
+    t =    10.18s Find the Target Application 'dev.engram.study'
+    t =    10.41s Added attachment named '42-Tablet-Assistant-Tap'
+    t =    10.41s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =    10.81s Requesting snapshot of accessibility hierarchy for app with pid 60427
+    t =    10.92s Added attachment named '42-Tablet-Assistant-Tap-tree'
+    t =    10.92s Tear Down
+Test Case '-[Engram_UITests.MinimalistReviewerUITests testTabletRouteProbe]' passed (11.237 seconds).
+Test Suite 'MinimalistReviewerUITests' passed at 2026-10-02 04:02:58.560.
+	 Executed 1 test, with 0 failures (0 unexpected) in 11.237 (11.238) seconds
+Test Suite 'Engram-UITests.xctest' passed at 2026-10-02 04:02:58.560.
+	 Executed 1 test, with 0 failures (0 unexpected) in 11.237 (11.239) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 04:02:58.560.
+	 Executed 1 test, with 0 failures (0 unexpected) in 11.237 (11.239) seconds
+2026-10-02 04:02:58.933 xcodebuild[60126:34978852] [MT] IDETestOperationsObserverDebug: 36.694 elapsed -- Testing started completed.
+2026-10-02 04:02:58.933 xcodebuild[60126:34978852] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 04:02:58.933 xcodebuild[60126:34978852] [MT] IDETestOperationsObserverDebug: 36.694 sec, +36.694 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/engram-minimalist-review-evidence/final-fddc39a/ipad.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
