@@ -50,26 +50,14 @@ struct NotebookView: View {
                     }
                     if let draft {
                         ForEach(draft.blocks) { block in
-                            Group {
-                                if editing { blockEditor(block) }
-                                else { blockReader(block) }
-                            }.id(block.id)
+                            notebookBlock(block).id(block.id)
                         }
                         if draft.blocks.isEmpty {
                             Text("Start with a thought, a heading, or a question.")
                                 .foregroundStyle(palette.secondaryText).padding(.vertical, 32)
                         }
                     }
-                    if editing {
-                        ViewThatFits(in: .horizontal) {
-                            HStack(spacing: 16) { insertButtons }
-                            VStack(alignment: .leading, spacing: 8) { insertButtons }
-                        }
-                    } else {
-                        Button { editing = true; insert(.question) } label: { Label("Add a question", systemImage: "plus") }
-                            .buttonStyle(EngramButtonStyle(.secondary))
-                    }
-                    .id("notebook-end")
+                    notebookActions.id("notebook-end")
                 }
                 .padding(EngramSpacing.section).padding(.trailing, 34)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
@@ -163,6 +151,21 @@ struct NotebookView: View {
         if model.busy { return "Saving notebook and cards…" }
         if draft?.changed == true { return "\(count) questions · Draft kept on this device" }
         return "\(count) questions · \(saved ? "Saved" : "Up to date")"
+    }
+    @ViewBuilder private func notebookBlock(_ block: NotebookBlock) -> some View {
+        if editing { blockEditor(block) }
+        else { blockReader(block) }
+    }
+    @ViewBuilder private var notebookActions: some View {
+        if editing {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 16) { insertButtons }
+                VStack(alignment: .leading, spacing: 8) { insertButtons }
+            }
+        } else {
+            Button { editing = true; insert(.question) } label: { Label("Add a question", systemImage: "plus") }
+                .buttonStyle(EngramButtonStyle(.secondary))
+        }
     }
     private func setActive(_ id: String) {
         guard activeBlockID != id else { return }
