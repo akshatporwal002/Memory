@@ -78,120 +78,53 @@ struct DeckRow: View {
 
 struct LibraryView: View {
     @Bindable var model: EngramModel
-    var deckScoped = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var textSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var body: some View {
-        GeometryReader { geometry in
-            let wide = geometry.size.width >= 850 && !textSize.isAccessibilitySize
-            HStack(spacing: 0) {
-                libraryList(wide: wide)
-                    .frame(minWidth: wide ? 280 : nil, idealWidth: wide ? 320 : nil, maxWidth: wide ? 360 : .infinity)
-                if wide {
-                    Divider()
-                    if let note = model.visibleNotes.first(where: { $0.id == model.selectedNoteID }) {
-                        LibraryNoteDetail(model: model, note: note)
-                            .id(note.id)
-                            .transition(EngramMotion.contentTransition(reduceMotion: reduceMotion))
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        EngramEmptyState(title: "A closer look", message: "Select a note to see its cards, content and study progress.", symbol: "rectangle.split.2x1")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-            }
-            .animation(EngramMotion.navigation(reduceMotion: reduceMotion), value: model.selectedNoteID)
+    private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var decks: [Deck] {
+        guard !model.search.isEmpty else { return model.library.liveDecks }
+        return model.library.liveDecks.filter { deck in
+            deck.name.localizedCaseInsensitiveContains(model.search) ||
+                model.library.liveNotes.contains { $0.deckID == deck.id && ($0.front + " " + $0.back).localizedCaseInsensitiveContains(model.search) }
         }
     }
-    private func libraryList(wide: Bool) -> some View {
-        VStack(spacing: 0) {
-            if model.library.liveDecks.isEmpty {
-                Spacer()
-                EngramEmptyState(title: "A home for your knowledge", message: "Create a deck, then add a question and answer.")
-                Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
-                Spacer()
-            } else {
-                List {
-                    Section {
-                        if !deckScoped {
-                            Picker("Deck", selection: $model.selectedDeckID) {
-                                Text("All decks").tag(String?.none)
-                                ForEach(model.library.liveDecks) { Text($0.name).tag(Optional($0.id)) }
-                            }
-                        }
-                        if let deck = model.library.liveDecks.first(where: { $0.id == model.selectedDeckID }) {
-                            DeckRow(model: model, deck: deck)
-                            DeckMemoryPanel(model: model, deck: deck).listRowSeparator(.hidden)
-                            HStack {
-                                Button("Study deck") { Task { await model.beginReview(deckID: deck.id) } }
-                                Spacer()
-                                Menu("Deck actions") {
-                                    Button("Rename deck") { model.deckForm = DeckForm(deck: deck) }
-                                    Button("Delete deck", role: .destructive) { model.deleteDeck = deck }
-                                }
-                            }.disabled(model.busy)
-                            Button { model.notebookDeckID = deck.id } label: {
-                                Label("Open notebook", systemImage: "book.pages")
-                            }.frame(minHeight: EngramShape.touchTarget)
+    var body: some View {
+        Group {
+            if let id = model.selectedDeckID {
+                DeckOverviewView(model: model, deckID: id)
+                    .toolbar {
+                        ToolbarItem(placement: .navigation) {
+                            Button("All decks") { model.selectedDeckID = nil; model.libraryDeckRequest = nil }
                         }
                     }
-                    Section("\(model.visibleNotes.count) notes") {
-                        if model.visibleNotes.isEmpty {
-                            Text(model.search.isEmpty ? "No notes yet. Add a basic or cloze card to start." : "No matching notes. Try fewer terms or a different deck.")
-                                .foregroundStyle(theme.palette(for: scheme).secondaryText)
-                        }
-                        ForEach(model.visibleNotes) { note in
-                            VStack(alignment: .leading, spacing: EngramSpacing.small) {
-                                Button {
-                                    model.selectedNoteID = note.id
-                                    model.selectedCardID = model.cards(for: note).first?.id
-                                    if !wide { model.edit(note) }
-                                } label: {
-                                    VStack(alignment: .leading, spacing: EngramSpacing.small) {
-                                        Text(note.front).font(theme.font(.body)).lineLimit(3)
-                                        Text("\(model.deckName(note.deckID)) · \(note.kind.rawValue.capitalized)")
-                                            .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-                                    }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-                                }.buttonStyle(.plain).accessibilityValue(wide && model.selectedNoteID == note.id ? "Selected" : "")
-                                if !note.tags.isEmpty {
-                                    Text(note.tags.map { "#" + $0 }.joined(separator: " ")).font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).accentInk)
-                                }
-                                ForEach(model.cards(for: note)) { card in
-                                    HStack(alignment: .firstTextBaseline) {
-                                        Text("Card \(card.ordinal + 1) · \(card.suspended ? "Suspended" : card.schedule.phase == .new ? "New" : card.schedule.due <= model.now ? "Due" : card.schedule.due.formatted(date: .abbreviated, time: .omitted))")
-                                            .font(theme.font(.metadata))
-                                        Spacer()
-                                        Button(card.suspended ? "Resume" : "Suspend") {
-                                            Task { _ = await model.perform { try await $0.setSuspended(cardID: card.id, suspended: !card.suspended) } }
-                                        }.font(theme.font(.metadata)).frame(minHeight: EngramShape.touchTarget).disabled(model.busy)
-                                    }
-                                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: EngramSpacing.regular) {
+                        if model.library.liveDecks.isEmpty {
+                            EngramEmptyState(title: "A home for your knowledge", message: "Create a deck, then add a question and answer.")
+                            Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
+                        } else {
+                            ForEach(decks) { deck in
+                                Button { model.selectedDeckID = deck.id } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
+                                Divider()
                             }
-                            .padding(.vertical, EngramSpacing.small)
-                            .listRowBackground(wide && model.selectedNoteID == note.id ? theme.palette(for: scheme).selection : theme.palette(for: scheme).canvas)
-                            .contextMenu {
-                                Button("Edit note") { model.edit(note) }
-                                Button("Delete note and cards", role: .destructive) { model.deleteNote = note }
-                            }
+                            if decks.isEmpty { Text("No matching decks").foregroundStyle(palette.secondaryText) }
                         }
+                    }.padding(EngramSpacing.section).frame(maxWidth: 760).frame(maxWidth: .infinity)
+                }
+                .searchable(text: $model.search, prompt: "Search decks or questions")
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { model.creationPresented = true } label: { Label("New deck", systemImage: "folder.badge.plus") }
                     }
                 }
-                .scrollContentBackground(.hidden)
-                .searchable(text: $model.search, prompt: "Search notes, tag:plants, is:suspended")
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                if !deckScoped { Button { model.creationPresented = true } label: { Label("New deck", systemImage: "folder.badge.plus") } }
-                Button { model.newNote() } label: { Label("Add card", systemImage: "plus") }
-                    .disabled(model.library.liveDecks.isEmpty).keyboardShortcut("n", modifiers: .command)
-            }
+        .onChange(of: model.libraryDeckRequest) { _, id in
+            if let id { model.selectedDeckID = id; model.libraryDeckRequest = nil }
         }
     }
 }
-
 struct LibraryNoteDetail: View {
     @Bindable var model: EngramModel
     let note: Note

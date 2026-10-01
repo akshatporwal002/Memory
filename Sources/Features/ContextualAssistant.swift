@@ -214,6 +214,8 @@ struct ContextualAssistant: View {
         #if os(iOS)
         if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
             navigationButtons.glassEffect(.regular.interactive(), in: .capsule)
+        } else if reduceTransparency || contrast == .increased {
+            navigationButtons.background(palette.surface, in: Capsule())
         } else { navigationButtons.background(.regularMaterial, in: Capsule()) }
         #else
         navigationButtons.background(palette.surface, in: Capsule())
@@ -227,7 +229,7 @@ struct ContextualAssistant: View {
                         Image(systemName: destination.symbol).font(.system(size: 18))
                         Text(destination.title).font(.caption2.weight(.medium))
                     }.frame(maxWidth: .infinity, minHeight: 50)
-                        .foregroundStyle(model.destination == destination ? palette.anchor : palette.secondaryText)
+                        .foregroundStyle(model.destination == destination ? (scheme == .dark ? palette.easyInk : palette.anchor) : palette.secondaryText)
                         .background(model.destination == destination ? palette.selection : .clear, in: Capsule())
                 }.buttonStyle(.plain).accessibilityIdentifier("tab-" + destination.rawValue)
                     .accessibilityAddTraits(model.destination == destination ? [.isSelected] : [])

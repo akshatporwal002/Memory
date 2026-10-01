@@ -72,7 +72,7 @@ struct DeckOverviewView: View {
     private func contentLink(_ title: String, detail: String, symbol: String, identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: symbol).font(.title3).foregroundStyle(palette.anchor)
+                Image(systemName: symbol).font(.title3).foregroundStyle(scheme == .dark ? palette.easyInk : palette.anchor)
                 HStack { Text(title).font(.headline); Spacer(minLength: 4); Image(systemName: "arrow.up.right").font(.caption) }
                 Text(detail).font(.caption).foregroundStyle(palette.secondaryText)
             }.frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
@@ -174,8 +174,7 @@ struct QuestionReadingView: View {
                     Text(question.explanation).font(.subheadline).foregroundStyle(correctInk).lineSpacing(4).textSelection(.enabled)
                 }
             } else {
-                if !prefix.isEmpty { Text(prefix + "Question").font(.caption).foregroundStyle(palette.secondaryText) }
-                CardContentView(text: front, media: media).font(.body.weight(.bold))
+                CardContentView(text: prefix + front, media: media).font(.body.weight(.bold))
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Answer").font(.subheadline.weight(.semibold)).foregroundStyle(correctInk)
                     CardContentView(text: back, media: media).font(.subheadline)

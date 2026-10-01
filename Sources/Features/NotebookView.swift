@@ -49,7 +49,7 @@ struct NotebookView: View {
                         Text("\(otherCount) formatted or cloze notes remain in Cards. Their content and schedules are preserved.")
                             .font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
                     }
-                    if let draft {
+                    if draft != nil {
                         ForEach(visibleBlocks) { block in
                             notebookBlock(block).id(block.id)
                         }
@@ -181,7 +181,7 @@ struct NotebookView: View {
 
     private func sectionTitle(_ block: NotebookBlock) -> String {
         let first = block.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-        let title = first.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = first.trimmingCharacters(in: CharacterSet(charactersIn: "# ").union(.whitespacesAndNewlines))
         return title.isEmpty ? (block.kind == .question ? "Untitled question" : "Untitled section") : String(title.prefix(48))
     }
     private var visibleBlocks: [NotebookBlock] {

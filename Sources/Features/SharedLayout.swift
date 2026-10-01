@@ -59,9 +59,9 @@ struct EngramTaskSizing: ViewModifier {
 }
 
 extension View {
-    @ViewBuilder func engramHideStudyTabs() -> some View {
+    @ViewBuilder func engramHideStudyTabs(_ hidden: Bool = true) -> some View {
         #if os(iOS)
-        toolbar(.hidden, for: .tabBar)
+        toolbar(hidden ? .hidden : .visible, for: .tabBar)
         #else
         self
         #endif

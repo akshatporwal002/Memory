@@ -31,7 +31,7 @@ public struct EngramRootView: View {
                 if geometry.size.width < 600 {
                     TabView(selection: $model.destination) {
                         ForEach(EngramDestination.allCases) { destination in
-                            NavigationStack { page(destination) }.engramHideStudyTabs()
+                            NavigationStack { page(destination) }.engramHideStudyTabs(!capturingScreenshots)
                                 .tabItem { Label(destination.title, systemImage: destination.symbol) }
                                 .tag(destination)
                         }
@@ -99,6 +99,7 @@ public struct EngramRootView: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh() } } }
         .environment(\.engramTheme, model.theme)
+        .tint(scheme == .dark ? model.theme.palette(for: scheme).easyInk : model.theme.palette(for: scheme).anchor)
         .preferredColorScheme(model.appearance.colorScheme)
     }
     @ViewBuilder private func page(_ destination: EngramDestination) -> some View {
