@@ -113,12 +113,19 @@ public enum PDFRetrieval {
         let tokens = passages.map { Set(normalize($0.text).split(separator: " ").map(String.init)) }
         var frequency: [String: Int] = [:]
         for set in tokens { for term in set { frequency[term, default: 0] += 1 } }
-        let scored = passages.enumerated().map { index, passage -> (PDFPassage, Double, Int) in
-            let score = terms.intersection(tokens[index]).reduce(0.0) { result, term in
-                result + log(1 + Double(passages.count) / Double(frequency[term, default: 1]))
+        var scored: [(PDFPassage, Double, Int)] = []
+        for (index, passage) in passages.enumerated() {
+            var score: Double = 0
+            for term in terms.intersection(tokens[index]) {
+                let occurrences = Double(frequency[term] ?? 1)
+                score += log(1.0 + Double(passages.count) / occurrences)
             }
-            return (passage, score, index)
-        }.sorted { $0.1 == $1.1 ? $0.2 < $1.2 : $0.1 > $1.1 }
+            scored.append((passage, score, index))
+        }
+        scored.sort { left, right in
+            if left.1 == right.1 { return left.2 < right.2 }
+            return left.1 > right.1
+        }
         if terms.isEmpty || scored.first?.1 == 0 {
             guard !passages.isEmpty else { return [] }
             let count = min(limit, passages.count)

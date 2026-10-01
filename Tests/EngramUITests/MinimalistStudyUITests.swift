@@ -1,6 +1,37 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testPDFSampleApprovalAndSourceLinkedSave() {
+        let app = launch(extra: ["--ui-pdf-fixture"])
+        XCTAssertTrue(app.buttons["New deck"].waitForExistence(timeout: 15))
+        app.buttons["New deck"].tap()
+        XCTAssertTrue(app.buttons["deck-pdf-learning"].waitForExistence(timeout: 5))
+        app.buttons["deck-pdf-learning"].tap()
+        XCTAssertTrue(app.buttons["pdf-source-inspect"].waitForExistence(timeout: 5))
+        capture("PDF-Learning-Brief", app)
+        for _ in 0..<5 where !app.buttons["pdf-preview"].isHittable { app.swipeUp() }
+        app.buttons["pdf-preview"].tap()
+        XCTAssertTrue(app.buttons["pdf-approve"].waitForExistence(timeout: 10))
+        capture("PDF-Learning-Sample", app)
+        for _ in 0..<5 where !app.buttons["pdf-approve"].isHittable { app.swipeUp() }
+        app.buttons["pdf-approve"].tap()
+        XCTAssertTrue(app.buttons["pdf-save"].waitForExistence(timeout: 10))
+        capture("PDF-Learning-Review", app)
+        for _ in 0..<6 where !app.buttons["pdf-save"].isHittable { app.swipeUp() }
+        app.buttons["pdf-save"].tap()
+        XCTAssertTrue(app.buttons["deck-actions"].waitForExistence(timeout: 10))
+        app.buttons["deck-actions"].tap()
+        XCTAssertTrue(app.buttons["PDF source pages"].waitForExistence(timeout: 5))
+        app.buttons["PDF source pages"].tap()
+        XCTAssertTrue(app.buttons["Page 1"].waitForExistence(timeout: 5))
+        capture("PDF-Saved-Source", app)
+        app.buttons["Done"].tap()
+        for _ in 0..<5 where !app.buttons["deck-questions"].isHittable { app.swipeUp() }
+        app.buttons["deck-questions"].tap()
+        XCTAssertTrue(app.staticTexts["1. Which service caches content near users?"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Source evidence"].exists)
+        capture("PDF-Saved-Questions", app)
+    }
     @MainActor func testDeckQuestionsAndNotesNavigation() {
         let app = launch()
         XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15))

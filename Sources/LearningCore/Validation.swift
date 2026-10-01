@@ -26,6 +26,10 @@ public enum LibraryValidation {
         var total = 0
         let mediaNames = Set(library.media.map(\.name))
         for deck in library.decks {
+            if let learning = deck.pdfLearning {
+                try learning.brief.validate(source: learning.source)
+                try PDFRetrieval.validate(learning.items, against: learning.source.chunks)
+            }
             guard deck.desiredRetention.map({ $0.isFinite && (0.8...0.97).contains($0) }) ?? true else {
                 throw EngramError.invalid("A deck has an invalid desired retention.")
             }
