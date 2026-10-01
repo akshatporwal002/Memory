@@ -44,7 +44,7 @@ struct LibraryCreateDeckView: View {
                         .font(.subheadline).foregroundStyle(palette.secondaryText)
                     Spacer(minLength: 0)
                     if !parsed.questions.isEmpty {
-                        Text("\(parsed.questions.count) cards").font(.subheadline).foregroundStyle(palette.secondaryText).monospacedDigit()
+                        Text("\(parsed.questions.count) \(parsed.questions.count == 1 ? "card" : "cards")").font(.subheadline).foregroundStyle(palette.secondaryText).monospacedDigit()
                     }
                 }
                 if showHelp {

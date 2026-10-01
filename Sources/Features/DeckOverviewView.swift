@@ -24,7 +24,8 @@ struct DeckOverviewView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(deck.name.components(separatedBy: "::").last ?? deck.name)
                                 .font(theme.font(.title)).accessibilityAddTraits(.isHeader)
-                            Text("\(notes.reduce(0) { $0 + model.cards(for: $1).count }) cards · \(model.due(in: deck).count) ready")
+                            let cardCount = notes.reduce(0) { $0 + model.cards(for: $1).count }
+                            Text("\(cardCount) \(cardCount == 1 ? "card" : "cards") · \(model.due(in: deck).count) ready")
                                 .font(.subheadline).foregroundStyle(palette.secondaryText)
                         }
                         DeckMemoryPanel(model: model, deck: deck)

@@ -23,7 +23,7 @@ struct PDFLearningView: View {
                 if let source = flow.draft.source {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(source.filename).font(theme.font(.title))
-                        Text("\(source.pages.count) pages · source text kept on this device").font(.subheadline).foregroundStyle(palette.secondaryText)
+                        Text("\(source.pages.count) \(source.pages.count == 1 ? "page" : "pages") · source text kept on this device").font(.subheadline).foregroundStyle(palette.secondaryText)
                         Button("Inspect source pages") { inspectSource = true }
                             .accessibilityIdentifier("pdf-source-inspect")
                         ForEach(source.warnings, id: \.self) { Text($0).font(.caption).foregroundStyle(palette.againInk) }
@@ -105,7 +105,7 @@ struct PDFLearningView: View {
             if flow.draft.brief.output != "Questions only" {
                 picker("Notes", value: $flow.draft.brief.noteDepth, options: ["Condensed", "Detailed"])
             }
-            Text("First, review a small sample. The full scope needs \(flow.batches.count) batches, each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.")
+            Text("First, review a small sample. The full scope needs \(flow.batches.count) \(flow.batches.count == 1 ? "batch" : "batches"), each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.")
                 .font(.caption).foregroundStyle(palette.secondaryText)
             Button("Preview a sample") { flow.generateSample(model: model) }
                 .buttonStyle(EngramButtonStyle()).accessibilityIdentifier("pdf-preview")
@@ -133,7 +133,7 @@ struct PDFLearningView: View {
             Text(flow.draft.finished ? "Your learning draft" : "Building your learning draft").font(theme.font(.section))
             let questionCount = flow.draft.items.filter { $0.kind != "note" }.count
             let notesCount = flow.draft.items.filter { $0.kind == "note" }.count
-            Text("\(questionCount) questions · \(notesCount) note sections · \(flow.draft.completedBatches)/\(flow.batches.count) batches checked")
+            Text("\(questionCount) \(questionCount == 1 ? "question" : "questions") · \(notesCount) \(notesCount == 1 ? "note section" : "note sections") · \(flow.draft.completedBatches)/\(flow.batches.count) batches checked")
                 .font(.subheadline).foregroundStyle(palette.secondaryText)
             Text("Source checks reduce unsupported claims; they do not guarantee accuracy. Read the evidence and remove anything you do not want to study.")
                 .font(.caption).foregroundStyle(palette.secondaryText)
@@ -158,7 +158,7 @@ struct PDFLearningView: View {
                     Button("Save learning deck", action: save).buttonStyle(EngramButtonStyle())
                         .disabled(flow.draft.items.isEmpty || model.busy).accessibilityIdentifier("pdf-save")
                     if questionCount < flow.draft.brief.questionCount && flow.draft.brief.output != "Notes only" {
-                        Text("\(questionCount) supported questions were retained from the requested maximum of \(flow.draft.brief.questionCount). A limited question set does not test every fact in the PDF.")
+                        Text("\(questionCount) supported \(questionCount == 1 ? "question was" : "questions were") retained from the requested maximum of \(flow.draft.brief.questionCount). A limited question set does not test every fact in the PDF.")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
                 } else {
