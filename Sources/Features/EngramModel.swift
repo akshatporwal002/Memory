@@ -19,6 +19,10 @@ public struct DeckForm: Identifiable {
 
 /// Own once in the composition root. Theme, selection and sheets never own learning data.
 @MainActor @Observable public final class EngramModel {
+    let voice = VoiceStudyController()
+    let aiMarker = AIAnswerMarker()
+    public var answerFeedback: String?
+    public var markingAnswer = false
     public let chatGPT = ChatGPTConnection.live()
     public let service: StudyService
     public private(set) var library = LibrarySnapshot()
@@ -37,6 +41,7 @@ public struct DeckForm: Identifiable {
     }
     public var creationPresented = false
     public var notebookFocusNoteID: String?
+    public var notebookFocusBlockID: String?
     public var notebookDeckID: String?
     public var selectedNoteID: String?
     public var selectedCardID: String?
@@ -52,15 +57,24 @@ public struct DeckForm: Identifiable {
     public var deleteNote: Note?
     public var theme: EngramTheme { didSet { defaults.set(theme.rawValue, forKey: "engram.theme.v1") } }
     public var appearance: EngramAppearance { didSet { defaults.set(appearance.rawValue, forKey: "engram.appearance.v1") } }
+    public private(set) var lastBackupExport: Date?
+    public func recordBackupExport(at date: Date = Date()) {
+        lastBackupExport = date
+        defaults.set(date, forKey: "engram.lastBackupExport.v1")
+    }
     public private(set) var now = Date()
     @ObservationIgnored private let defaults: UserDefaults
 
     public init(service: StudyService, defaults: UserDefaults = .standard) {
         self.service = service; self.defaults = defaults
+        lastBackupExport = defaults.object(forKey: "engram.lastBackupExport.v1") as? Date
         deckCreationDraft = defaults.data(forKey: "engram.deckCreationDraft.v1")
             .flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
         theme = EngramTheme(rawValue: defaults.string(forKey: "engram.theme.v1") ?? "") ?? .warm
         appearance = EngramAppearance(rawValue: defaults.string(forKey: "engram.appearance.v1") ?? "") ?? .system
+        if ProcessInfo.processInfo.arguments.contains("--prepare-local-voice") {
+            Task { await voice.prepare() }
+        }
     }
     func notebookDraft(_ deckID: String) -> NotebookEditingDraft? {
         defaults.data(forKey: "engram.notebookDraft." + deckID).flatMap { try? JSONDecoder().decode(NotebookEditingDraft.self, from: $0) }
@@ -116,6 +130,40 @@ public struct DeckForm: Identifiable {
     public func undo() async {
         guard let session = library.session else { return }
         _ = await perform { try await $0.undo(sessionID: session.id, now: Date()) }
+    }
+    func submitChoice(_ choice: String, presentationID: String) async {
+        guard let session = library.session, session.current?.presentationID == presentationID else { return }
+        _ = await perform { try await $0.submitAnswer(sessionID: session.id, presentationID: presentationID, choiceID: choice) }
+    }
+    func markSpokenAnswer(_ text: String) async {
+        guard !markingAnswer, let session = library.session, let item = session.current, item.revealedAt == nil,
+              let note = library.liveNotes.first(where: { $0.id == item.card.noteID }) else { return }
+        answerFeedback = nil
+        if let question = note.mcq {
+            guard let choice = question.resolve(text) else { answerFeedback = "Please say one option letter or its answer text."; return }
+            await submitChoice(choice, presentationID: item.presentationID); return
+        }
+        markingAnswer = true; defer { markingAnswer = false }
+        do {
+            let card = try CardRenderer.render(note: note, card: item.card, revealed: true)
+            let question = try CardRenderer.render(note: note, card: item.card, revealed: false)
+            let assessment = try await aiMarker.assess(answer: text, note: note, prompt: question.prompt, expected: card.answer ?? note.back, library: library, connection: chatGPT)
+            try Task.checkCancellation()
+            guard library.session?.current?.presentationID == item.presentationID, library.session?.current?.revealedAt == nil else { return }
+            if assessment.outcome == .unclear { answerFeedback = assessment.reason; return }
+            _ = await perform { try await $0.submitAnswer(sessionID: session.id, presentationID: item.presentationID, assessment: assessment) }
+        } catch is CancellationError { }
+        catch { if !Task.isCancelled { answerFeedback = error.localizedDescription } }
+    }
+    func nextAnswer() async {
+        guard let session = library.session, let item = session.current else { return }
+        answerFeedback = nil
+        _ = await perform { try await $0.nextAssessedAnswer(sessionID: session.id, presentationID: item.presentationID) }
+    }
+    func skipAnswer() async {
+        guard let session = library.session, let item = session.current else { return }
+        answerFeedback = nil
+        _ = await perform { try await $0.skipAnswer(sessionID: session.id, presentationID: item.presentationID) }
     }
     public func newNote(deckID: String? = nil) {
         guard let id = deckID ?? selectedDeckID ?? library.liveDecks.first?.id else { creationPresented = true; return }

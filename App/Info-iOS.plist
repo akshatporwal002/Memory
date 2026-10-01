@@ -6,6 +6,8 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Engram</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Recognize spoken study answers locally on your device.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save screenshots of Engram pages to Photos so you can review and share them.</string>
 	<key>CFBundleExecutable</key>

@@ -42,6 +42,8 @@ public struct Deck: Codable, Identifiable, Equatable, Sendable {
     /// Notebook text, retained for portable reading alongside stable editable blocks.
     public var sourceDocument: String?
     public var notebookBlocks: [NotebookBlock]?
+    /// Nil inherits the library's desired retention. Old backups decode as nil.
+    public var desiredRetention: Double?
     /// Missing means the original arrow-only document format.
     public var documentFormatVersion: Int?
     public init(id: String = UUID().uuidString, name: String, deleted: Bool = false,
@@ -64,6 +66,8 @@ public struct ImportOrigin: Codable, Equatable, Sendable {
     }
 }
 public struct Note: Codable, Identifiable, Equatable, Sendable {
+    public var multipleChoice: MultipleChoiceQuestion?
+    public var mcq: MultipleChoiceQuestion? { kind == .basic ? multipleChoice ?? MultipleChoiceQuestion.parse(front: front, back: back) : nil }
     public var id: String
     public var deckID: String
     public var kind: NoteKind
@@ -77,6 +81,7 @@ public struct Note: Codable, Identifiable, Equatable, Sendable {
     public init(id: String = UUID().uuidString, deckID: String, kind: NoteKind, front: String, back: String = "", tags: [String] = [], source: String = "", origin: ImportOrigin? = nil, deleted: Bool = false, modifiedAt: Date = Date()) {
         self.id = id; self.deckID = deckID; self.kind = kind; self.front = front; self.back = back
         self.tags = tags; self.source = source; self.origin = origin; self.deleted = deleted; self.modifiedAt = modifiedAt
+        self.multipleChoice = kind == .basic ? MultipleChoiceQuestion.parse(front: front, back: back) : nil
     }
 }
 public struct NoteDraft: Codable, Equatable, Sendable {
@@ -110,6 +115,7 @@ public struct StudyCard: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct ReviewEvent: Codable, Identifiable, Equatable, Sendable {
+    public var assessment: AnswerAssessment?
     public var id: String
     public var cardID: String
     public var deckID: String
@@ -154,6 +160,7 @@ public struct StudySettings: Codable, Equatable, Sendable {
     public init(timeZoneID: String = TimeZone.current.identifier) { self.timeZoneID = timeZoneID }
 }
 public struct ReviewPresentation: Codable, Equatable, Sendable {
+    public var assessment: AnswerAssessment?
     public var presentationID: String
     public var card: StudyCard
     public var revealedAt: Date?
@@ -161,6 +168,7 @@ public struct ReviewPresentation: Codable, Equatable, Sendable {
     public init(card: StudyCard) { self.presentationID = UUID().uuidString; self.card = card; self.revealedAt = nil; self.outcomes = [:] }
 }
 public struct StudySession: Codable, Identifiable, Equatable, Sendable {
+    public var skippedCardIDs: [String]?
     public var id: String
     public var deckID: String?
     public var startedAt: Date

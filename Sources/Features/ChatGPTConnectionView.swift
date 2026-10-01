@@ -56,7 +56,7 @@ struct ChatGPTConnectionView: View {
             }
             Text("Eligible Plus and Pro accounts can grant access to their existing plan. Usage shares your ChatGPT limits. Connecting does not grant access to your ChatGPT conversations.")
                 .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-            Text("This build adds account connection; AI generation and tutoring are not available yet.")
+            Text("AI answer marking can use this connection when you enable it. Audio is processed on your device.")
                 .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
             HStack {
                 Link("Manage usage", destination: ChatGPTOAuth.usageURL)
@@ -68,7 +68,7 @@ struct ChatGPTConnectionView: View {
         .alert("You're using your ChatGPT plan", isPresented: $connection.showPlanConfirmation) {
             Button("Got it") { connection.acknowledgePlanUsage() }
         } message: {
-            Text("When Engram's AI features become available, eligible requests will use your ChatGPT plan. You can manage Engram's access and usage limits in ChatGPT settings.")
+            Text("Enabled AI answer marking uses your ChatGPT plan. You can manage Engram's access and usage limits in ChatGPT settings.")
         }
         #if os(iOS)
         .sheet(item: $browser, onDismiss: { if connection.waitingForBrowser { connection.cancelSignIn() } }) { destination in

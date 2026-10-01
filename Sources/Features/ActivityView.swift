@@ -1,199 +1,240 @@
 import SwiftUI
+import DesignSystem
+import Charts
 import LearningCore
 import StudyApplication
-import DesignSystem
+
+private enum ActivityChartStyle: String, CaseIterable, Identifiable {
+    case bars = "Bars", line = "Line"
+    var id: String { rawValue }
+}
 
 struct ActivityView: View {
     let model: EngramModel
-    @Environment(\.engramTheme) private var theme
-    @Environment(\.colorScheme) private var scheme
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var period: ActivityPeriod = .today
-    @State private var summary: ActivitySummary?
-    @State private var expandedDeck: String?
-    @State private var expandedQuestion: String?
-    @State private var filter: ActivityCardFilter = .all
-    @State private var limit = 20
+    @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
+    @AppStorage("engram.activity.chartStyle.v1") private var chartStyle: ActivityChartStyle = .bars
     private var palette: EngramPalette { theme.palette(for: scheme) }
-    private var refreshID: String { "\(model.library.revision)-\(period.rawValue)-\(scenePhase == .active)" }
+    @State private var period: ActivityPeriod = .week
+    @State private var offset = 0
+    @State private var selectedDate: Date?
+    @State private var summary: ActivitySummary?
+    @State private var report: ActivityReviewReport?
+    @State private var previous: ActivityReviewReport?
+    @State private var refreshedAt = Date()
+    private var window: ActivityWindow { ActivityWindow(period: period, offset: offset, now: refreshedAt, settings: model.library.settings, earliestReview: model.library.activeReviews.map(\.reviewedAt).min()) }
+    private var selected: DateInterval? { selectedDate.flatMap { date in window.buckets.first { date >= $0.start && date < $0.end } } }
+    private var refreshID: String { "\(model.library.revision)-\(period)-\(offset)-\(selectedDate?.timeIntervalSince1970 ?? 0)-\(scenePhase)" }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
-                if typeSize.isAccessibilitySize {
-                    periodPicker.pickerStyle(.menu)
-                } else { periodPicker.pickerStyle(.segmented) }
-                if let summary {
-                    VStack(spacing: 12) {
-                        metric("Cards reviewed", value: summary.reviewedCount)
-                        metric("Review attempts", value: summary.attemptCount)
-                        Divider()
-                        metric("Due now", value: summary.dueCount)
-                    }.padding(20).background(palette.surface, in: RoundedRectangle(cornerRadius: 22))
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Memory now").font(theme.font(.section)).accessibilityAddTraits(.isHeader)
-                        Text("Estimated recall · target \(Int((model.library.settings.desiredRetention * 100).rounded()))%")
-                            .font(.subheadline).foregroundStyle(palette.secondaryText)
-                        Text("Memory and due counts reflect now. Review results reflect \(period.rawValue.lowercased()) and your own ratings.")
-                            .font(.caption).foregroundStyle(palette.secondaryText)
-                    }
-                    if summary.decks.isEmpty {
-                        EngramEmptyState(title: "Watch your memory grow", message: "Create a deck and study a few questions to see your progress here.", symbol: "chart.bar.xaxis")
-                    }
-                    ForEach(summary.decks) { deck in deckRow(deck) }
-                    if !model.library.importedReviews.isEmpty {
-                        Text("\(model.library.importedReviews.count) imported review records are preserved separately. Review totals here include Engram ratings only.")
-                            .font(.caption).foregroundStyle(palette.secondaryText)
-                    }
-                } else { ProgressView("Loading activity…").frame(maxWidth: .infinity) }
-            }.padding(20).frame(maxWidth: 760).frame(maxWidth: .infinity)
-        }
-        .task(id: refreshID) {
-            guard scenePhase == .active else { return }
-            repeat {
-                let result = await model.service.activity(in: model.library, period: period, now: Date())
-                guard !Task.isCancelled else { return }
-                summary = result
-                do { try await Task.sleep(for: .seconds(60)) } catch { return }
-            } while !Task.isCancelled
-        }
-        .onChange(of: period) { _, _ in expandedQuestion = nil; limit = 20 }
-    }
-
-    private var periodPicker: some View {
-        Picker("Review period", selection: $period) {
-            ForEach(ActivityPeriod.allCases) { Text($0.rawValue).tag($0) }
-        }
-    }
-    private var questionPicker: some View {
-        Picker("Questions", selection: $filter) {
-            ForEach(ActivityCardFilter.allCases) { Text($0.rawValue).tag($0) }
-        }
-    }
-    private func metric(_ title: String, value: Int) -> some View {
-        HStack { Text(title).foregroundStyle(palette.secondaryText); Spacer(); Text(value, format: .number).font(.headline).monospacedDigit() }
-            .accessibilityElement(children: .combine)
-    }
-    private func color(_ bucket: MemoryBucket) -> Color {
-        switch bucket {
-        case .atTarget: return palette.anchor
-        case .belowTarget: return palette.againInk
-        case .learning: return palette.accentInk
-        case .unstudied: return palette.hairline
-        case .unavailable: return palette.secondaryText
-        }
-    }
-    private func deckRow(_ deck: ActivityDeck) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Button {
-                expandedDeck = expandedDeck == deck.id ? nil : deck.id
-                expandedQuestion = nil; filter = .all; limit = 20
-            } label: {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(deck.title).font(theme.font(.section)).foregroundStyle(palette.primaryText)
-                            if !deck.folder.isEmpty { Text(deck.folder).font(.caption).foregroundStyle(palette.secondaryText) }
-                            Text("\(deck.questions.count) cards · \(deck.dueCount) due now").font(.subheadline).foregroundStyle(palette.secondaryText)
-                        }
-                        Spacer(minLength: 12)
-                        Image(systemName: expandedDeck == deck.id ? "chevron.up" : "chevron.down").foregroundStyle(palette.secondaryText)
-                    }
-                    memoryBar(deck)
-                }.contentShape(Rectangle())
-            }.buttonStyle(.plain)
-                .accessibilityValue(expandedDeck == deck.id ? "Expanded" : "Collapsed")
-                .accessibilityHint("Show or hide questions")
-            // Counts make every segment readable without relying on color or bar width.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { legend(deck) }
-                VStack(alignment: .leading, spacing: 8) { legend(deck) }
-            }
-            if deck.suspendedCount > 0 {
-                Text("\(deck.suspendedCount) suspended cards not included").font(.caption).foregroundStyle(palette.secondaryText)
-            }
-            if expandedDeck == deck.id {
-                Divider()
+        List {
+            EngramListSection {
                 Group {
-                    if typeSize.isAccessibilitySize { questionPicker.pickerStyle(.menu) }
-                    else { questionPicker.pickerStyle(.segmented) }
-                }.onChange(of: filter) { _, _ in limit = 20; expandedQuestion = nil }
-                let questions = deck.questions.filter { $0.matches(filter) }
-                if questions.isEmpty {
-                    Text(deck.questions.isEmpty ? "No active cards in this deck." : "No questions match this filter.")
-                        .foregroundStyle(palette.secondaryText).padding(.vertical, 12)
+                    if typeSize.isAccessibilitySize { periodPicker.pickerStyle(.menu) }
+                    else { periodPicker.pickerStyle(.segmented) }
+                }.listRowSeparator(.hidden)
+                HStack {
+                    Button { offset -= 1; selectedDate = nil } label: { Image(systemName: "chevron.left").frame(minWidth: EngramShape.touchTarget, minHeight: EngramShape.touchTarget) }.accessibilityLabel("Previous period").disabled(period == .all)
+                    Spacer()
+                    Text(rangeLabel(selected ?? window.interval)).font(.subheadline.weight(.medium)).multilineTextAlignment(.center)
+                    Spacer()
+                    Button { offset += 1; selectedDate = nil } label: { Image(systemName: "chevron.right").frame(minWidth: EngramShape.touchTarget, minHeight: EngramShape.touchTarget) }.accessibilityLabel("Next period").disabled(offset >= 0 || period == .all)
+                }.buttonStyle(.borderless).listRowSeparator(.hidden)
+                if let report, let summary {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(summary.attemptCount, format: .number).font(theme.font(.hero)).monospacedDigit()
+                        Text("Review attempts").engramSecondaryText()
+                        if selected == nil, let previous, previous.attempts > 0 {
+                            let delta = report.attempts - previous.attempts
+                            Text("\(abs(delta)) \(delta >= 0 ? "more" : "fewer") than the previous period").font(.caption).engramSecondaryText()
+                        }
+                    }.padding(.vertical, 4).listRowSeparator(.hidden)
+                    Group {
+                        if typeSize.isAccessibilitySize { chartStylePicker.pickerStyle(.menu) }
+                        else { chartStylePicker.pickerStyle(.segmented) }
+                    }.listRowSeparator(.hidden)
+                    Chart(report.points) { point in
+                        if chartStyle == .bars {
+                          RectangleMark(xStart: .value("Start", point.interval.start.addingTimeInterval(point.interval.duration * 0.12)),
+                                xEnd: .value("End", point.interval.end.addingTimeInterval(-point.interval.duration * 0.12)),
+                                yStart: .value("Baseline", 0), yEnd: .value("Review attempts", point.attempts)).cornerRadius(3)
+                            .foregroundStyle(selected == nil || selected?.start == point.interval.start ? palette.accentInk : palette.secondaryText)
+                            .accessibilityLabel(point.interval.start.formatted(date: .abbreviated, time: period == .today ? .shortened : .omitted))
+                            .accessibilityValue("\(point.attempts) attempts, \(point.cards) cards")
+                        } else {
+                            LineMark(x: .value("Date", point.interval.start.addingTimeInterval(point.interval.duration / 2)), y: .value("Review attempts", point.attempts))
+                                .interpolationMethod(.linear).lineStyle(StrokeStyle(lineWidth: 2.5)).foregroundStyle(palette.accentInk)
+                            PointMark(x: .value("Date", point.interval.start.addingTimeInterval(point.interval.duration / 2)), y: .value("Review attempts", point.attempts))
+                                .symbolSize(selected?.start == point.interval.start ? 70 : 25).foregroundStyle(palette.accentInk)
+                                .accessibilityLabel(point.interval.start.formatted(date: .abbreviated, time: period == .today ? .shortened : .omitted))
+                                .accessibilityValue("\(point.attempts) attempts, \(point.cards) cards")
+                        }
+                        if selected?.start == point.interval.start {
+                            RuleMark(x: .value("Selection", point.interval.start.addingTimeInterval(point.interval.duration / 2)))
+                                .foregroundStyle(palette.secondaryText).lineStyle(StrokeStyle(dash: [3]))
+                        }
+                    }.chartXScale(domain: window.interval.start...window.interval.end)
+                        .chartXSelection(value: $selectedDate)
+                        .chartGesture { proxy in
+                            SpatialTapGesture().onEnded { event in proxy.selectXValue(at: event.location.x) }
+                        }
+                        .chartYScale(domain: 0...max(1, report.points.map(\.attempts).max() ?? 1))
+                        .chartYAxis {
+                            AxisMarks(position: .leading, values: .stride(by: Double(max(1, (report.points.map(\.attempts).max() ?? 1) / 4)))) {
+                                AxisGridLine().foregroundStyle(palette.hairline)
+                                AxisValueLabel().foregroundStyle(palette.secondaryText)
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks {
+                                AxisGridLine().foregroundStyle(palette.hairline)
+                                AxisValueLabel().foregroundStyle(palette.secondaryText)
+                            }
+                        }
+                        .environment(\.timeZone, TimeZone(identifier: model.library.settings.timeZoneID) ?? .gmt)
+                        .frame(height: typeSize.isAccessibilitySize ? 280 : 180).padding(.vertical, 8).listRowSeparator(.hidden)
+                        .accessibilityIdentifier("review-activity-chart")
+                    if selectedDate != nil { Button("Show entire period") { selectedDate = nil } }
+                    LabeledContent("Cards reviewed", value: summary.reviewedCount.formatted())
+                    if summary.attemptCount == 0 { Text("No reviews in this period. Study a deck to see your activity here.").engramSecondaryText() }
+                } else { ProgressView("Loading activity…") }
+            } footer: { Text("Tap the chart to inspect a time. Review totals exclude undone and imported records.") }
+
+            if let summary, let report {
+                if report.attempts > 0 {
+                    EngramListSection {
+                        LabeledContent("Manual ratings", value: report.manual.formatted())
+                        LabeledContent("Automatically marked", value: report.automatic.formatted())
+                        LabeledContent("Good or Easy", value: "\(report.recalled) of \(report.attempts)")
+                    } header: { Text("Review results · entire period") } footer: { Text("Good or Easy is the recorded scheduling grade, not an exam score. Question history shows how each answer was marked.") }
                 }
-                ForEach(questions.prefix(limit)) { question in
-                    questionRow(question)
-                    Divider()
-                }
-                if questions.count > limit {
-                    Button("Show more (\(questions.count - limit) remaining)") { limit += 20 }
-                        .frame(minHeight: 44).frame(maxWidth: .infinity)
-                }
-            }
-        }.padding(20).background(palette.surface, in: RoundedRectangle(cornerRadius: 22))
-    }
-    @ViewBuilder private func legend(_ deck: ActivityDeck) -> some View {
-        ForEach(MemoryBucket.allCases.filter { deck.counts[$0, default: 0] > 0 }) { bucket in
-            HStack(spacing: 5) {
-                Circle().fill(color(bucket)).frame(width: 7, height: 7).accessibilityHidden(true)
-                Text("\(deck.counts[bucket, default: 0]) \(bucket.rawValue.lowercased())").font(.caption)
-            }.foregroundStyle(palette.secondaryText).fixedSize(horizontal: false, vertical: true)
-        }
-    }
-    private func memoryBar(_ deck: ActivityDeck) -> some View {
-        GeometryReader { geometry in
-            HStack(spacing: 0) {
-                ForEach(MemoryBucket.allCases) { bucket in
-                    if let count = deck.counts[bucket], count > 0 {
-                        color(bucket).frame(width: geometry.size.width * Double(count) / Double(max(1, deck.questions.count)))
+                EngramListSection {
+                    LabeledContent("Due now", value: summary.dueCount.formatted())
+                    LabeledContent("Retention target", value: model.library.settings.desiredRetention.formatted(.percent.precision(.fractionLength(0))))
+                    let counts = summary.decks.reduce(into: [MemoryBucket: Int]()) { totals, deck in for (bucket, count) in deck.counts { totals[bucket, default: 0] += count } }
+                    ForEach(MemoryBucket.allCases.filter { counts[$0, default: 0] > 0 }) { bucket in
+                        LabeledContent { Text(counts[bucket, default: 0], format: .number).foregroundStyle(bucketColor(bucket, palette: palette)) } label: { Text(bucket.rawValue) }
                     }
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading).background(palette.hairline).clipShape(Capsule())
-        }.frame(height: 10).accessibilityHidden(true)
-    }
-    private func questionRow(_ question: ActivityQuestion) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button { expandedQuestion = expandedQuestion == question.id ? nil : question.id } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top) {
-                        Text(question.prompt).font(theme.font(.body)).foregroundStyle(palette.primaryText).multilineTextAlignment(.leading)
-                        Spacer(minLength: 8)
-                        Image(systemName: expandedQuestion == question.id ? "chevron.up" : "chevron.down").font(.caption)
-                    }
-                    Label(question.outcome, systemImage: outcomeSymbol(question)).font(.subheadline)
-                        .foregroundStyle(outcomeColor(question))
-                    Text("\(question.attempts.count) \(question.attempts.count == 1 ? "attempt" : "attempts") · \(question.isDue ? "Due now" : question.bucket == .unstudied ? "Not studied yet" : "Not due")")
-                        .font(.caption).foregroundStyle(palette.secondaryText)
-                }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityValue(expandedQuestion == question.id ? "Expanded" : "Collapsed")
-            if expandedQuestion == question.id {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Answer").font(.caption.bold()).foregroundStyle(palette.secondaryText)
-                    CardContentView(text: question.answer, media: model.library.media)
-                    if question.bucket != .unstudied {
-                        Text("Next due: \(question.due.formatted(date: .abbreviated, time: .shortened))").font(.caption)
-                    }
-                    if !question.attempts.isEmpty {
-                        Text("Attempts · \(period.rawValue)").font(.caption.bold())
-                        ForEach(question.attempts) { event in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(event.rating.label).font(.subheadline)
-                                Text(event.reviewedAt.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(palette.secondaryText)
-                            }.accessibilityElement(children: .combine)
+                } header: { Text("Memory now") } footer: { Text("Recall is estimated by FSRS from your current schedule. These counts reflect now, regardless of the selected dates.") }
+                EngramListSection("Deck activity") {
+                    ForEach(summary.decks.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }) { deck in
+                        NavigationLink { ActivityDeckPage(model: model, deck: deck, interval: selected ?? window.interval) } label: {
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack { Text(deck.title); Spacer(); Text(deck.questions.reduce(0) { $0 + $1.attempts.count }, format: .number).engramSecondaryText().monospacedDigit() }
+                                if !deck.folder.isEmpty { Text(deck.folder).font(.caption).engramSecondaryText() }
+                                Text("\(deck.questions.filter { !$0.attempts.isEmpty }.count) reviewed · \(deck.dueCount) due now").font(.caption).engramSecondaryText()
+                            }.padding(.vertical, 4)
                         }
                     }
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
-                    .background(palette.canvas, in: RoundedRectangle(cornerRadius: 12))
+                    if summary.decks.isEmpty { ContentUnavailableView("No activity yet", systemImage: "chart.bar", description: Text("Create a deck to start studying.")) }
+                }
+                EngramListSection { Text("Updated \(refreshedAt.formatted(date: .omitted, time: .shortened))").font(.caption).engramSecondaryText().frame(maxWidth: .infinity) }
             }
+        }.modifier(UtilityListStyle()).navigationTitle("Activity")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
+            .onChange(of: period) { _, _ in offset = 0; selectedDate = nil }
+            .task(id: refreshID) {
+                guard scenePhase == .active else { return }
+                repeat {
+                    let now = Date()
+                    let range = ActivityWindow(period: period, offset: offset, now: now, settings: model.library.settings, earliestReview: model.library.activeReviews.map(\.reviewedAt).min())
+                    let picked = selectedDate.flatMap { date in range.buckets.first { date >= $0.start && date < $0.end } }
+                    let result = await model.service.activity(in: model.library, period: period, now: now, interval: picked ?? range.interval)
+                    guard !Task.isCancelled else { return }
+                    summary = result; report = ActivityReviewReport.make(in: model.library, window: range, now: now)
+                    previous = period == .all ? nil : ActivityReviewReport.make(in: model.library, window: ActivityWindow(period: period, offset: offset - 1, now: now, settings: model.library.settings), now: now)
+                    refreshedAt = now
+                    do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                } while !Task.isCancelled
+            }
+    }
+    private var periodPicker: some View {
+        Picker("Period", selection: $period) {
+            Text("Day").tag(ActivityPeriod.today); Text("Week").tag(ActivityPeriod.week)
+            Text("Month").tag(ActivityPeriod.month); Text("All").tag(ActivityPeriod.all)
         }
     }
-    private func outcomeSymbol(_ question: ActivityQuestion) -> String {
-        switch question.attempts.first?.rating { case .again: return "xmark.circle"; case .hard: return "minus.circle"; case .good, .easy: return "checkmark.circle"; case nil: return "circle.dotted" }
+    private var chartStylePicker: some View {
+        Picker("Chart style", selection: $chartStyle) {
+            ForEach(ActivityChartStyle.allCases) { Text($0.rawValue).tag($0) }
+        }
     }
-    private func outcomeColor(_ question: ActivityQuestion) -> Color {
-        switch question.attempts.first?.rating { case .again: return palette.againInk; case .hard: return palette.hardInk; case .good, .easy: return palette.goodInk; case nil: return palette.secondaryText }
+    private func rangeLabel(_ range: DateInterval) -> String {
+        let formatter = DateFormatter(); formatter.timeZone = TimeZone(identifier: model.library.settings.timeZoneID); formatter.dateStyle = .medium
+        if period == .today { formatter.timeStyle = selected == nil ? .none : .short; return formatter.string(from: range.start) }
+        if selected != nil && range.duration <= 25 * 3600 { return formatter.string(from: range.start) }
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = formatter.timeZone
+        let lastDay = calendar.date(byAdding: .day, value: -1, to: range.end) ?? range.end
+        return formatter.string(from: range.start) + " – " + formatter.string(from: lastDay)
+    }
+}
+
+private func bucketColor(_ bucket: MemoryBucket, palette: EngramPalette) -> Color {
+    switch bucket { case .atTarget: palette.primaryText; case .belowTarget: palette.againInk; case .learning: palette.accentInk; case .unstudied, .unavailable: palette.secondaryText }
+}
+
+private struct ActivityDeckPage: View {
+    let model: EngramModel
+    let deck: ActivityDeck
+    let interval: DateInterval
+    @State private var filter: ActivityCardFilter = .all
+    @State private var search = ""
+    @State private var limit = 50
+    var body: some View {
+        List {
+            EngramListSection("Current memory") {
+                ForEach(MemoryBucket.allCases.filter { deck.counts[$0, default: 0] > 0 }) { bucket in
+                    LabeledContent(bucket.rawValue, value: deck.counts[bucket, default: 0].formatted())
+                }
+                if deck.suspendedCount > 0 { Text("\(deck.suspendedCount) suspended cards excluded").engramSecondaryText() }
+            }
+            EngramListSection {
+                Picker("Questions", selection: $filter) { ForEach(ActivityCardFilter.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.menu)
+                let questions = deck.questions.filter { $0.matches(filter) && (search.isEmpty || $0.prompt.localizedCaseInsensitiveContains(search)) }
+                ForEach(questions.prefix(limit)) { question in
+                    NavigationLink { ActivityQuestionPage(model: model, question: question) } label: {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(question.prompt).lineLimit(3)
+                            Text("\(question.attempts.count) attempts · \(question.outcome)").font(.caption).engramSecondaryText()
+                        }.padding(.vertical, 4)
+                    }
+                }
+                if questions.count > limit { Button("Show more questions") { limit += 50 } }
+                if questions.isEmpty { Text("No questions match this filter.").engramSecondaryText() }
+            } header: { Text("Questions") } footer: { Text("Review history is limited to the selected activity period. Memory and due status reflect now.") }
+        }.modifier(UtilityListStyle()).navigationTitle(deck.title).engramInlineTitle().searchable(text: $search, prompt: "Search questions")
+            .onChange(of: filter) { _, _ in limit = 50 }
+    }
+}
+
+private struct ActivityQuestionPage: View {
+    let model: EngramModel
+    let question: ActivityQuestion
+    var body: some View {
+        List {
+            EngramListSection("Question") { Text(question.prompt).textSelection(.enabled) }
+            EngramListSection("Answer") { CardContentView(text: question.answer, media: model.library.media) }
+            EngramListSection("Current schedule") {
+                LabeledContent("Memory", value: question.bucket.rawValue)
+                if question.bucket != .unstudied { LabeledContent("Next due", value: question.due.formatted(date: .abbreviated, time: .shortened)) }
+            }
+            EngramListSection("Review history · selected period") {
+                ForEach(question.attempts) { event in
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack { Text(event.rating.label).font(.headline); Spacer(); Text(event.assessment == nil ? "Manual" : "Automatic").font(.caption).engramSecondaryText() }
+                        Text(event.reviewedAt.formatted(date: .abbreviated, time: .shortened)).font(.caption).engramSecondaryText()
+                        if let assessment = event.assessment {
+                            Text(assessment.outcome.rawValue.capitalized).font(.subheadline)
+                            Text(assessment.reason).font(.subheadline).engramSecondaryText()
+                        }
+                    }.padding(.vertical, 4).accessibilityElement(children: .combine)
+                }
+                if question.attempts.isEmpty { Text("No reviews in this period.").engramSecondaryText() }
+            }
+        }.modifier(UtilityListStyle()).navigationTitle("Question History").engramInlineTitle()
     }
 }

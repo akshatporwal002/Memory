@@ -33,6 +33,7 @@ targets:
       path: App/Info-iOS.plist
       properties:
         CFBundleDisplayName: Engram
+        NSMicrophoneUsageDescription: Recognize spoken study answers locally on your device.
         NSPhotoLibraryAddUsageDescription: Save screenshots of Engram pages to Photos so you can review and share them.
         UTExportedTypeDeclarations: &engramTypes
           - UTTypeIdentifier: dev.engram.study.backup
@@ -113,11 +114,24 @@ targets:
         product: PersistenceAdapters
       - package: Engram
         product: SchedulingAdapters
+  Engram-UITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/EngramUITests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.engram.study.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Engram-iOS
+    dependencies:
+      - target: Engram-iOS
 schemes:
   Engram-iOS:
     build:
       targets:
         Engram-iOS: all
+    test:
+      targets: [Engram-UITests]
   Engram-macOS:
     build:
       targets:

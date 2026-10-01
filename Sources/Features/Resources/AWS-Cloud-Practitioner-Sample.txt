@@ -1,63 +1,47 @@
-# AWS Cloud Practitioner
+# AWS Cloud Practitioner - Sample Quiz
 
-A short practice notebook for testing writing, cards, and review. Read each question, recall an answer, then reveal it. These are original study prompts based on the supplied course slides, not official exam questions.
+24 original multiple-choice practice questions aligned with the CLF-C02 topic areas. Choose an answer mentally, reveal the explanation, then grade your recall. This uses the app's flashcard review flow; it is not a timed or automatically scored exam.
 
-## Cloud foundations
+## Cloud concepts
 
-Think about which infrastructure tasks remain yours as you move from infrastructure services to managed applications.
+1. Demand changes sharply during the day. Which cloud benefit helps match capacity to demand? A) Elasticity; B) Fixed hardware capacity; C) Manual procurement; D) Longer contracts -> A) Elasticity. Resources can expand and contract as demand changes, reducing the need to provision for a permanent peak.
+2. A startup avoids buying servers and pays for resources as it uses them. Which benefit is illustrated? A) Owning data centers; B) Trading upfront expense for variable expense; C) Eliminating all costs; D) Avoiding security duties -> B) Trading upfront expense for variable expense. Usage-based cloud services reduce the need for large initial infrastructure purchases.
+3. Which deployment combines an on-premises environment with cloud services? A) Public cloud only; B) Single-zone; C) Hybrid; D) Serverless only -> C) Hybrid. A hybrid deployment connects cloud resources with infrastructure retained on premises.
+4. Which AWS Well-Architected pillar focuses on recovering from failures? A) Cost optimization; B) Sustainability; C) Operational excellence; D) Reliability -> D) Reliability. Reliable workloads withstand disruptions and recover to meet their intended function.
+5. Which design reduces dependence on one data center failure boundary? A) Use multiple Availability Zones; B) Use one larger instance; C) Remove backups; D) Use one administrator -> A) Use multiple Availability Zones. Distributing resources across zones improves resilience to a zone-level failure.
+6. Which service model supplies a finished application operated by its provider? A) IaaS; B) SaaS; C) Physical colocation; D) Bare-metal hosting -> B) SaaS. Software as a service delivers an application; infrastructure as a service supplies building blocks customers manage.
 
-What does IaaS give you?: Computing, storage, and networking building blocks that you configure and manage.
-What does PaaS let you focus on?: Deploying and managing applications while the provider handles the underlying infrastructure.
-What does SaaS provide?: A finished application operated by its service provider.
-What makes a deployment hybrid?: It combines on-premises infrastructure with cloud services.
+## Security and compliance
 
-## Regions and availability
+7. For Amazon EC2, who normally patches the guest operating system? A) AWS Support; B) The hardware vendor; C) The customer; D) The internet provider -> C) The customer. AWS secures underlying infrastructure, while EC2 customers manage their guest OS and applications.
+8. An application on EC2 needs to read S3 objects. What is the preferred credential approach? A) Share the root password; B) Embed permanent keys in code; C) Disable authentication; D) Attach an IAM role -> D) Attach an IAM role. The application can use temporary credentials instead of embedding long-lived access keys.
+9. What does least privilege mean? A) Grant only permissions needed for a task; B) Give everyone administrator access; C) Disable auditing; D) Share one identity -> A) Grant only permissions needed for a task. Restricting actions and resources limits unnecessary access.
+10. Which measure adds a second verification factor to account sign-in? A) An S3 bucket; B) Multi-factor authentication; C) A larger EC2 instance; D) A public subnet -> B) Multi-factor authentication. MFA requires an additional factor beyond the password.
+11. Which service records AWS API activity for auditing? A) Amazon CloudFront; B) AWS Budgets; C) AWS CloudTrail; D) Amazon Route 53 -> C) AWS CloudTrail. It records account activity and API events; CloudWatch focuses on operational monitoring such as metrics and logs.
+12. Where can a customer obtain AWS compliance reports and agreements? A) Amazon EC2; B) Amazon SQS; C) AWS Lambda; D) AWS Artifact -> D) AWS Artifact. It provides access to AWS compliance documentation and selected agreements.
 
-A Region identifies a geographical deployment area. Availability Zones provide separate failure boundaries within that area.
+## Cloud technology and services
 
-What is an AWS Region?: A geographical area containing multiple Availability Zones.
-What is an Availability Zone?: One or more discrete data centers with redundant power, networking, and connectivity.
-Why deploy across multiple Availability Zones?: To reduce the impact of a failure affecting one zone.
-How are Availability Zones within a Region connected?: Through high-bandwidth, low-latency networking.
+13. Which service provides object storage for files and backups? A) Amazon S3; B) Amazon RDS; C) Amazon EC2; D) AWS IAM -> A) Amazon S3. It stores objects in buckets; it is not a relational database or EC2 block volume.
+14. Which service runs event-driven code without provisioning servers? A) Amazon VPC; B) AWS Lambda; C) Amazon Route 53; D) AWS Artifact -> B) AWS Lambda. AWS manages the underlying compute infrastructure while customers supply and configure function code.
+15. Which service provides managed relational databases? A) Amazon S3; B) Amazon CloudFront; C) Amazon RDS; D) Amazon SQS -> C) Amazon RDS. It reduces infrastructure and database administration work while customers still manage tasks such as data and access.
+16. Which service is a managed key-value and document database? A) Amazon EBS; B) Amazon RDS; C) Amazon Route 53; D) Amazon DynamoDB -> D) Amazon DynamoDB. It supports nonrelational key-value and document workloads.
+17. Which service delivers cached content through edge locations? A) Amazon CloudFront; B) Amazon RDS; C) AWS IAM; D) AWS CloudFormation -> A) Amazon CloudFront. Its content delivery network brings content closer to viewers.
+18. Which service provides DNS and domain routing? A) Amazon EBS; B) Amazon Route 53; C) Amazon SQS; D) AWS Budgets -> B) Amazon Route 53. DNS routing helps direct clients to application endpoints.
+19. Which service decouples components using a message queue? A) AWS Artifact; B) Amazon CloudFront; C) Amazon SQS; D) AWS IAM -> C) Amazon SQS. Producers and consumers can work independently by exchanging messages through a queue.
+20. Which service provisions infrastructure from declarative templates? A) AWS Cost Explorer; B) Amazon CloudTrail; C) Amazon S3 Glacier; D) AWS CloudFormation -> D) AWS CloudFormation. Templates describe infrastructure resources that can be created and managed as stacks.
 
-## Identity and responsibility
+## Billing, pricing, and support
 
-Distinguish permission management from infrastructure protection. A managed service changes the division of work, but does not remove the customer's responsibilities.
+21. Which tool estimates the cost of a proposed workload before deployment? A) AWS Pricing Calculator; B) AWS CloudTrail; C) AWS Artifact; D) Amazon Route 53 -> A) AWS Pricing Calculator. It models expected costs from planned service usage rather than reporting actual account spend.
+22. Which tool helps analyze historical AWS spending and usage? A) AWS Lambda; B) AWS Cost Explorer; C) AWS IAM; D) Amazon SQS -> B) AWS Cost Explorer. It helps explore cost and usage patterns over time.
+23. Which service can alert when spending crosses a configured threshold? A) Amazon VPC; B) Amazon Route 53; C) AWS Budgets; D) AWS CloudFormation -> C) AWS Budgets. Budget alerts help track spending; an alert alone does not automatically cap all charges.
+24. A batch job tolerates interruption and can restart. Which EC2 purchase option may reduce compute cost? A) Dedicated Hosts only; B) Always use On-Demand; C) Buy a larger instance; D) Spot Instances -> D) Spot Instances. Spare EC2 capacity can cost less, but AWS can interrupt it, so the workload must tolerate interruptions.
 
-What does an IAM policy define?: Which actions are allowed or denied on AWS resources.
-What does least privilege mean?: Grant only the permissions needed for the task.
-Why give an EC2 instance an IAM role?: So it can receive permissions to access AWS services on behalf of the application.
-Who patches the guest operating system on an EC2 instance?: The customer; AWS maintains the underlying physical infrastructure.
+## Practice and sources
 
-## Compute and scaling
+Original educational content, not official AWS exam questions and not an exam-pass prediction. A small sample cannot cover the full syllabus. Reviewed against the AWS CLF-C02 exam guide on 30 September 2026.
 
-Separate the job of running compute from the jobs of distributing traffic and adjusting capacity.
+https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html
 
-What does Amazon EC2 provide?: Virtual machines that you can configure to run applications.
-What does AWS Lambda run?: Functions invoked on demand without requiring you to provision or manage servers.
-What does an Elastic Load Balancer do?: Distributes incoming traffic across application targets.
-What does an Auto Scaling group do?: Adjusts EC2 capacity to meet demand and replaces unhealthy instances.
-
-## Storage and databases
-
-Choose the storage model before choosing the service. Objects and relational records solve different problems.
-
-What kind of storage does Amazon S3 provide?: Object storage.
-What is an S3 bucket?: A container for objects.
-What is an S3 object key?: The identifier for an object within its bucket.
-What does Amazon RDS provide?: Managed relational databases, reducing infrastructure and database administration work.
-
-## Costs
-
-Estimating a future workload, exploring existing spend, and alerting against a budget are different tasks.
-
-Which tool estimates the cost of a planned AWS workload?: AWS Pricing Calculator.
-Which tool helps explore AWS spending and usage over time?: AWS Cost Explorer.
-Which service helps set budgets and send spending alerts?: AWS Budgets.
-Why inspect the AWS Cost and Usage Report?: To examine detailed cost and usage records for further analysis.
-
-## Source and practice
-
-Paraphrased from AWS Certified Cloud Practitioner Slides v44 by Stéphane Maarek. Relevant PDF pages are 22, 26, 34, 36, 43, 54, 60, 92, 130, 134-135, 174, 210, 398, 403, 405, and 411.
-
-Try editing one answer, adding your own question, moving a block, and completing a short review. This small sample is not a complete exam-preparation deck.
+Try revealing an answer, grading it, undoing a grade, editing a question, and checking Activity. Your answers and review history remain on this device.

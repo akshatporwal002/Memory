@@ -199,7 +199,9 @@ struct PortabilityView: View {
             }
             .fileExporter(isPresented: $transfer.showExporter, document: transfer.exportDocument, contentType: transfer.exportName.hasSuffix(".engram") ? .engramBackup : .ankiDeck, defaultFilename: transfer.exportName) { result in
                 switch result {
-                case .success: transfer.message = "Export saved. Keep it somewhere safe."
+                case .success:
+                    transfer.message = "Export saved. Keep it somewhere safe."
+                    if transfer.exportName.hasSuffix(".engram") { transfer.model.recordBackupExport() }
                 case .failure(let error): transfer.error = error.localizedDescription
                 }
             }

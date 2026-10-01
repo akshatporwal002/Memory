@@ -10,6 +10,7 @@ struct ReviewView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @AccessibilityFocusState private var answerFocused: Bool
     @State private var completionVisible = false
     @State private var optionsPresented = false
@@ -18,6 +19,9 @@ struct ReviewView: View {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     if let error = model.error { EngramInlineError(message: error).padding(EngramSpacing.regular) }
+                    if model.voice.enabled { Text(model.voice.status).font(.caption).padding(8) }
+                    if model.markingAnswer { ProgressView("Checking your answer…").padding(8) }
+                    if let feedback = model.answerFeedback { Text(feedback).font(.subheadline).padding(8) }
                     if let session = model.library.session, let item = session.current,
                        let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) {
                         VStack(spacing: 0) {
@@ -47,6 +51,14 @@ struct ReviewView: View {
                     }
                 }
                 ToolbarItem(placement: .automatic) {
+                    Button {
+                        if model.voice.ready { model.voice.enabled.toggle() }
+                        else { optionsPresented = true }
+                    } label: {
+                        Label(model.voice.enabled ? "Stop voice mode" : "Start voice mode", systemImage: model.voice.enabled ? "mic.fill" : "mic")
+                    }.accessibilityIdentifier("review-voice-mode")
+                }
+                ToolbarItem(placement: .automatic) {
                     Button { optionsPresented = true } label: { Label("Review options", systemImage: "ellipsis") }
                 }
             }
@@ -64,8 +76,22 @@ struct ReviewView: View {
         }
         .modifier(EngramTaskSizing(embedded: embedded, width: 820, height: 550))
         .interactiveDismissDisabled(model.busy)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.library.session?.current?.presentationID)
+        .onAppear { model.voice.present(model: model) }
+        .onDisappear { model.voice.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { model.voice.stop() }
+            else if phase == .active { model.voice.present(model: model) }
+        }
+        .onChange(of: model.voice.enabled) { _, _ in model.voice.present(model: model) }
+        .onChange(of: model.library.session?.current?.presentationID) { _, _ in model.voice.present(model: model) }
+        .onChange(of: model.library.session?.current?.revealedAt) { _, _ in model.voice.present(model: model) }
     }
     @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation, minimumHeight: CGFloat) -> some View {
+        if let question = note.mcq {
+            MultipleChoiceReviewView(model: model, question: question, item: item)
+                .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .topLeading).engramSurface()
+        } else {
         let rendered = Result { try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil) }
         switch rendered {
         case .success(let card):
@@ -90,6 +116,7 @@ struct ReviewView: View {
             .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.revealedAt)
         case .failure(let error): EngramInlineError(message: error.localizedDescription)
         }
+        }
     }
     private var reviewTitle: String {
         guard let item = model.library.session?.current else { return "Review complete" }
@@ -109,6 +136,7 @@ struct ReviewView: View {
                         .keyboardShortcut("z", modifiers: .command).disabled(!model.canUndo || model.busy)
                     if let error = model.error { EngramInlineError(message: error) }
                 }
+                Section("Voice") { VoiceModeSettings(voice: model.voice) }
                 Section("Appearance") {
                     Picker("Theme", selection: $model.theme) {
                         ForEach(EngramTheme.allCases) { Text($0.title).tag($0) }
@@ -126,7 +154,17 @@ struct ReviewView: View {
         .engramSheetSizing(idealWidth: 440, minimumHeight: 360)
     }
 
-    private func controls(session: StudySession, item: ReviewPresentation, width: CGFloat) -> some View {
+    @ViewBuilder private func controls(session: StudySession, item: ReviewPresentation, width: CGFloat) -> some View {
+        if let assessment = item.assessment {
+            VStack(spacing: 12) {
+                Text(assessment.outcome.rawValue.capitalized + " · " + (assessment.rating?.label ?? "Ungraded")).font(.headline)
+                if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq == nil { Text(assessment.reason) }
+                EngramActionButton("Next", busy: model.busy) { Task { await model.nextAnswer() } }
+                Button("Undo assessment") { Task { await model.undo() } }.disabled(model.busy)
+            }
+        } else if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq != nil {
+            Text("Tap an option twice to confirm, or speak its letter or answer.").font(.caption)
+        } else {
         // Reserve the actual grade controls' height before reveal so the reading surface stays still.
         ZStack(alignment: .bottom) {
             VStack(spacing: EngramSpacing.small) {
@@ -153,6 +191,7 @@ struct ReviewView: View {
                 }.keyboardShortcut(.space, modifiers: [])
             }
         }.frame(maxWidth: EngramShape.readingWidth)
+        }
     }
     private var completion: some View {
         ScrollView {

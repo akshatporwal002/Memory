@@ -58,6 +58,9 @@ public struct EngramRootView: View {
         }
         .engramCanvas()
         .engramCaptureSurface()
+        .overlay(alignment: .bottomTrailing) {
+            if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
+        }
         .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
         .confirmationDialog("Delete deck?", isPresented: Binding(get: { model.deleteDeck != nil }, set: { if !$0 { model.deleteDeck = nil } }), titleVisibility: .visible) {
             if let deck = model.deleteDeck {
@@ -117,7 +120,7 @@ public struct EngramRootView: View {
             EditorView(model: model, embedded: true).engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.settingsPresented }, set: { model.settingsPresented = $0 })) {
-            SettingsView(model: model, embedded: true).engramCaptureSurface()
+            SettingsView(model: model, embedded: true, portabilityAction: portabilityAction).engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.creationPresented }, set: { model.creationPresented = $0 })) {
             NotebookCreationPage(model: model).engramCaptureSurface()

@@ -4,12 +4,29 @@ import LearningCore
 /// Application use cases. Views share this actor; no database or vendor scheduler enters presentation code.
 public actor StudyService {
     let repository: any LibraryRepository
-    private let scheduler: any Scheduler
+    let scheduler: any Scheduler
     public init(repository: any LibraryRepository, scheduler: any Scheduler) { self.repository = repository; self.scheduler = scheduler }
-    public func activity(in library: LibrarySnapshot, period: ActivityPeriod, now: Date) -> ActivitySummary {
-        ActivitySummary.make(in: library, period: period, now: now, estimator: scheduler as? any MemoryEstimating)
+    public func activity(in library: LibrarySnapshot, period: ActivityPeriod, now: Date, interval: DateInterval? = nil) -> ActivitySummary {
+        ActivitySummary.make(in: library, period: period, now: now, estimator: scheduler as? any MemoryEstimating, interval: interval)
+    }
+    public func memoryOutlook(for deck: Deck, in library: LibrarySnapshot, now: Date) -> DeckMemoryOutlook {
+        DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: scheduler as? any MemoryEstimating)
     }
     public func snapshot() async throws -> LibrarySnapshot { try await repository.read() }
+
+    public func setDeckRetention(id: String, desiredRetention: Double?) async throws {
+        guard desiredRetention.map({ $0.isFinite && (0.8...0.97).contains($0) }) ?? true else {
+            throw EngramError.invalid("Choose a desired retention between 80% and 97%.")
+        }
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }
+        library.decks[index].desiredRetention = desiredRetention
+        library.decks[index].modifiedAt = Date()
+        if let current = library.session?.current, current.card.deckID == id, current.assessment == nil {
+            library.session?.current = ReviewPresentation(card: current.card)
+        }
+        try await save(library)
+    }
 
     /// Validate everything, then commit the deck and all of its questions together.
     @discardableResult public func createDeck(from draft: DeckCreationDraft, now: Date = Date()) async throws -> Deck {
@@ -69,6 +86,7 @@ public actor StudyService {
                 guard let ni = library.notes.firstIndex(where: { $0.id == id && !$0.deleted && $0.deckID == deckID }) else { throw EngramError.conflict }
                 if library.notes[ni].front != front || library.notes[ni].back != back {
                     library.notes[ni].front = front; library.notes[ni].back = back; library.notes[ni].modifiedAt = now
+                    library.notes[ni].multipleChoice = MultipleChoiceQuestion.parse(front: front, back: back)
                     for ci in library.cards.indices where library.cards[ci].noteID == id { library.cards[ci].version += 1 }
                 }
             } else {
@@ -215,7 +233,7 @@ public actor StudyService {
     public func startSession(deckID: String?, now: Date) async throws -> StudySession {
         var library = try await repository.read()
         if let existing = library.session, existing.deckID == deckID, let current = existing.current,
-           library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended }) {
+           (current.assessment != nil || library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended })) {
             return existing
         }
         let queue = QueuePolicy.dueCards(in: library, deckID: deckID, now: now)
@@ -228,7 +246,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard var session = library.session else { return nil }
         if let item = session.current,
-           library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended }) { return session }
+           (item.assessment != nil || library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended })) { return session }
         refresh(&session, in: library, now: now); library.session = session
         try await save(library); return session
     }
@@ -239,7 +257,11 @@ public actor StudyService {
         guard library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended }) else { throw EngramError.conflict }
         if item.revealedAt != nil { return item }
         let history = library.activeReviews.filter { $0.cardID == item.card.id }
-        item.outcomes = try scheduler.outcomes(state: item.card.schedule, history: history, now: now, settings: library.settings)
+        var schedulingSettings = library.settings
+        if let target = library.liveDecks.first(where: { $0.id == item.card.deckID })?.desiredRetention {
+            schedulingSettings.desiredRetention = target
+        }
+        item.outcomes = try scheduler.outcomes(state: item.card.schedule, history: history, now: now, settings: schedulingSettings)
         guard item.outcomes.count == 4 else { throw EngramError.invalid("Scheduler did not supply all four grades.") }
         item.revealedAt = now; session.current = item; library.session = session
         try await save(library); return item
@@ -298,7 +320,7 @@ public actor StudyService {
         return clean
     }
     private func refresh(_ session: inout StudySession, in library: LibrarySnapshot, now: Date) {
-        let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
+        let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
         session.nextLearningDue = nextLearningDue(in: library, deckID: session.deckID, now: now)
     }

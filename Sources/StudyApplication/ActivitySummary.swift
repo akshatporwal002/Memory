@@ -54,16 +54,18 @@ public struct ActivitySummary: Sendable {
     public var dueCount: Int { decks.reduce(0) { $0 + $1.dueCount } }
 
     public static func make(in library: LibrarySnapshot, period: ActivityPeriod, now: Date,
-                            estimator: (any MemoryEstimating)?) -> Self {
+                            estimator: (any MemoryEstimating)?, interval: DateInterval? = nil) -> Self {
         let notes = Dictionary(uniqueKeysWithValues: library.liveNotes.map { ($0.id, $0) })
         let deckIDs = Set(library.liveDecks.map(\.id))
         let cards = library.liveCards.filter { notes[$0.noteID] != nil && deckIDs.contains($0.deckID) }
         let activeIDs = Set(cards.filter { !$0.suspended }.map(\.id))
-        let start = period.start(now: now, settings: library.settings)
-        let reviews = library.activeReviews.filter { activeIDs.contains($0.cardID) && $0.reviewedAt >= start && $0.reviewedAt <= now }
+        let start = interval?.start ?? period.start(now: now, settings: library.settings)
+        let reviews = library.activeReviews.filter { activeIDs.contains($0.cardID) && $0.reviewedAt >= start && $0.reviewedAt <= now && (interval == nil || $0.reviewedAt < interval!.end) }
         let history = Dictionary(grouping: reviews, by: \.cardID)
         let groupedCards = Dictionary(grouping: cards, by: \.deckID)
         let decks = library.liveDecks.map { deck -> ActivityDeck in
+            var deckSettings = library.settings
+            deckSettings.desiredRetention = deck.desiredRetention ?? library.settings.desiredRetention
             let ownCards = groupedCards[deck.id] ?? []
             let questions = ownCards.filter { !$0.suspended }.map { card -> ActivityQuestion in
                 let bucket: MemoryBucket
@@ -71,8 +73,8 @@ public struct ActivitySummary: Sendable {
                 case .new: bucket = .unstudied
                 case .learning, .relearning: bucket = .learning
                 case .review:
-                    if let value = estimator?.recallProbability(state: card.schedule, now: now, settings: library.settings), value.isFinite, (0...1).contains(value) {
-                        bucket = value >= library.settings.desiredRetention ? .atTarget : .belowTarget
+                    if let value = estimator?.recallProbability(state: card.schedule, now: now, settings: deckSettings), value.isFinite, (0...1).contains(value) {
+                        bucket = value >= deckSettings.desiredRetention ? .atTarget : .belowTarget
                     } else { bucket = .unavailable }
                 }
                 let rendered = notes[card.noteID].flatMap { try? CardRenderer.render(note: $0, card: card, revealed: true) }

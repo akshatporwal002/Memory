@@ -26,6 +26,9 @@ public enum LibraryValidation {
         var total = 0
         let mediaNames = Set(library.media.map(\.name))
         for deck in library.decks {
+            guard deck.desiredRetention.map({ $0.isFinite && (0.8...0.97).contains($0) }) ?? true else {
+                throw EngramError.invalid("A deck has an invalid desired retention.")
+            }
             guard (deck.sourceDocument?.utf8.count ?? 0) <= DeckDocument.byteLimit else {
                 throw EngramError.invalid("A deck document exceeds the 1 MB limit.")
             }

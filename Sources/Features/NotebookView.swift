@@ -19,8 +19,12 @@ struct NotebookView: View {
     @State private var confirmRemoval = false
     @State private var confirmReload = false
     @State private var saved = false
+    @State private var editing = false
+    @State private var activeBlockID: String?
     @FocusState private var focusedBlock: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var progressKey: String { "engram.notebook.readingSection." + deckID }
     private var removedCount: Int {
         guard let draft else { return 0 }
         return Set(draft.original.compactMap(\.noteID)).subtracting(draft.blocks.compactMap(\.noteID)).count
@@ -46,25 +50,45 @@ struct NotebookView: View {
                     }
                     if let draft {
                         ForEach(draft.blocks) { block in
-                            blockEditor(block).id(block.id)
+                            Group {
+                                if editing { blockEditor(block) }
+                                else { blockReader(block) }
+                            }.id(block.id)
                         }
                         if draft.blocks.isEmpty {
                             Text("Start with a thought, a heading, or a question.")
                                 .foregroundStyle(palette.secondaryText).padding(.vertical, 32)
                         }
                     }
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 16) { insertButtons }
-                        VStack(alignment: .leading, spacing: 8) { insertButtons }
+                    if editing {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 16) { insertButtons }
+                            VStack(alignment: .leading, spacing: 8) { insertButtons }
+                        }
+                    } else {
+                        Button { editing = true; insert(.question) } label: { Label("Add a question", systemImage: "plus") }
+                            .buttonStyle(EngramButtonStyle(.secondary))
                     }
                     .id("notebook-end")
                 }
-                .padding(EngramSpacing.section).frame(maxWidth: 760).frame(maxWidth: .infinity)
+                .padding(EngramSpacing.section).padding(.trailing, 34)
+                .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .disabled(model.busy)
             }
+            .coordinateSpace(name: "notebook-scroll")
+            .onPreferenceChange(NotebookBlockPositions.self) { positions in
+                if focusedBlock == nil,
+                   let nearest = positions.min(by: { abs($0.value - 130) < abs($1.value - 130) }) {
+                    setActive(nearest.key)
+                }
+            }
+            .overlay(alignment: .trailing) { sectionRail(proxy: proxy) }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: focusedBlock) { _, id in
-                if let id { proxy.scrollTo(id, anchor: .center) }
+                if let id { setActive(id); proxy.scrollTo(id, anchor: .center) }
+            }
+            .onChange(of: proxyScrollTarget) { _, id in
+                if let id { jump(to: id, proxy: proxy); proxyScrollTarget = nil }
             }
         }
         .navigationTitle("Notebook").engramInlineTitle().engramCanvas().engramHideStudyTabs()
@@ -76,6 +100,10 @@ struct NotebookView: View {
             }.padding(EngramSpacing.regular).background(palette.canvas)
         }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(editing ? "Done editing" : "Edit") { focusedBlock = nil; editing.toggle() }
+                    .disabled(model.busy)
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button(model.busy ? "Saving…" : "Save") {
                     if removedCount > 0 { confirmRemoval = true } else { save() }
@@ -83,8 +111,16 @@ struct NotebookView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Menu {
+                    if let draft {
+                        ForEach(draft.blocks) { block in
+                            Button(sectionTitle(block)) {
+                                setActive(block.id)
+                                proxyScrollTarget = block.id
+                            }
+                        }
+                    }
                     Button("Reload saved notebook") { confirmReload = true }
-                } label: { Label("Notebook options", systemImage: "ellipsis.circle") }.disabled(model.busy)
+                } label: { Label("Contents", systemImage: "list.bullet") }.disabled(model.busy)
             }
         }
         .confirmationDialog("Remove \(removedCount) cards from study?", isPresented: $confirmRemoval, titleVisibility: .visible) {
@@ -94,9 +130,25 @@ struct NotebookView: View {
             Button("Discard draft and reload", role: .destructive) { load(useDraft: false) }
         } message: { Text("This replaces your unsaved writing with the latest saved notes and cards.") }
         .onAppear {
+            UserDefaults.standard.set(deckID, forKey: "engram.notebook.lastDeckID")
             if draft == nil { load(useDraft: true) }
             if let noteID = model.notebookFocusNoteID {
-                focusedBlock = draft?.blocks.first { $0.noteID == noteID }?.id
+                proxyScrollTarget = draft?.blocks.first { $0.noteID == noteID }?.id
+                model.notebookFocusNoteID = nil
+            }
+            if let blockID = model.notebookFocusBlockID {
+                proxyScrollTarget = blockID
+                model.notebookFocusBlockID = nil
+            } else if proxyScrollTarget == nil {
+                proxyScrollTarget = UserDefaults.standard.string(forKey: progressKey)
+            }
+        }
+        .onChange(of: model.notebookFocusBlockID) { _, id in
+            if let id { proxyScrollTarget = id; model.notebookFocusBlockID = nil }
+        }
+        .onChange(of: model.notebookFocusNoteID) { _, id in
+            if let id {
+                proxyScrollTarget = draft?.blocks.first { $0.noteID == id }?.id
                 model.notebookFocusNoteID = nil
             }
         }
@@ -111,6 +163,90 @@ struct NotebookView: View {
         if model.busy { return "Saving notebook and cards…" }
         if draft?.changed == true { return "\(count) questions · Draft kept on this device" }
         return "\(count) questions · \(saved ? "Saved" : "Up to date")"
+    }
+    private func setActive(_ id: String) {
+        guard activeBlockID != id else { return }
+        activeBlockID = id
+        UserDefaults.standard.set(id, forKey: progressKey)
+    }
+    @State private var proxyScrollTarget: String?
+
+    private func sectionTitle(_ block: NotebookBlock) -> String {
+        let first = block.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+        let title = first.trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty ? (block.kind == .question ? "Untitled question" : "Untitled section") : String(title.prefix(48))
+    }
+    private var railBlocks: [NotebookBlock] {
+        guard let blocks = draft?.blocks else { return [] }
+        guard blocks.count > 12 else { return blocks }
+        let center = blocks.firstIndex { $0.id == activeBlockID } ?? 0
+        let start = min(max(0, center - 5), blocks.count - 12)
+        return Array(blocks[start..<(start + 12)])
+    }
+
+    private func sectionRail(proxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            if let draft, draft.blocks.count > 1 {
+                Menu {
+                    ForEach(draft.blocks) { block in
+                        Button(sectionTitle(block)) { jump(to: block.id, proxy: proxy) }
+                    }
+                } label: { Image(systemName: "list.bullet").frame(width: 44, height: 44) }
+                    .accessibilityLabel("Notebook contents")
+                ForEach(railBlocks) { block in
+                    Button { jump(to: block.id, proxy: proxy) } label: {
+                        Capsule()
+                            .fill(activeBlockID == block.id ? palette.accent : palette.hairline)
+                            .frame(width: activeBlockID == block.id ? 24 : 10, height: 2)
+                            .frame(width: 44, height: 22, alignment: .trailing)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(sectionTitle(block))
+                    .accessibilityAddTraits(activeBlockID == block.id ? [.isSelected] : [])
+                }
+                if let active = draft.blocks.first(where: { $0.id == activeBlockID }) {
+                    Text(sectionTitle(active))
+                        .font(.caption2.weight(.semibold)).foregroundStyle(palette.accentInk)
+                        .lineLimit(1).fixedSize()
+                        .rotationEffect(.degrees(90))
+                        .frame(width: 32, height: 140)
+                        .accessibilityHidden(true)
+                }
+            }
+            Spacer()
+        }
+        .padding(.trailing, 8)
+        .background(palette.canvas.opacity(0.9))
+    }
+
+    private func jump(to id: String, proxy: ScrollViewProxy) {
+        setActive(id)
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(id, anchor: .top) }
+    }
+    private func blockReader(_ block: NotebookBlock) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if block.kind == .question {
+                Text("RECALL PROMPT").font(.caption2.weight(.semibold)).foregroundStyle(palette.accentInk)
+                Text(block.text).font(.system(.title3, design: .serif))
+                Text(block.answer).font(theme.font(.body)).foregroundStyle(palette.secondaryText)
+            } else {
+                let lines = block.text.components(separatedBy: "\n")
+                if let first = lines.first, first.hasPrefix("#") {
+                    Text(first.trimmingCharacters(in: CharacterSet(charactersIn: "# ")))
+                        .font(.system(.title2, design: .serif)).accessibilityAddTraits(.isHeader)
+                    Text(lines.dropFirst().joined(separator: "\n"))
+                        .font(theme.font(.body)).lineSpacing(5).textSelection(.enabled)
+                } else {
+                    Text(block.text).font(theme.font(.body)).lineSpacing(5).textSelection(.enabled)
+                }
+            }
+            Divider()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: NotebookBlockPositions.self,
+                                   value: [block.id: geometry.frame(in: .named("notebook-scroll")).minY])
+        })
     }
     @ViewBuilder private var insertButtons: some View {
         Button { insert(.text) } label: { Label("Add writing", systemImage: "text.alignleft") }
@@ -152,6 +288,10 @@ struct NotebookView: View {
             }
             Divider().padding(.top, EngramSpacing.regular)
         }
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: NotebookBlockPositions.self,
+                                   value: [block.id: geometry.frame(in: .named("notebook-scroll")).minY])
+        })
     }
     private func binding(_ id: String, _ path: WritableKeyPath<NotebookBlock, String>) -> Binding<String> {
         Binding(get: { draft?.blocks.first { $0.id == id }?[keyPath: path] ?? "" }, set: { value in
@@ -196,6 +336,13 @@ struct NotebookView: View {
                 model.keepNotebookDraft(nil, deckID: deckID); load(useDraft: false); saved = true
             }
         }
+    }
+}
+
+private struct NotebookBlockPositions: PreferenceKey {
+    static var defaultValue: [String: CGFloat] = [:]
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, newest in newest })
     }
 }
 

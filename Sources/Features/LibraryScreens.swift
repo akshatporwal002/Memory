@@ -7,49 +7,90 @@ struct TodayView: View {
     var showsPageTitle = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
+    private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var readingDeck: Deck? {
+        if let recent = UserDefaults.standard.string(forKey: "engram.notebook.lastDeckID"),
+           let deck = model.library.liveDecks.first(where: { $0.id == recent }) { return deck }
+        return model.library.liveDecks.first { deck in
+            NotebookDocument.blocks(for: deck, in: model.library).contains { $0.kind == .text && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        } ?? model.library.liveDecks.first
+    }
+    private func readingTitle(_ deck: Deck) -> String {
+        let blocks = NotebookDocument.blocks(for: deck, in: model.library)
+        let saved = UserDefaults.standard.string(forKey: "engram.notebook.readingSection." + deck.id)
+        let block = blocks.first { $0.id == saved } ?? blocks.first { $0.kind == .text } ?? blocks.first
+        return String((block?.text ?? "Open your notes and questions").prefix(75))
+    }
+    private var missedNote: Note? {
+        let failed = model.library.activeReviews.reversed().first { $0.rating == .again || $0.rating == .hard }
+        let card = model.library.liveCards.first { $0.id == failed?.cardID }
+        return model.library.liveNotes.first { $0.id == card?.noteID }
+    }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: EngramSpacing.section) {
+            VStack(alignment: .leading, spacing: 28) {
                 if showsPageTitle {
                     Text("Today").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
                 }
-                Text(model.now.formatted(date: .complete, time: .omitted)).font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-                Text("A little study,\na lasting memory.").font(theme.font(.hero)).accessibilityAddTraits(.isHeader)
+                Text(model.now.formatted(date: .complete, time: .omitted))
+                    .font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
                 if model.library.liveDecks.isEmpty {
                     EngramEmptyState(title: "Your first deck", message: "Save a question you want to remember. Your library stays on this device.")
                     Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
                 } else {
-                    VStack(alignment: .leading, spacing: EngramSpacing.regular) {
-                        Text("READY WHEN YOU ARE").font(theme.font(.metadata))
-                        Text(model.due.count, format: .number).font(theme.font(.hero)).monospacedDigit()
-                            .engramNumericTransition(value: model.due.count)
-                        Text("cards available now").font(theme.font(.section))
-                        Text("\(model.due.filter { $0.schedule.phase == .new }.count) new · \(model.due.filter { $0.schedule.phase != .new }.count) due, within daily limits")
-                            .font(theme.font(.metadata))
-                        Button(model.due.isEmpty ? "Check study queue" : "Start review") { Task { await model.beginReview() } }
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(model.due.count) cards ready").font(.headline)
+                            Text("\(model.due.filter { $0.schedule.phase != .new }.count) due · \(model.due.filter { $0.schedule.phase == .new }.count) new")
+                                .font(.subheadline).foregroundStyle(palette.secondaryText)
+                        }
+                        Spacer(minLength: 4)
+                        Button("Review") { Task { await model.beginReview() } }
                             .buttonStyle(EngramButtonStyle(.secondary)).disabled(model.busy)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(EngramSpacing.section)
-                    .foregroundStyle(theme.palette(for: scheme).onAnchor)
-                    .background(theme.palette(for: scheme).anchor, in: RoundedRectangle(cornerRadius: EngramShape.study, style: .continuous))
+                    .padding(16).background(palette.surface, in: RoundedRectangle(cornerRadius: 16))
                     if model.library.session?.current != nil {
                         Button { Task { await model.resumeReview() } } label: { Label("Resume saved session", systemImage: "arrow.uturn.forward") }
                             .buttonStyle(EngramButtonStyle(.secondary)).disabled(model.busy)
                     }
-                    HStack { Text("Your decks").font(theme.font(.section)); Spacer(); Button("New deck") { model.creationPresented = true } }
-                    LazyVStack(spacing: 0) {
-                        ForEach(model.library.liveDecks.prefix(6)) { deck in
-                            Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
-                            Divider()
+                    if let deck = readingDeck {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Pick up your notebook").font(theme.font(.section))
+                            Button {
+                                model.notebookDeckID = deck.id
+                            } label: {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text(deck.name.replacingOccurrences(of: "::", with: " / "))
+                                        .font(.caption).foregroundStyle(palette.secondaryText)
+                                    Text(readingTitle(deck))
+                                        .font(.system(.title2, design: .serif)).lineLimit(3)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    Label("Continue reading", systemImage: "arrow.right")
+                                        .font(.subheadline.weight(.medium)).foregroundStyle(palette.accentInk)
+                                }
+                                .padding(22).frame(maxWidth: .infinity, minHeight: 170, alignment: .leading)
+                                .background(palette.surface, in: RoundedRectangle(cornerRadius: 16))
+                                .overlay(alignment: .leading) { Rectangle().fill(palette.accent).frame(width: 2).padding(.vertical, 16) }
+                            }.buttonStyle(.plain)
                         }
                     }
-                    Text("\(model.todaysReviews.count) reviews saved today").font(theme.font(.body))
-                        .engramNumericTransition(value: model.todaysReviews.count)
-                    Text("Each installation has its own library. Export a backup to protect your cards and review history.")
-                        .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
+                    if let note = missedNote {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Worth another look").font(theme.font(.section))
+                            Button {
+                                model.notebookFocusNoteID = note.id
+                                model.notebookDeckID = note.deckID
+                            } label: {
+                                HStack { Text(note.front).lineLimit(2); Spacer(); Image(systemName: "arrow.right") }
+                                    .font(.subheadline).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            }.buttonStyle(.plain)
+                            Text("A recent answer was difficult. Revisit its source before practising again.")
+                                .font(.caption).foregroundStyle(palette.secondaryText)
+                        }
+                    }
                 }
             }
-            .frame(maxWidth: 1000, alignment: .leading).padding(EngramSpacing.section).frame(maxWidth: .infinity)
+            .frame(maxWidth: 720, alignment: .leading).padding(EngramSpacing.section).frame(maxWidth: .infinity)
         }
     }
 }
@@ -123,6 +164,7 @@ struct LibraryView: View {
                         }
                         if let deck = model.library.liveDecks.first(where: { $0.id == model.selectedDeckID }) {
                             DeckRow(model: model, deck: deck)
+                            DeckMemoryPanel(model: model, deck: deck).listRowSeparator(.hidden)
                             HStack {
                                 Button("Study deck") { Task { await model.beginReview(deckID: deck.id) } }
                                 Spacer()

@@ -90,6 +90,11 @@ private struct ApplicationRoot: View {
             Button("OK") { recoveryNotice = nil }
         } message: { Text(recoveryNotice ?? "") }
         .task { if model == nil { await openLibrary() } }
+        #if DEBUG
+        .transformEnvironment(\.dynamicTypeSize) { size in
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing") && ProcessInfo.processInfo.arguments.contains("--ui-large-text") { size = .accessibility3 }
+        }
+        #endif
         .onChange(of: scenePhase) { _, phase in if phase == .background { screenshots.cancel() } }
     }
     private func canCapture(_ model: EngramModel) -> Bool {
@@ -104,6 +109,29 @@ private struct ApplicationRoot: View {
     @MainActor private func openLibrary() async {
         failure = nil
         do {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+                let defaults = UserDefaults(suiteName: "engram.ui-tests")!
+                defaults.removePersistentDomain(forName: "engram.ui-tests")
+                if ProcessInfo.processInfo.arguments.contains("--ui-dark") { defaults.set("dark", forKey: "engram.appearance.v1") }
+                if ProcessInfo.processInfo.arguments.contains("--ui-neutral") { defaults.set("neutral", forKey: "engram.theme.v1") }
+                let scheduler = FSRSScheduler(), now = Date()
+                var snapshot = LibrarySnapshot()
+                snapshot.decks = [Deck(id: "ui-deck", name: "AWS Cloud Practitioner")]
+                for index in 0..<5 {
+                    let id = "ui-card-\(index)"
+                    snapshot.notes.append(Note(id: id, deckID: "ui-deck", kind: .basic, front: "What is cloud computing?", back: "On-demand access to computing resources."))
+                    let state = try scheduler.initialState(now: now, settings: snapshot.settings)
+                    snapshot.cards.append(StudyCard(id: id, noteID: id, deckID: "ui-deck", schedule: state))
+                    for day in 0..<7 where (index + day) % 3 != 0 {
+                        let time = now.addingTimeInterval(-Double(day) * 86400 - 60)
+                        snapshot.reviews.append(ReviewEvent(id: "ui-review-\(index)-\(day)", cardID: id, deckID: "ui-deck", sessionID: "ui-session", rating: .good, reviewedAt: time, committedAt: time, before: state, after: state))
+                    }
+                }
+                model = EngramModel(service: StudyService(repository: MemoryRepository(initial: snapshot), scheduler: scheduler), defaults: defaults)
+                return
+            }
+            #endif
             let location = try libraryLocation()
             let repository = try await Task.detached(priority: .userInitiated) { try AtomicFileRepository(url: location) }.value
             let opened = EngramModel(service: StudyService(repository: repository, scheduler: FSRSScheduler()))
