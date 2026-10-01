@@ -1,0 +1,71 @@
+Attributes: Application, 0x102cc15d0, pid: 76695, label: 'Engram'
+Element subtree:
+ →Application, 0x102cc15d0, pid: 76695, label: 'Engram'
+    Window (Main), 0x102cc3090, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cc2210, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cc1df0, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x102cc2630, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x102cc2a50, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x102cc19d0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cc0f90, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cc0b70, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x102cc0750, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x102cc0330, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x102cbff10, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x102cb6c80, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x102cc34b0, {{0.0, 62.0}, {402.0, 54.0}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                              Button, 0x102cc35d0, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'New notebook'
+                              Other, 0x102cc36f0, {{334.0, 66.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                                Other, 0x102cc3810, {{334.0, 66.0}, {48.0, 36.0}}
+                                  Button, 0x102cc3930, {{334.0, 66.0}, {48.0, 36.0}}, identifier: 'deck-actions', label: 'Deck actions'
+                                    Button, 0x102cc3a50, {{334.0, 66.0}, {48.0, 36.0}}
+                                      Image, 0x102cc3b70, {{346.3, 72.7}, {23.3, 23.0}}, identifier: 'gearshape', label: 'gearshape'
+                            Other, 0x102cc3c90, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cc3db0, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x102cc3ed0, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x102cc3ff0, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x102cc4110, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x102cc4230, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x102cc4350, {{0.0, 116.0}, {402.0, 570.0}}
+                                        StaticText, 0x102cc4470, {{24.0, 140.0}, {230.3, 33.7}}, label: 'AWS PDF learning'
+                                        StaticText, 0x102cc4590, {{24.0, 181.7}, {110.3, 18.0}}, label: '1 cards · 1 ready'
+                                        StaticText, 0x102cc46b0, {{24.0, 236.5}, {166.7, 26.3}}, identifier: 'deck-memory-outlook', label: 'Memory outlook'
+                                        Button, 0x102cc47d0, {{281.3, 240.7}, {96.7, 18.0}}, identifier: 'deck-memory-outlook', label: 'Target 90%'
+                                          StaticText, 0x102cc48f0, {{281.3, 240.7}, {79.7, 18.0}}, label: 'Target 90%'
+                                          Image, 0x102cc4a10, {{371.3, 244.7}, {6.0, 10.3}}, identifier: 'chevron.right', label: 'Forward'
+                                        StaticText, 0x102cc4b30, {{24.0, 285.7}, {304.3, 38.0}}, identifier: 'deck-memory-outlook', label: 'Review cards to see a recall curve. New and learning cards have no reliable estimate yet.'
+                                        StaticText, 0x102cc4c50, {{24.0, 354.7}, {142.0, 14.3}}, identifier: 'deck-memory-outlook', label: '0 above · 0 below · 1 new'
+                                        StaticText, 0x102cc4d70, {{24.0, 383.0}, {351.3, 46.3}}, identifier: 'deck-memory-outlook', label: 'FSRS estimates for studied cards. The curve assumes no further reviews; learning and unsupported cards are excluded from the average.'
+                                        Button, 0x102cc4e90, {{24.0, 457.3}, {354.0, 44.3}}, identifier: 'deck-study', label: 'Study deck'
+                                          StaticText, 0x102cc4fb0, {{40.0, 469.3}, {88.3, 20.3}}, label: 'Study deck'
+                                          Image, 0x102cc50d0, {{344.0, 473.0}, {16.0, 13.0}}, identifier: 'arrow.right', label: 'Right'
+                                        Button, 0x102cc51f0, {{24.0, 558.0}, {167.0, 92.0}}, identifier: 'deck-questions', label: 'Questions, 1 to explore'
+                                          Image, 0x102cc5310, {{25.0, 565.0}, {23.7, 23.3}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                                          StaticText, 0x102cc5430, {{24.0, 599.7}, {80.7, 20.3}}, label: 'Questions'
+                                          Image, 0x102cc5550, {{180.7, 605.3}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                          StaticText, 0x102cc5670, {{24.0, 630.0}, {65.3, 14.3}}, label: '1 to explore'
+                                        Button, 0x102cc5790, {{211.0, 558.0}, {167.0, 92.0}}, identifier: 'deck-notes', label: 'Notes, Read and relearn'
+                                          Image, 0x102cc58b0, {{212.0, 564.3}, {19.0, 24.7}}, identifier: 'book.pages', label: 'book.pages'
+                                          StaticText, 0x102cc59d0, {{211.0, 600.3}, {47.3, 20.3}}, label: 'Notes'
+                                          Image, 0x102cc5af0, {{367.7, 606.0}, {9.0, 9.0}}, identifier: 'arrow.up.right', label: 'arrow.up.right'
+                                          StaticText, 0x102cc5c10, {{211.0, 630.7}, {96.0, 14.3}}, label: 'Read and relearn'
+                                      Other, 0x102cc5d30, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x102cc5e50, {{396.0, 344.0}, {3.0, 409.0}}
+                                      Other, 0x102cc5f70, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x102cc6090, {{396.0, 344.0}, {3.0, 409.0}}
+                            Other, 0x102cc61b0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cc62d0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cc63f0, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x102cc6510, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cc6630, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x102cc6750, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x102cc6870, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cc6990, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cc6ab0, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x102cc15d0, pid: 76695, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x102cb7b40, pid: 76695, label: 'Engram'
+  }

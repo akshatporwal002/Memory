@@ -1,0 +1,178 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Engram.xcodeproj -scheme Engram-iOS -destination id=C9DD5AAC-E456-4648-BCF3-A50DD6D8FFF3 -derivedDataPath /private/tmp/engram-pdf-219c4ae-derived -packageAuthorizationProvider netrc CODE_SIGNING_ALLOWED=NO -parallel-testing-enabled NO -resultBundlePath /private/tmp/engram-pdf-review-evidence/77dd033/ipad.xcresult "-only-testing:Engram-UITests/MinimalistStudyUITests/testPDFSampleApprovalAndSourceLinkedSave" test-without-building
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  FluidAudio: https://github.com/FluidInference/FluidAudio.git @ 8145085
+  FSRS: /tmp/engram-minimalist-recheck/Vendor/FSRS @ local
+  Engram: /tmp/engram-minimalist-recheck
+
+Writing result bundle at path:
+	/private/tmp/engram-pdf-review-evidence/77dd033/ipad.xcresult
+
+2026-10-02 04:48:06.098976+1000 Engram-UITests-Runner[75248:35072530] [Default] Running tests...
+2026-10-02 04:48:06.248358+1000 Engram-UITests-Runner[75248:35072530] [UIKit App Config] Update the Info.plist: Launch screens will soon be required.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-02 04:48:10.403.
+Test Suite 'Engram-UITests.xctest' started at 2026-10-02 04:48:10.403.
+Test Suite 'MinimalistStudyUITests' started at 2026-10-02 04:48:10.404.
+Test Case '-[Engram_UITests.MinimalistStudyUITests testPDFSampleApprovalAndSourceLinkedSave]' started.
+    t =     0.00s Start Test at 2026-10-02 04:48:10.404
+    t =     0.36s Set Up
+    t =     0.37s Open dev.engram.study
+    t =     0.37s     Launch dev.engram.study
+2026-10-02 04:48:11.213 xcodebuild[74996:35069774] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-10-02 04:48:11.213 xcodebuild[74996:35069774] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     3.69s         Setting up automation session
+    t =     4.75s         Wait for dev.engram.study to idle
+    t =     6.85s Waiting 15.0s for "New deck" Button to exist
+    t =     7.88s     Checking `Expect predicate `existsNoRetry == 1` for object "New deck" Button`
+    t =     7.88s         Checking existence of `"New deck" Button`
+    t =     8.02s Tap "New deck" Button
+    t =     8.02s     Wait for dev.engram.study to idle
+    t =     8.02s     Find the "New deck" Button
+    t =     8.06s     Check for interrupting elements affecting "New deck" Button
+    t =     8.16s         Wait for com.apple.springboard to idle
+    t =     8.24s     Synthesize event
+    t =     8.64s     Wait for dev.engram.study to idle
+    t =    10.03s Waiting 5.0s for "deck-pdf-learning" Button to exist
+    t =    11.07s     Checking `Expect predicate `existsNoRetry == 1` for object "deck-pdf-learning" Button`
+    t =    11.07s         Checking existence of `"deck-pdf-learning" Button`
+    t =    11.17s Tap "deck-pdf-learning" Button
+    t =    11.17s     Wait for dev.engram.study to idle
+    t =    11.18s     Find the "deck-pdf-learning" Button
+    t =    11.25s     Check for interrupting elements affecting "deck-pdf-learning" Button
+    t =    11.32s         Wait for com.apple.springboard to idle
+    t =    11.34s     Synthesize event
+    t =    11.63s     Wait for dev.engram.study to idle
+    t =    12.35s Waiting 5.0s for "pdf-source-inspect" Button to exist
+    t =    13.39s     Checking `Expect predicate `existsNoRetry == 1` for object "pdf-source-inspect" Button`
+    t =    13.39s         Checking existence of `"pdf-source-inspect" Button`
+    t =    13.49s Find the Target Application 'dev.engram.study'
+    t =    13.72s Added attachment named 'PDF-Learning-Brief'
+    t =    13.72s Find the "pdf-preview" Button
+    t =    13.81s Find the "pdf-preview" Button
+    t =    13.89s Find the "pdf-preview" Button
+    t =    13.98s Find the "pdf-preview" Button
+    t =    14.06s Find the "pdf-preview" Button
+    t =    14.15s Tap "pdf-preview" Button
+    t =    14.15s     Wait for dev.engram.study to idle
+    t =    14.15s     Find the "pdf-preview" Button
+    t =    14.22s     Check for interrupting elements affecting "pdf-preview" Button
+    t =    14.29s         Wait for com.apple.springboard to idle
+    t =    14.31s     Synthesize event
+    t =    14.61s     Wait for dev.engram.study to idle
+    t =    14.61s Waiting 10.0s for "pdf-approve" Button to exist
+    t =    15.65s     Checking `Expect predicate `existsNoRetry == 1` for object "pdf-approve" Button`
+    t =    15.65s         Checking existence of `"pdf-approve" Button`
+    t =    15.73s         Capturing element debug description
+    t =    16.67s     Checking `Expect predicate `existsNoRetry == 1` for object "pdf-approve" Button`
+    t =    16.67s         Checking existence of `"pdf-approve" Button`
+    t =    16.73s Find the Target Application 'dev.engram.study'
+    t =    16.93s Added attachment named 'PDF-Learning-Sample'
+    t =    16.93s Find the "pdf-approve" Button
+    t =    17.00s Find the "pdf-approve" Button
+    t =    17.06s Find the "pdf-approve" Button
+    t =    17.12s Find the "pdf-approve" Button
+    t =    17.18s Find the "pdf-approve" Button
+    t =    17.24s Tap "pdf-approve" Button
+    t =    17.24s     Wait for dev.engram.study to idle
+    t =    17.24s     Find the "pdf-approve" Button
+    t =    17.30s     Check for interrupting elements affecting "pdf-approve" Button
+    t =    17.35s         Wait for com.apple.springboard to idle
+    t =    17.37s     Synthesize event
+    t =    17.66s     Wait for dev.engram.study to idle
+    t =    17.66s Waiting 10.0s for "pdf-save" Button to exist
+    t =    18.70s     Checking `Expect predicate `existsNoRetry == 1` for object "pdf-save" Button`
+    t =    18.70s         Checking existence of `"pdf-save" Button`
+    t =    18.78s         Capturing element debug description
+    t =    19.72s     Checking `Expect predicate `existsNoRetry == 1` for object "pdf-save" Button`
+    t =    19.72s         Checking existence of `"pdf-save" Button`
+    t =    19.78s Find the Target Application 'dev.engram.study'
+    t =    20.00s Added attachment named 'PDF-Learning-Review'
+    t =    20.01s Find the "pdf-save" Button
+    t =    20.07s Find the "pdf-save" Button
+    t =    20.14s Find the "pdf-save" Button
+    t =    20.21s Find the "pdf-save" Button
+    t =    20.28s Find the "pdf-save" Button
+    t =    20.34s Find the "pdf-save" Button
+    t =    20.41s Tap "pdf-save" Button
+    t =    20.41s     Wait for dev.engram.study to idle
+    t =    20.41s     Find the "pdf-save" Button
+    t =    20.47s     Check for interrupting elements affecting "pdf-save" Button
+    t =    20.52s         Wait for com.apple.springboard to idle
+    t =    20.54s     Synthesize event
+    t =    20.83s     Wait for dev.engram.study to idle
+    t =    21.59s Waiting 10.0s for "deck-actions" Button to exist
+    t =    22.62s     Checking `Expect predicate `existsNoRetry == 1` for object "deck-actions" Button`
+    t =    22.62s         Checking existence of `"deck-actions" Button`
+    t =    22.67s Tap "deck-actions" Button
+    t =    22.67s     Wait for dev.engram.study to idle
+    t =    22.67s     Find the "deck-actions" Button
+    t =    22.72s     Check for interrupting elements affecting "deck-actions" Button
+    t =    22.77s         Wait for com.apple.springboard to idle
+    t =    22.78s     Synthesize event
+    t =    23.08s     Wait for dev.engram.study to idle
+    t =    23.94s Waiting 5.0s for "PDF source pages" Button to exist
+    t =    24.98s     Checking `Expect predicate `existsNoRetry == 1` for object "PDF source pages" Button`
+    t =    24.98s         Checking existence of `"PDF source pages" Button`
+    t =    25.05s Tap "PDF source pages" Button
+    t =    25.05s     Wait for dev.engram.study to idle
+    t =    25.05s     Find the "PDF source pages" Button
+    t =    25.10s     Check for interrupting elements affecting "doc.text.magnifyingglass" Button
+    t =    25.15s         Wait for com.apple.springboard to idle
+    t =    25.17s     Synthesize event
+    t =    25.46s     Wait for dev.engram.study to idle
+    t =    26.43s Waiting 5.0s for "Page 1" Button to exist
+    t =    27.47s     Checking `Expect predicate `existsNoRetry == 1` for object "Page 1" Button`
+    t =    27.47s         Checking existence of `"Page 1" Button`
+    t =    27.58s Find the Target Application 'dev.engram.study'
+    t =    27.79s Added attachment named 'PDF-Saved-Source'
+    t =    27.79s Tap "Done" Button
+    t =    27.79s     Wait for dev.engram.study to idle
+    t =    27.79s     Find the "Done" Button
+    t =    27.86s     Check for interrupting elements affecting "Done" Button
+    t =    27.92s         Wait for com.apple.springboard to idle
+    t =    27.94s     Synthesize event
+    t =    28.24s     Wait for dev.engram.study to idle
+    t =    29.03s Find the "deck-questions" Button
+    t =    29.11s Find the "deck-questions" Button
+    t =    29.17s Find the "deck-questions" Button
+    t =    29.23s Find the "deck-questions" Button
+    t =    29.28s Find the "deck-questions" Button
+    t =    29.34s Tap "deck-questions" Button
+    t =    29.34s     Wait for dev.engram.study to idle
+    t =    29.35s     Find the "deck-questions" Button
+    t =    29.40s     Check for interrupting elements affecting "deck-questions" Button
+    t =    29.44s         Wait for com.apple.springboard to idle
+    t =    29.46s     Synthesize event
+    t =    29.75s     Wait for dev.engram.study to idle
+    t =    30.34s Waiting 5.0s for "1. Which service caches content near users?" StaticText to exist
+    t =    31.38s     Checking `Expect predicate `existsNoRetry == 1` for object "1. Which service caches content near users?" StaticText`
+    t =    31.38s         Checking existence of `"1. Which service caches content near users?" StaticText`
+    t =    31.47s Checking existence of `"Source evidence" Button`
+    t =    31.52s Find the Target Application 'dev.engram.study'
+    t =    31.72s Added attachment named 'PDF-Saved-Questions'
+    t =    31.73s Tear Down
+Test Case '-[Engram_UITests.MinimalistStudyUITests testPDFSampleApprovalAndSourceLinkedSave]' passed (32.133 seconds).
+Test Suite 'MinimalistStudyUITests' passed at 2026-10-02 04:48:42.539.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.133 (32.136) seconds
+Test Suite 'Engram-UITests.xctest' passed at 2026-10-02 04:48:42.541.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.133 (32.137) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 04:48:42.541.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.133 (32.138) seconds
+2026-10-02 04:48:42.908 xcodebuild[74996:35069774] [MT] IDETestOperationsObserverDebug: 59.777 elapsed -- Testing started completed.
+2026-10-02 04:48:42.908 xcodebuild[74996:35069774] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-02 04:48:42.908 xcodebuild[74996:35069774] [MT] IDETestOperationsObserverDebug: 59.777 sec, +59.777 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/engram-pdf-review-evidence/77dd033/ipad.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

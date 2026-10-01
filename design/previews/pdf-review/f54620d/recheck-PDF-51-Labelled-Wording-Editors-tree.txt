@@ -1,0 +1,104 @@
+Attributes: Application, 0x1022da820, pid: 76695, label: 'Engram'
+Element subtree:
+ →Application, 0x1022da820, pid: 76695, label: 'Engram'
+    Window (Main), 0x1022db130, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x1022d9380, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x1022d8f60, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x1022dadd0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x1022dbde0, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x1022d9dc0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x1022da1e0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x1022d8b40, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x1022d8720, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x1022d8300, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x1022d5e30, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x1022db550, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x1022dbba0, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'PDF learning'
+                              Button, 0x1022dbcc0, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'New notebook'
+                              StaticText, 0x1022dab90, {{150.3, 73.8}, {101.3, 20.3}}, label: 'PDF learning'
+                              Other, 0x1022dacb0, {{346.0, 66.0}, {36.0, 36.0}}, label: 'More'
+                                Other, 0x1022d97a0, {{346.0, 66.0}, {36.0, 36.0}}
+                                  Button, 0x1022d98c0, {{350.0, 66.0}, {28.0, 36.0}}, label: 'More'
+                                    Button, 0x1022d99e0, {{350.0, 66.0}, {28.0, 36.0}}
+                                      Image, 0x1022dbfa0, {{354.0, 82.0}, {20.0, 4.3}}, identifier: 'ellipsis', label: 'More'
+                            Other, 0x1022dc0c0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x1022dc1e0, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x1022dc300, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x1022dc420, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x1022dc540, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x1022dc660, {{0.0, -241.0}, {402.0, 1326.0}}
+                                        StaticText, 0x1022dc780, {{20.0, -220.9}, {308.3, 33.7}}, label: 'AWS learning fixture.pdf'
+                                        StaticText, 0x1022dc8a0, {{20.0, -179.3}, {274.3, 18.0}}, label: '1 pages · source text kept on this device'
+                                        Button, 0x1022dc9c0, {{20.0, -153.3}, {163.3, 20.3}}, identifier: 'pdf-source-inspect', label: 'Inspect source pages'
+                                        StaticText, 0x1022dcae0, {{20.0, -108.9}, {188.0, 26.3}}, label: 'Your learning draft'
+                                        StaticText, 0x1022dcc00, {{20.0, -62.6}, {343.7, 18.0}}, label: '1 questions · 1 note sections · 1/1 batches checked'
+                                        StaticText, 0x1022dcd20, {{20.0, -24.6}, {347.3, 46.3}}, label: 'Source checks reduce unsupported claims; they do not guarantee accuracy. Read the evidence and remove anything you do not want to study.'
+                                        StaticText, 0x1022dce40, {{20.0, 41.7}, {86.0, 14.3}}, label: 'Multiple choice'
+                                        StaticText, 0x1022dcf60, {{20.0, 66.1}, {334.7, 20.3}}, label: 'Which service caches content near users?'
+                                        StaticText, 0x1022dd080, {{20.0, 96.4}, {95.7, 18.0}}, label: 'A) CloudFront'
+                                        StaticText, 0x1022dd1a0, {{20.0, 124.4}, {37.7, 18.0}}, label: 'B) S3'
+                                        StaticText, 0x1022dd2c0, {{20.0, 152.4}, {46.7, 18.0}}, label: 'C) IAM'
+                                        StaticText, 0x1022dd3e0, {{20.0, 180.4}, {49.7, 18.0}}, label: 'D) RDS'
+                                        StaticText, 0x1022dd500, {{20.0, 208.4}, {322.0, 42.3}}, label: 'CloudFront uses edge locations to reduce latency and origin load.'
+                                        StaticText, 0x1022dd620, {{20.0, 260.7}, {193.0, 14.3}}, label: 'Checked against source passages'
+                                        Button, 0x1022dd740, {{20.0, 285.0}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          StaticText, 0x1022dd860, {{20.0, 285.0}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          Image, 0x1022dd980, {{374.3, 292.0}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x1022ddaa0, {{20.0, 321.0}, {362.0, 28.3}}, label: 'Edit wording'
+                                          StaticText, 0x1022ddbc0, {{20.0, 321.0}, {362.0, 28.3}}, label: 'Edit wording'
+                                          Image, 0x1022ddce0, {{370.8, 332.8}, {12.0, 7.0}}, identifier: 'expanded'
+                                        TextField, 0x1022dde00, {{20.0, 357.3}, {362.0, 22.0}}, label: 'Question or heading', value: Which service cach...
+                                          Other, 0x1022ddf20, {{20.0, 365.3}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x1022de040, {{23.0, 373.3}, {356.0, 3.0}}
+                                        TextField, 0x1022de160, {{20.0, 403.3}, {362.0, 44.0}}, label: 'Answer or notes', value: CloudFront uses ed...
+                                          Other, 0x1022de280, {{20.0, 422.3}, {362.0, 22.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x1022de3a0, {{23.0, 441.3}, {356.0, 3.0}}
+                                        StaticText, 0x1022de4c0, {{44.7, 459.9}, {312.7, 30.3}}, label: 'Your edits are marked as unverified. Source references stay available.'
+                                        Button, 0x1022de5e0, {{20.0, 500.3}, {45.0, 14.3}}, label: 'Remove'
+                                        StaticText, 0x1022de700, {{20.0, 554.9}, {84.0, 14.3}}, label: 'Learning notes'
+                                        StaticText, 0x1022de820, {{20.0, 579.3}, {131.3, 20.3}}, label: 'Content delivery'
+                                        StaticText, 0x1022de940, {{20.0, 609.6}, {328.3, 64.3}}, label: 'CloudFront caches content close to users, reducing latency and origin load. S3 stores objects in buckets.'
+                                        StaticText, 0x1022dea60, {{20.0, 683.9}, {193.0, 14.3}}, label: 'Checked against source passages'
+                                        Button, 0x1022deb80, {{20.0, 708.3}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          StaticText, 0x1022deca0, {{20.0, 708.3}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          Image, 0x1022dedc0, {{374.3, 715.3}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x1022deee0, {{20.0, 744.3}, {362.0, 28.3}}, label: 'Edit wording'
+                                          StaticText, 0x1022df000, {{20.0, 744.3}, {362.0, 28.3}}, label: 'Edit wording'
+                                          Image, 0x1022df120, {{374.3, 752.3}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x1022df240, {{20.0, 782.7}, {45.0, 14.3}}, label: 'Remove'
+                                        Button, 0x1022df4b0, {{20.0, 837.3}, {179.3, 44.3}}, identifier: 'pdf-save', label: 'Save learning deck'
+                                        StaticText, 0x1022df5d0, {{20.0, 901.6}, {355.7, 46.3}}, label: '1 supported questions were retained from the requested maximum of 12. A limited question set does not test every fact in the PDF.'
+                                        Button, 0x1022df6f0, {{20.0, 968.0}, {240.0, 20.3}}, label: 'Start again with a different brief'
+                                        StaticText, 0x1022df810, {{20.0, 1012.3}, {143.7, 14.3}}, label: 'Ready to review and save'
+                                        StaticText, 0x1022df930, {{20.0, 1050.6}, {270.3, 14.3}}, label: 'UI review fixture — no live AI request was made.'
+                                      Other, 0x1022dfc50, {{0.0, -0.0}, {402.0, 170.8}}
+                                      Other, 0x1022dfd70, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Image, 0x1022dfe90, {{-120.0, -166.0}, {642.0, 332.0}}, identifier: 'AdditionalDimmingOverlay'
+                                        Other, 0x1022dffb0, {{0.0, -0.0}, {402.0, 106.0}}
+                                        Other, 0x1022e00d0, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x1022e01f0, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Other, 0x1022e0310, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x1022e0430, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Other, 0x1022e0550, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x1022e0670, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x1022e0790, {{0.0, -0.0}, {402.0, 170.8}}
+                                      Other, 0x1022e08b0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 3 pages', value: 52%
+                                        Other, 0x1022e09d0, {{396.0, 303.0}, {3.0, 450.0}}
+                                      Other, 0x1022e0af0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 3 pages', value: 52%
+                                        Other, 0x1022e0c10, {{396.0, 303.0}, {3.0, 450.0}}
+                            Other, 0x1022e0d30, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x1022e0e50, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x1022e0f70, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x1022e1090, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x1022e11b0, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x1022e12d0, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x1022e13f0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x1022e1510, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x1022e1630, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x1022da820, pid: 76695, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x1023d27b0, pid: 76695, label: 'Engram'
+  }

@@ -1,6 +1,6 @@
 # PDF learning implementation
 
-Status: approved for implementation after the accepted UI revision (`853ff0c`), on `akshat/minimalist-ui-revision`.
+Status: implemented and delivered after the accepted UI revision (`853ff0c`), on `akshat/minimalist-ui-revision`. See [validation and practical limits](PDF-LEARNING-VALIDATION.md).
 
 ## User flow
 
@@ -35,4 +35,16 @@ Status: approved for implementation after the accepted UI revision (`853ff0c`), 
 3. Minimal guided UI for import → brief → sample → generation → review/save, with source inspection, progress, retry and cancellation.
 4. Regression tests for persistence, source references, batch deduplication, old backups and shuffled letter grading/voice. Build on the Mac.
 5. Ask the existing Mac GPT-6.1 Sol reviewer to traverse DEBUG fixture flows and inspect screenshots. Fix concrete defects and recheck; label fixture generation as simulated. Live service verification requires a connected account and is reported separately.
-6. Commit/push all task files and evidence; leave main unchanged. Stop the temporary Windows keep-awake helper before ending. Current helper PID: `36212`, five-hour automatic expiry; no saved power-plan changes.
+6. Commit/push all task files and evidence; leave main unchanged. Stop the temporary Windows keep-awake helper before ending. Helper PID `36212` has exited; no saved power-plan changes.
+
+## Completion
+
+- [x] PDF extraction, source-preserving retrieval, guided brief and approved sample generation.
+- [x] Separate evidence verification, citations, condensed notes and safe atomic deck saving.
+- [x] Edit/remove, pause/retry, persisted draft and preserved independent manual draft.
+- [x] Randomized MCQ presentation with canonical grading and consistent letter mapping.
+- [x] 117 domain tests: zero failures, one skipped; Mac iPhone/iPad fixture review and focused fixes accepted.
+- [x] Final copy revision `05b9ef3` builds for generic iPhone; task source committed and pushed on review branch.
+- [x] Scoped review report/screenshots collected; temporary keep-awake process stopped.
+
+Live service output quality, microphone interaction and physical-device installation were not exercised by the fixture review.

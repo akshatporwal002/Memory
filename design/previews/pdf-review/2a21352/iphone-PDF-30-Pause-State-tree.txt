@@ -1,0 +1,104 @@
+Attributes: Application, 0x10435ccc0, pid: 73986, label: 'Engram'
+Element subtree:
+ →Application, 0x10435ccc0, pid: 73986, label: 'Engram'
+    Window (Main), 0x10435d1b0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x10435d700, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x10435d820, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x10435d5b0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x10435c680, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x10435d940, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x10435da60, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x10435db80, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x10435dca0, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x10435ddc0, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x10435dee0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x10435e000, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x10435e120, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'PDF learning'
+                              Button, 0x10435e240, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'New notebook'
+                              StaticText, 0x10435e360, {{150.3, 73.8}, {101.3, 20.3}}, label: 'PDF learning'
+                              Other, 0x10435e480, {{346.0, 66.0}, {36.0, 36.0}}, label: 'More'
+                                Other, 0x10435e5a0, {{346.0, 66.0}, {36.0, 36.0}}
+                                  Button, 0x10435e6c0, {{350.0, 66.0}, {28.0, 36.0}}, label: 'More'
+                                    Button, 0x10435e7e0, {{350.0, 66.0}, {28.0, 36.0}}
+                                      Image, 0x10435e900, {{354.0, 82.0}, {20.0, 4.3}}, identifier: 'ellipsis', label: 'More'
+                            Other, 0x10435ea20, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x10435eb40, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x10435ec60, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x10435ed80, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x10435eea0, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x10435efc0, {{0.0, -292.3}, {402.0, 1086.7}}
+                                        StaticText, 0x10435f0e0, {{20.0, -272.3}, {308.3, 33.7}}, label: 'AWS learning fixture.pdf'
+                                        StaticText, 0x10435f200, {{20.0, -230.7}, {274.3, 18.0}}, label: '1 pages · source text kept on this device'
+                                        Button, 0x10435f320, {{20.0, -204.7}, {163.3, 20.3}}, identifier: 'pdf-source-inspect', label: 'Inspect source pages'
+                                        StaticText, 0x10435f440, {{20.0, -160.3}, {293.0, 26.3}}, label: 'What would you like to learn?'
+                                        StaticText, 0x10435f560, {{20.0, -116.0}, {66.7, 18.0}}, label: 'Deck title'
+                                        TextField, 0x10435f680, {{0.0, 0.0}, {0.0, 0.0}}, label: 'Deck title', value: AWS PDF learning
+                                          Other, 0x10435f7a0, {{20.0, -76.0}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x10435f8c0, {{23.0, -68.0}, {356.0, 3.0}}
+                                        StaticText, 0x10435f9e0, {{20.0, -29.7}, {196.0, 18.0}}, label: 'What are you preparing for?'
+                                        TextField, 0x10435fb00, {{20.0, 2.3}, {362.0, 22.0}}, label: 'What are you preparing for?', placeholderValue: 'An exam, work task, or a new subject'
+                                          Other, 0x10435fc20, {{20.0, 10.3}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x10435fd40, {{23.0, 18.3}, {356.0, 3.0}}
+                                        StaticText, 0x10435fe60, {{20.0, 56.7}, {217.0, 18.0}}, label: 'Which topics should we cover?'
+                                        TextField, 0x10435ff80, {{20.0, 88.7}, {362.0, 22.0}}, label: 'Which topics should we cover?', placeholderValue: 'Leave blank to cover the selected pages'
+                                          Other, 0x1043600a0, {{20.0, 96.7}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x1043601c0, {{23.0, 104.7}, {356.0, 3.0}}
+                                        StaticText, 0x1043602e0, {{20.0, 143.0}, {156.0, 18.0}}, label: 'Anything to leave out?'
+                                        TextField, 0x104360400, {{20.0, 175.0}, {362.0, 22.0}}, label: 'Anything to leave out?', placeholderValue: 'Optional topics to exclude'
+                                          Other, 0x104360520, {{20.0, 183.0}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x104360640, {{23.0, 191.0}, {356.0, 3.0}}
+                                        Button, 0x104360760, {{20.0, 229.3}, {213.3, 20.3}}, label: 'Use a heading from the PDF'
+                                          Button, 0x104360880, {{20.0, 229.3}, {213.3, 20.3}}
+                                            StaticText, 0x1043609a0, {{20.0, 229.3}, {213.3, 20.3}}, label: 'Use a heading from the PDF'
+                                        Stepper, 0x104360ac0, {{20.0, 267.7}, {177.0, 38.0}}, label: 'From page 1', value: 1
+                                          Button, 0x104360be0, {{103.0, 270.7}, {47.0, 32.0}}, identifier: 'Decrement', label: 'From page 1, Decrement', value: 1
+                                          Button, 0x104360d00, {{150.0, 270.7}, {47.0, 32.0}}, identifier: 'Increment', label: 'From page 1, Increment', value: 1
+                                        Stepper, 0x104360e20, {{205.0, 270.7}, {177.0, 32.0}}, label: 'To page 1', value: 1
+                                          Button, 0x104360f40, {{288.0, 270.7}, {47.0, 32.0}}, identifier: 'Decrement', label: 'To page 1, Decrement', value: 1
+                                          Button, 0x104361060, {{335.0, 270.7}, {47.0, 32.0}}, identifier: 'Increment', label: 'To page 1, Increment', value: 1
+                                        Button, 0x104361180, {{20.0, 323.7}, {136.3, 34.3}}, label: 'Difficulty, Intermediate'
+                                          StaticText, 0x1043612a0, {{31.7, 330.7}, {96.0, 20.3}}, label: 'Intermediate'
+                                        Button, 0x1043613c0, {{20.0, 376.0}, {197.0, 34.3}}, label: 'Create, Questions and notes'
+                                          StaticText, 0x1043614e0, {{32.0, 383.0}, {156.7, 20.3}}, label: 'Questions and notes'
+                                        Button, 0x104361600, {{20.0, 428.3}, {86.0, 34.3}}, label: 'Question style, Mixed'
+                                          StaticText, 0x104361720, {{32.0, 435.3}, {45.7, 20.3}}, label: 'Mixed'
+                                        Stepper, 0x104361840, {{20.0, 480.7}, {362.0, 32.0}}, label: 'Up to 12 questions', value: 12
+                                          Button, 0x104361960, {{288.0, 480.7}, {47.0, 32.0}}, identifier: 'Decrement', label: 'Up to 12 questions, Decrement', value: 12
+                                          Button, 0x104361a80, {{335.0, 480.7}, {47.0, 32.0}}, identifier: 'Increment', label: 'Up to 12 questions, Increment', value: 12
+                                        Button, 0x104361ba0, {{20.0, 530.7}, {128.0, 34.3}}, label: 'Notes, Condensed'
+                                          StaticText, 0x104361cc0, {{32.0, 537.7}, {87.7, 20.3}}, label: 'Condensed'
+                                        StaticText, 0x104361de0, {{20.0, 583.0}, {344.3, 62.3}}, label: 'First, review a small sample. The full scope needs 1 batches, each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.'
+                                        Button, 0x104361f00, {{20.0, 663.3}, {156.7, 34.3}}, identifier: 'pdf-preview', label: 'Preview a sample'
+                                        Button, 0x104362020, {{20.0, 715.7}, {138.0, 20.3}}, label: 'Connect ChatGPT'
+                                        StaticText, 0x104362140, {{20.0, 760.0}, {308.3, 14.3}}, label: 'Paused. Completed batches are kept; you can resume.'
+                                      Other, 0x104362260, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x104362380, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Image, 0x1043624a0, {{-120.0, -166.0}, {642.0, 332.0}}, identifier: 'AdditionalDimmingOverlay'
+                                        Other, 0x1043625c0, {{0.0, 0.0}, {402.0, 106.0}}
+                                        Other, 0x1043626e0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x104362800, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x1043629e0, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x104362b00, {{0.0, 0.0}, {402.0, 170.8}}
+                                        Other, 0x104362c20, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x104362d40, {{0.0, 0.0}, {402.0, 170.8}}
+                                          Other, 0x104362e60, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x104362f80, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 91%
+                                        Other, 0x1043630a0, {{396.0, 321.0}, {3.0, 432.0}}
+                                      Other, 0x1043631c0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 91%
+                                        Other, 0x1043632e0, {{396.0, 321.0}, {3.0, 432.0}}
+                            Other, 0x104363400, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x104363520, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x104363640, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x104363760, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x104363880, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x1043639a0, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x104363ac0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x104363be0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x104363d00, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x10435ccc0, pid: 73986, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x10439e9d0, pid: 73986, label: 'Engram'
+  }

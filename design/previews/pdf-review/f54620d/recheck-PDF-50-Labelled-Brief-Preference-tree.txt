@@ -1,0 +1,105 @@
+Attributes: Application, 0x1023641e0, pid: 76695, label: 'Engram'
+Element subtree:
+ →Application, 0x1023641e0, pid: 76695, label: 'Engram'
+    Window (Main), 0x102364450, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102364810, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102364930, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x102364570, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x102364690, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x102364a50, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102364b70, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102364c90, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x102364db0, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x102364ed0, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x102364ff0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x102365110, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x102365230, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'PDF learning'
+                              Button, 0x102365350, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'New notebook'
+                              StaticText, 0x102365470, {{150.3, 73.8}, {101.3, 20.3}}, label: 'PDF learning'
+                              Other, 0x102365590, {{346.0, 66.0}, {36.0, 36.0}}, label: 'More'
+                                Other, 0x1023656b0, {{346.0, 66.0}, {36.0, 36.0}}
+                                  Button, 0x1023657d0, {{350.0, 66.0}, {28.0, 36.0}}, label: 'More'
+                                    Button, 0x1023658f0, {{350.0, 66.0}, {28.0, 36.0}}
+                                      Image, 0x102365a10, {{354.0, 82.0}, {20.0, 4.3}}, identifier: 'ellipsis', label: 'More'
+                            Other, 0x102365b30, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102365c50, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x102365d70, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x102365e90, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x102365fb0, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x1023660d0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x1023661f0, {{0.0, 116.0}, {402.0, 1229.7}}
+                                        StaticText, 0x102366310, {{20.0, 136.0}, {308.3, 33.7}}, label: 'AWS learning fixture.pdf'
+                                        StaticText, 0x102366430, {{20.0, 177.7}, {274.3, 18.0}}, label: '1 pages · source text kept on this device'
+                                        Button, 0x102366550, {{20.0, 203.7}, {163.3, 20.3}}, identifier: 'pdf-source-inspect', label: 'Inspect source pages'
+                                        StaticText, 0x102366670, {{20.0, 248.0}, {293.0, 26.3}}, label: 'What would you like to learn?'
+                                        StaticText, 0x102366790, {{20.0, 292.3}, {66.7, 18.0}}, label: 'Deck title'
+                                        TextField, 0x1023668b0, {{20.0, 324.3}, {362.0, 22.0}}, label: 'Deck title', value: AWS PDF learning
+                                          Other, 0x1023669d0, {{20.0, 332.3}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102366af0, {{23.0, 340.3}, {356.0, 3.0}}
+                                        StaticText, 0x102366c10, {{20.0, 378.7}, {196.0, 18.0}}, label: 'What are you preparing for?'
+                                        TextField, 0x102366d30, {{20.0, 410.7}, {362.0, 22.0}}, label: 'What are you preparing for?', placeholderValue: 'An exam, work task, or a new subject'
+                                          Other, 0x102366e50, {{20.0, 418.7}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102366f70, {{23.0, 426.7}, {356.0, 3.0}}
+                                        StaticText, 0x102367090, {{20.0, 465.0}, {217.0, 18.0}}, label: 'Which topics should we cover?'
+                                        TextField, 0x1023671b0, {{20.0, 497.0}, {362.0, 22.0}}, label: 'Which topics should we cover?', placeholderValue: 'Leave blank to cover the selected pages'
+                                          Other, 0x1023672d0, {{20.0, 505.0}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x1023673f0, {{23.0, 513.0}, {356.0, 3.0}}
+                                        StaticText, 0x102367510, {{20.0, 551.3}, {156.0, 18.0}}, label: 'Anything to leave out?'
+                                        TextField, 0x102367630, {{20.0, 583.3}, {362.0, 22.0}}, label: 'Anything to leave out?', placeholderValue: 'Optional topics to exclude'
+                                          Other, 0x102367750, {{20.0, 591.3}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102367870, {{23.0, 599.3}, {356.0, 3.0}}
+                                        Button, 0x102367990, {{20.0, 637.7}, {213.3, 20.3}}, label: 'Use a heading from the PDF'
+                                          Button, 0x102367ab0, {{20.0, 637.7}, {213.3, 20.3}}
+                                            StaticText, 0x102367bd0, {{20.0, 637.7}, {213.3, 20.3}}, label: 'Use a heading from the PDF'
+                                        Stepper, 0x102367cf0, {{20.0, 676.0}, {362.0, 38.7}}, label: 'From page, 1, From page', value: 1
+                                          Button, 0x102367e10, {{288.0, 679.3}, {47.0, 32.0}}, identifier: 'Decrement', label: 'From page, 1, From page, Decrement', value: 1
+                                          Button, 0x102367f30, {{335.0, 679.3}, {47.0, 32.0}}, identifier: 'Increment', label: 'From page, 1, From page, Increment', value: 1
+                                        Stepper, 0x102368050, {{20.0, 726.7}, {362.0, 38.7}}, label: 'To page, 1, To page', value: 1
+                                          Button, 0x102368170, {{288.0, 730.0}, {47.0, 32.0}}, identifier: 'Decrement', label: 'To page, 1, To page, Decrement', value: 1
+                                          Button, 0x102368290, {{335.0, 730.0}, {47.0, 32.0}}, identifier: 'Increment', label: 'To page, 1, To page, Increment', value: 1
+                                        StaticText, 0x1023683b0, {{20.0, 783.3}, {51.0, 14.3}}, label: 'Difficulty'
+                                        Button, 0x1023684d0, {{20.0, 803.7}, {362.0, 44.0}}, label: 'Difficulty', value: Beginner
+                                          Button, 0x1023685f0, {{20.0, 803.7}, {362.0, 44.0}}
+                                            StaticText, 0x102368710, {{20.0, 815.5}, {68.3, 20.3}}, label: 'Beginner'
+                                            Image, 0x102368830, {{370.3, 825.0}, {10.3, 6.0}}, identifier: 'chevron.down', label: 'Go Down'
+                                        StaticText, 0x102368950, {{20.0, 865.7}, {37.7, 14.3}}, label: 'Create'
+                                        Button, 0x102368a70, {{20.0, 886.0}, {362.0, 44.0}}, label: 'Create', value: Questions and notes
+                                          Button, 0x102368b90, {{20.0, 886.0}, {362.0, 44.0}}
+                                            StaticText, 0x102368cb0, {{20.0, 897.8}, {156.7, 20.3}}, label: 'Questions and notes'
+                                            Image, 0x102368dd0, {{370.3, 907.3}, {10.3, 6.0}}, identifier: 'chevron.down', label: 'Go Down'
+                                        StaticText, 0x102368ef0, {{20.0, 948.0}, {81.3, 14.3}}, label: 'Question style'
+                                        Button, 0x102369010, {{20.0, 968.3}, {362.0, 44.0}}, label: 'Question style', value: Mixed
+                                          Button, 0x102369130, {{20.0, 968.3}, {362.0, 44.0}}
+                                            StaticText, 0x102369250, {{20.0, 980.2}, {45.7, 20.3}}, label: 'Mixed'
+                                            Image, 0x1023693e0, {{370.3, 989.7}, {10.3, 6.0}}, identifier: 'chevron.down', label: 'Go Down'
+                                        Stepper, 0x102369500, {{20.0, 1030.3}, {362.0, 32.0}}, label: 'Up to 12 questions', value: 12
+                                          Button, 0x102369620, {{288.0, 1030.3}, {47.0, 32.0}}, identifier: 'Decrement', label: 'Up to 12 questions, Decrement', value: 12
+                                          Button, 0x102369740, {{335.0, 1030.3}, {47.0, 32.0}}, identifier: 'Increment', label: 'Up to 12 questions, Increment', value: 12
+                                        StaticText, 0x102369860, {{20.0, 1080.3}, {33.7, 14.3}}, label: 'Notes'
+                                        Button, 0x102369980, {{20.0, 1100.7}, {362.0, 44.0}}, label: 'Notes', value: Condensed
+                                          Button, 0x102369aa0, {{20.0, 1100.7}, {362.0, 44.0}}
+                                            StaticText, 0x102369bc0, {{20.0, 1112.5}, {87.7, 20.3}}, label: 'Condensed'
+                                            Image, 0x102369ce0, {{370.3, 1122.0}, {10.3, 6.0}}, identifier: 'chevron.down', label: 'Go Down'
+                                        StaticText, 0x102369e00, {{20.0, 1162.7}, {344.3, 62.3}}, label: 'First, review a small sample. The full scope needs 1 batches, each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.'
+                                        Button, 0x102369f20, {{20.0, 1243.0}, {168.0, 44.3}}, identifier: 'pdf-preview', label: 'Preview a sample'
+                                        Button, 0x10236a040, {{20.0, 1305.3}, {138.0, 20.3}}, label: 'Connect ChatGPT'
+                                      Other, 0x10236a4b0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                                        Other, 0x10236a5d0, {{396.0, 119.0}, {3.0, 378.7}}
+                                      Other, 0x10236a6f0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                                        Other, 0x10236a810, {{396.0, 119.0}, {3.0, 378.7}}
+                            Other, 0x10236a930, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x10236aa50, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x10236ab70, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x10236ac90, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x10236adb0, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x10236aed0, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x10236aff0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x10236b110, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x10236b230, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x1023641e0, pid: 76695, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x10236b570, pid: 76695, label: 'Engram'
+  }

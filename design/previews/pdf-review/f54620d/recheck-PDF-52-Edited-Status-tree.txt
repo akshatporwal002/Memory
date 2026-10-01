@@ -1,0 +1,180 @@
+Attributes: Application, 0x102cb42e0, pid: 76695, label: 'Engram'
+Element subtree:
+ →Application, 0x102cb42e0, pid: 76695, label: 'Engram'
+    Window (Main), 0x102cb4be0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cb4fa0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cb50c0, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x102cb4d00, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x102cb4e20, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x102cb51e0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cb5300, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cb5420, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x102cb5540, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x102cb5660, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x102cb5780, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x102cb58a0, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x102cb59c0, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'PDF learning'
+                              Button, 0x102cb5ae0, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'New notebook'
+                              StaticText, 0x102cb5c00, {{150.3, 73.8}, {101.3, 20.3}}, label: 'PDF learning'
+                              Other, 0x102cb5d20, {{346.0, 66.0}, {36.0, 36.0}}, label: 'More'
+                                Other, 0x102cb5e40, {{346.0, 66.0}, {36.0, 36.0}}
+                                  Button, 0x102cb5f60, {{350.0, 66.0}, {28.0, 36.0}}, label: 'More'
+                                    Button, 0x102cb6080, {{350.0, 66.0}, {28.0, 36.0}}
+                                      Image, 0x102cb61a0, {{354.0, 82.0}, {20.0, 4.3}}, identifier: 'ellipsis', label: 'More'
+                            Other, 0x102cb62c0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cb63e0, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x102cb6500, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x102cb6620, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x102cb6740, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x102cb6860, {{0.0, -241.0}, {402.0, 1326.0}}
+                                        StaticText, 0x102cb6980, {{20.0, -220.9}, {308.3, 33.7}}, label: 'AWS learning fixture.pdf'
+                                        StaticText, 0x102cb6aa0, {{20.0, -179.3}, {274.3, 18.0}}, label: '1 pages · source text kept on this device'
+                                        Button, 0x102cb6bc0, {{20.0, -153.3}, {163.3, 20.3}}, identifier: 'pdf-source-inspect', label: 'Inspect source pages'
+                                        StaticText, 0x102cb6ce0, {{20.0, -108.9}, {188.0, 26.3}}, label: 'Your learning draft'
+                                        StaticText, 0x102cb6e00, {{20.0, -62.6}, {343.7, 18.0}}, label: '1 questions · 1 note sections · 1/1 batches checked'
+                                        StaticText, 0x102cb6f20, {{20.0, -24.6}, {347.3, 46.3}}, label: 'Source checks reduce unsupported claims; they do not guarantee accuracy. Read the evidence and remove anything you do not want to study.'
+                                        StaticText, 0x102cb7040, {{20.0, 41.7}, {86.0, 14.3}}, label: 'Multiple choice'
+                                        StaticText, 0x102cb7160, {{20.0, 66.1}, {334.7, 20.3}}, label: 'Which service caches content near users?'
+                                        StaticText, 0x102cb7280, {{20.0, 96.4}, {95.7, 18.0}}, label: 'A) CloudFront'
+                                        StaticText, 0x102cb73a0, {{20.0, 124.4}, {37.7, 18.0}}, label: 'B) S3'
+                                        StaticText, 0x102cb74c0, {{20.0, 152.4}, {46.7, 18.0}}, label: 'C) IAM'
+                                        StaticText, 0x102cb75e0, {{20.0, 180.4}, {49.7, 18.0}}, label: 'D) RDS'
+                                        StaticText, 0x102cb7700, {{20.0, 208.4}, {326.3, 42.3}}, label: 'Reviewed wording. CloudFront uses edge locations to reduce latency and origin load.'
+                                        StaticText, 0x102cb7820, {{20.0, 260.7}, {168.0, 14.3}}, label: 'Edited by you · not rechecked'
+                                        Button, 0x102cb7940, {{20.0, 285.0}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          StaticText, 0x102cb7a60, {{20.0, 285.0}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          Image, 0x102cb7b80, {{374.3, 292.0}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x102cb7ca0, {{20.0, 321.0}, {362.0, 28.3}}, label: 'Edit wording'
+                                          StaticText, 0x102cb7dc0, {{20.0, 321.0}, {362.0, 28.3}}, label: 'Edit wording'
+                                          Image, 0x102cb7ee0, {{370.8, 332.8}, {12.0, 7.0}}, identifier: 'expanded'
+                                        TextField, 0x102cb8000, {{20.0, 357.3}, {362.0, 22.0}}, label: 'Question or heading', value: Which service cach...
+                                          Other, 0x102cb8120, {{20.0, 365.3}, {362.0, 11.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102cb8240, {{23.0, 373.3}, {356.0, 3.0}}
+                                        TextField, 0x102cb8360, {{20.0, 403.3}, {362.0, 44.0}}, label: 'Answer or notes', value: Reviewed wording. ..., Keyboard Focused
+                                          Other, 0x102cb8480, {{20.0, 422.3}, {362.0, 22.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102cb85a0, {{23.0, 441.3}, {356.0, 3.0}}
+                                        StaticText, 0x102cb86c0, {{44.7, 459.9}, {312.7, 30.3}}, label: 'Your edits are marked as unverified. Source references stay available.'
+                                        Button, 0x102cb87e0, {{20.0, 500.3}, {45.0, 14.3}}, label: 'Remove'
+                                        StaticText, 0x102cb8900, {{20.0, 554.9}, {84.0, 14.3}}, label: 'Learning notes'
+                                        StaticText, 0x102cb8a20, {{20.0, 579.3}, {131.3, 20.3}}, label: 'Content delivery'
+                                        StaticText, 0x102cb8b40, {{20.0, 609.6}, {328.3, 64.3}}, label: 'CloudFront caches content close to users, reducing latency and origin load. S3 stores objects in buckets.'
+                                        StaticText, 0x102cb8c60, {{20.0, 683.9}, {193.0, 14.3}}, label: 'Checked against source passages'
+                                        Button, 0x102cb8d80, {{20.0, 708.3}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          StaticText, 0x102cb8ea0, {{20.0, 708.3}, {362.0, 26.0}}, label: 'Supporting evidence'
+                                          Image, 0x102cb8fc0, {{374.3, 715.3}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x102cb90e0, {{20.0, 744.3}, {362.0, 28.3}}, label: 'Edit wording'
+                                          StaticText, 0x102cb9200, {{20.0, 744.3}, {362.0, 28.3}}, label: 'Edit wording'
+                                          Image, 0x102cb9320, {{374.3, 752.3}, {7.0, 12.0}}, identifier: 'collapsed'
+                                        Button, 0x102cb9440, {{20.0, 782.7}, {45.0, 14.3}}, label: 'Remove'
+                                        Button, 0x102cb96b0, {{20.0, 837.3}, {179.3, 44.3}}, identifier: 'pdf-save', label: 'Save learning deck'
+                                        StaticText, 0x102cb97d0, {{20.0, 901.6}, {355.7, 46.3}}, label: '1 supported questions were retained from the requested maximum of 12. A limited question set does not test every fact in the PDF.'
+                                        Button, 0x102cb98f0, {{20.0, 968.0}, {240.0, 20.3}}, label: 'Start again with a different brief'
+                                        StaticText, 0x102cb9a10, {{20.0, 1012.3}, {143.7, 14.3}}, label: 'Ready to review and save'
+                                        StaticText, 0x102cb9b30, {{20.0, 1050.6}, {270.3, 14.3}}, label: 'UI review fixture — no live AI request was made.'
+                                      Other, 0x102cb9e50, {{0.0, -0.0}, {402.0, 170.8}}
+                                      Other, 0x102cb9f70, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Image, 0x102cba090, {{-120.0, -166.0}, {642.0, 332.0}}, identifier: 'AdditionalDimmingOverlay'
+                                        Other, 0x102cba1b0, {{0.0, -0.0}, {402.0, 106.0}}
+                                        Other, 0x102cba2d0, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x102cba3f0, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Other, 0x102cba510, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x102cba630, {{0.0, -0.0}, {402.0, 170.8}}
+                                        Other, 0x102cba750, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x102cba870, {{0.0, -0.0}, {402.0, 170.8}}
+                                          Other, 0x102cba990, {{0.0, -0.0}, {402.0, 170.8}}
+                                      Other, 0x102cbaab0, {{369.0, 116.0}, {30.0, 329.0}}, label: 'Vertical scroll bar, 5 pages', value: 36%
+                                        Other, 0x102cbabd0, {{396.0, 180.7}, {3.0, 151.0}}
+                                      Other, 0x102cbacf0, {{369.0, 116.0}, {30.0, 329.0}}, label: 'Vertical scroll bar, 5 pages', value: 36%
+                                        Other, 0x102cbae10, {{396.0, 180.7}, {3.0, 151.0}}
+                            Other, 0x102cbaf30, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cbb050, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cbb170, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x102cbb290, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cbb3b0, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x102cbb4d0, {{336.0, 471.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x102cbb5f0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cbb710, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cbb830, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cbb950, {{0.0, 529.0}, {402.0, 345.0}}
+          Other, 0x102cbba70, {{4.7, 529.0}, {393.0, 345.0}}, identifier: 'inputView'
+    Window, 0x102cbbb90, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cbbcb0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cbbdd0, {{0.0, 529.0}, {402.0, 345.0}}
+          Other, 0x102cbbef0, {{0.0, 529.0}, {402.0, 345.0}}
+            Other, 0x102cbc010, {{0.0, 529.0}, {402.0, 345.0}}
+              Other, 0x102cbc130, {{0.0, 529.0}, {402.0, 345.0}}
+                Other, 0x102cbc250, {{0.0, 529.0}, {402.0, 345.0}}
+                  Other, 0x102cbc370, {{0.0, 529.0}, {402.0, 345.0}}
+                    Other, 0x102cbc490, {{0.0, 529.0}, {402.0, 345.0}}
+                      Other, 0x102cbc5b0, {{0.0, 529.0}, {402.0, 345.0}}
+                        Other, 0x102cbc6d0, {{0.0, 529.0}, {402.0, 345.0}}
+                          Other, 0x102cbc7f0, {{0.0, 529.0}, {402.0, 243.0}}
+                      Other, 0x102cbc910, {{0.0, 529.0}, {402.0, 345.0}}
+                        Other, 0x102cbca30, {{0.0, 529.0}, {402.0, 243.0}}
+          Other, 0x102cbcb50, {{4.7, 529.0}, {393.0, 44.0}}, identifier: 'SystemInputAssistantView'
+            Other, 0x102cbcc70, {{4.7, 529.0}, {393.0, 44.0}}
+              Other, 0x102cbcd90, {{4.7, 529.0}, {393.0, 44.0}}, identifier: 'CenterPageView'
+                Other, 0x102cbceb0, {{4.7, -71.0}, {393.0, 1244.0}}
+                  ScrollView, 0x102cbcfd0, {{4.7, 529.0}, {393.0, 44.0}}
+                Other, 0x102cbd0f0, {{4.7, 529.0}, {393.0, 44.0}}
+                  Other, 0x102cbd210, {{4.7, 529.0}, {393.0, 44.0}}, label: 'Typing Predictions'
+                    Other, 0x102cbd330, {{4.7, 529.0}, {393.0, 44.0}}
+                      Other, 0x102e62de0, {{4.7, 529.0}, {393.0, 44.0}}
+                        Other, 0x102e65ea0, {{4.7, 529.0}, {131.0, 44.0}}, label: '“R”'
+                        Other, 0x102e65fc0, {{135.7, 529.0}, {131.0, 44.0}}, label: 'Right'
+                        Other, 0x102e660e0, {{266.7, 529.0}, {131.0, 44.0}}, label: 'Really'
+          Other, 0x102e66200, {{0.0, 573.0}, {402.0, 301.0}}
+            Button, 0x102e66320, {{8.5, 805.7}, {68.1, 68.7}}, label: 'Emoji'
+              StaticText, 0x102e66440, {{8.5, 805.7}, {0.0, 0.0}}
+            Button, 0x102e66560, {{325.4, 805.4}, {68.1, 68.7}}, identifier: 'dictation', label: 'Dictate'
+              StaticText, 0x102e66680, {{325.4, 805.4}, {0.0, 0.0}}
+            Button, 0x102e667a0, {{325.4, 805.4}, {68.1, 68.7}}, identifier: 'dictation', label: 'Dictate'
+              StaticText, 0x102e668c0, {{325.4, 805.4}, {0.0, 0.0}}
+          Other, 0x102e669e0, {{4.7, 573.0}, {393.0, 243.0}}
+            Keyboard, 0x102e66b00, {{4.7, 573.0}, {393.0, 243.0}}
+              Other, 0x102e66c20, {{4.7, 573.0}, {393.0, 243.0}}
+                Other, 0x102e66d40, {{4.7, 573.0}, {393.0, 243.0}}, identifier: 'UIKeyboardLayoutStar Preview'
+                  Key, 0x102e66e60, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102e66f80, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102e670a0, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102e671c0, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102e672e0, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102e67400, {{4.7, 573.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102e67520, {{6.7, 580.0}, {39.0, 56.0}}, label: 'Q'
+                  Key, 0x102e67640, {{45.7, 580.0}, {39.0, 56.0}}, label: 'W'
+                  Key, 0x102e67760, {{84.7, 580.0}, {39.0, 56.0}}, label: 'E'
+                  Key, 0x102e67880, {{123.7, 580.0}, {39.3, 56.0}}, label: 'R'
+                  Key, 0x102e679a0, {{163.0, 580.0}, {39.0, 56.0}}, label: 'T'
+                  Key, 0x102e67ac0, {{202.0, 580.0}, {39.0, 56.0}}, label: 'Y'
+                  Key, 0x102e67be0, {{241.0, 580.0}, {39.3, 56.0}}, label: 'U'
+                  Key, 0x102e67d00, {{280.3, 580.0}, {39.0, 56.0}}, label: 'I'
+                  Key, 0x102e67e20, {{319.3, 580.0}, {39.0, 56.0}}, label: 'O'
+                  Key, 0x102e67f40, {{358.3, 580.0}, {39.3, 56.0}}, label: 'P'
+                  Key, 0x102e68060, {{26.0, 636.0}, {39.0, 56.0}}, label: 'A'
+                  Key, 0x102e68180, {{65.0, 636.0}, {39.3, 56.0}}, label: 'S'
+                  Key, 0x102e682a0, {{104.3, 636.0}, {39.0, 56.0}}, label: 'D'
+                  Key, 0x102e683c0, {{143.3, 636.0}, {39.0, 56.0}}, label: 'F'
+                  Key, 0x102e684e0, {{182.3, 636.0}, {39.3, 56.0}}, label: 'G'
+                  Key, 0x102e68600, {{221.7, 636.0}, {39.0, 56.0}}, label: 'H'
+                  Key, 0x102e68720, {{260.7, 636.0}, {39.0, 56.0}}, label: 'J'
+                  Key, 0x102e68840, {{299.7, 636.0}, {39.3, 56.0}}, label: 'K'
+                  Key, 0x102e68960, {{339.0, 636.0}, {39.0, 56.0}}, label: 'L'
+                  Button, 0x102e68a80, {{6.7, 692.0}, {50.7, 56.0}}, identifier: 'shift', label: 'shift', Selected
+                  Key, 0x102e68ba0, {{65.0, 692.0}, {39.3, 56.0}}, label: 'Z'
+                  Key, 0x102e68e10, {{104.3, 692.0}, {39.0, 56.0}}, label: 'X'
+                  Key, 0x102e68f30, {{143.3, 692.0}, {39.0, 56.0}}, label: 'C'
+                  Key, 0x102e69050, {{182.3, 692.0}, {39.3, 56.0}}, label: 'V'
+                  Key, 0x102e69170, {{221.7, 692.0}, {39.0, 56.0}}, label: 'B'
+                  Key, 0x102e69290, {{260.7, 692.0}, {39.0, 56.0}}, label: 'N'
+                  Key, 0x102e693b0, {{299.7, 692.0}, {39.3, 56.0}}, label: 'M'
+                  Key, 0x102e694d0, {{346.7, 692.0}, {51.0, 56.0}}, identifier: 'delete', label: 'delete'
+                  Key, 0x102e695f0, {{6.7, 748.0}, {97.7, 56.0}}, identifier: 'more', label: 'numbers'
+                  Key, 0x102e69710, {{104.3, 748.0}, {195.3, 56.0}}, identifier: 'space', label: ' '
+                  Button, 0x102e69830, {{299.7, 748.0}, {98.0, 56.0}}, identifier: 'Return', label: 'return'
+Path to element:
+ →Application, 0x102cb42e0, pid: 76695, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x102cab760, pid: 76695, label: 'Engram'
+  }

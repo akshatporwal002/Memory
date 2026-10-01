@@ -1,0 +1,56 @@
+Attributes: Application, 0x105c64410, pid: 74455, label: 'Engram'
+Element subtree:
+ →Application, 0x105c64410, pid: 74455, label: 'Engram'
+    Window (Main), 0x105c63bd0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105c618d0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x105c614b0, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x105c623a0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x105c62f60, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x105c61090, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x105c60c70, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105c64a50, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x105c64b70, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x105c64ec0, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x105c64fe0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x105c65100, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x105c63580, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'MCQ selection fixture'
+                              Button, 0x105c636a0, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x105c637c0, {{72.0, 73.8}, {172.0, 20.3}}, label: 'MCQ selection fixture'
+                              Button, 0x105c627c0, {{291.3, 66.0}, {36.7, 36.0}}, identifier: 'review-voice-mode', label: 'Start voice mode'
+                              Button, 0x105c628e0, {{344.0, 66.0}, {38.0, 36.0}}, label: 'Review options'
+                            Other, 0x105c62a00, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x105c62b20, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x105c61cf0, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x105c61e10, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x105c61f30, {{0.0, 0.0}, {402.0, 709.7}}
+                                      Other, 0x105c62050, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x105c65300, {{0.0, 116.0}, {402.0, 593.7}}
+                                        StaticText, 0x105c65420, {{40.0, 156.0}, {226.3, 24.0}}, label: 'Which word is a number?'
+                                        Button, 0x105c65540, {{39.5, 193.5}, {323.0, 55.0}}, label: 'Option A, Blue', value: Not selected
+                                          StaticText, 0x105c65660, {{56.0, 210.8}, {17.0, 20.3}}, label: 'A.'
+                                          StaticText, 0x105c65780, {{85.0, 210.8}, {33.7, 20.3}}, label: 'Blue'
+                                        Button, 0x105c658a0, {{39.5, 261.5}, {323.0, 55.0}}, label: 'Option B, One', value: Not selected
+                                          StaticText, 0x105c659c0, {{56.0, 278.8}, {16.3, 20.3}}, label: 'B.'
+                                          StaticText, 0x105c65ae0, {{84.3, 278.8}, {31.7, 20.3}}, label: 'One'
+                                        StaticText, 0x105c65c00, {{40.0, 330.0}, {106.7, 14.3}}, label: 'Choose an answer.'
+                                      Other, 0x105c65d20, {{369.0, 116.0}, {30.0, 593.7}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x105c65e40, {{396.0, 119.0}, {3.0, 587.7}}
+                                      Other, 0x105c65f60, {{369.0, 116.0}, {30.0, 593.7}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x105c66080, {{396.0, 119.0}, {3.0, 587.7}}
+                                    StaticText, 0x105c661a0, {{31.7, 725.7}, {338.7, 14.3}}, label: 'Tap an option twice to confirm, or speak its letter or answer.'
+                            Other, 0x105c662c0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x105c663e0, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x105c66500, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x105c66620, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105c66740, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x105c66860, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x105c66980, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105c66aa0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x105c66bc0, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x105c64410, pid: 74455, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x105c66ce0, pid: 74455, label: 'Engram'
+  }

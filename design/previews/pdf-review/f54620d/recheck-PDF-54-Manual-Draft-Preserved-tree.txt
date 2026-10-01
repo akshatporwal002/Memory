@@ -1,0 +1,127 @@
+Attributes: Application, 0x102cb7b40, pid: 76695, label: 'Engram'
+Element subtree:
+ →Application, 0x102cb7b40, pid: 76695, label: 'Engram'
+    Window (Main), 0x102cc2fd0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cc0330, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cc0750, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x102cb6c80, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x102cbff10, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x102cc0b70, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cc2550, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cc2130, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x102cc66d0, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x102cc67f0, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x102cc6910, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x102cc6a30, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x102cc6b50, {{0.0, 62.0}, {402.0, 54.0}}, identifier: 'New notebook'
+                              Button, 0x102cc6c70, {{16.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x102cc6d90, {{72.0, 73.8}, {115.0, 20.3}}, label: 'New notebook'
+                              Button, 0x102cc6eb0, {{258.7, 66.0}, {40.0, 36.0}}, label: 'Notebook options'
+                              Other, 0x102cc6fd0, {{314.7, 66.0}, {67.3, 36.0}}, identifier: 'deck-create', label: 'Create'
+                                Other, 0x102cc70f0, {{314.7, 66.0}, {67.3, 36.0}}
+                                  Button, 0x102cc7210, {{314.7, 66.0}, {67.3, 36.0}}, identifier: 'deck-create', label: 'Create'
+                            Other, 0x102cc7330, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cc7450, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x102cc7570, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x102cc7690, {{0.0, 0.0}, {402.0, 874.0}}
+                                    ScrollView, 0x102cc77b0, {{0.0, 0.0}, {402.0, 874.0}}
+                                      Other, 0x102cc78d0, {{0.0, 0.0}, {402.0, 170.8}}
+                                      Other, 0x102cc79f0, {{0.0, 116.0}, {402.0, 472.3}}
+                                        TextField, 0x102cc7b10, {{20.0, 136.0}, {362.0, 34.0}}, identifier: 'deck-title', label: 'Deck title', value: Manual draft kept
+                                          Other, 0x102cc7c30, {{20.0, 150.0}, {362.0, 17.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                            Other, 0x102cc7d50, {{23.0, 164.0}, {356.0, 3.0}}
+                                        Button, 0x102cc7e70, {{20.0, 190.0}, {158.0, 20.3}}, identifier: 'deck-pdf-learning', label: 'Learn from a PDF'
+                                          Image, 0x102cc7f90, {{22.0, 191.3}, {14.0, 18.0}}, identifier: 'doc.text', label: 'Plain Text Document'
+                                          StaticText, 0x102cc80b0, {{20.0, 190.0}, {158.0, 20.3}}, label: 'Learn from a PDF'
+                                        StaticText, 0x102cc81d0, {{20.0, 230.3}, {118.7, 18.0}}, label: 'Question: answer'
+                                        StaticText, 0x102cc82f0, {{330.7, 230.3}, {51.3, 18.0}}, label: '1 cards'
+                                        TextView, 0x102cc8410, {{20.0, 268.3}, {362.0, 300.0}}, identifier: 'deck-document', label: 'Deck document', value: Manual question?: ..., Keyboard Focused
+                                          Other, 0x102cc8530, {{349.0, 268.3}, {30.0, 300.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                            Other, 0x102cc8650, {{376.0, 533.3}, {3.0, 32.0}}
+                                      Other, 0x102cc8770, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x102cc8890, {{396.0, 286.7}, {3.0, 466.3}}
+                                      Other, 0x102cc89b0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x102cc8ad0, {{396.0, 286.7}, {3.0, 466.3}}
+                            Other, 0x102cc8bf0, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x102cc8d10, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x102cc8e30, {{0.0, 791.0}, {402.0, 83.0}}
+                  Other, 0x102cc8f50, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x102cc9070, {{0.0, 791.0}, {402.0, 83.0}}
+              Button, 0x102cc9190, {{336.0, 782.0}, {50.0, 50.0}}, identifier: 'assistant-entry', label: 'Ask the study assistant'
+    Window, 0x102cc92b0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cc93d0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cc94f0, {{0.0, 0.0}, {402.0, 874.0}}
+    Window, 0x102cc9610, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x102cc9730, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x102cc9850, {{0.0, 874.0}, {402.0, 321.0}}
+          Other, 0x102cc9970, {{0.0, 874.0}, {402.0, 78.0}}, identifier: 'SystemInputAssistantView'
+            Other, 0x102cc9a90, {{0.0, 874.0}, {402.0, 78.0}}
+              Other, 0x102cc9bb0, {{0.0, 874.0}, {402.0, 44.0}}, identifier: 'CenterPageView'
+                Other, 0x102cc9cd0, {{0.0, 274.0}, {402.0, 1244.0}}
+                  ScrollView, 0x102cc9df0, {{0.0, 874.0}, {402.0, 44.0}}
+                Other, 0x102cc9f10, {{0.0, 874.0}, {402.0, 44.0}}
+                  Other, 0x102cca030, {{0.0, 874.0}, {402.0, 44.0}}, label: 'Typing Predictions'
+                    Other, 0x102cca150, {{0.0, 874.0}, {402.0, 44.0}}
+                      Other, 0x102cca270, {{0.0, 874.0}, {402.0, 44.0}}
+                        Other, 0x102cca390, {{0.0, 874.0}, {134.0, 44.0}}
+                        Other, 0x102cca4b0, {{134.0, 874.0}, {134.0, 44.0}}
+                        Other, 0x102cca5d0, {{268.0, 874.0}, {134.0, 44.0}}
+          Other, 0x102cca6f0, {{0.0, 874.0}, {402.0, 321.0}}
+            Other, 0x102cca810, {{0.0, 874.0}, {402.0, 321.0}}
+              Other, 0x102cca930, {{0.0, 874.0}, {402.0, 321.0}}
+                Other, 0x102ccaa50, {{0.0, 874.0}, {402.0, 321.0}}
+                  Other, 0x102cb8bf0, {{0.0, 874.0}, {402.0, 321.0}}
+                    Other, 0x102cb8d10, {{0.0, 874.0}, {402.0, 321.0}}
+                      Other, 0x102cb8e30, {{0.0, 874.0}, {402.0, 321.0}}
+                        Other, 0x102cb8f50, {{0.0, 874.0}, {402.0, 321.0}}
+                          Other, 0x102cb9070, {{0.0, 874.0}, {402.0, 243.0}}
+                      Other, 0x102cb9190, {{0.0, 874.0}, {402.0, 321.0}}
+                        Other, 0x102cb92b0, {{0.0, 874.0}, {402.0, 243.0}}
+          Other, 0x102cb93d0, {{0.0, 952.0}, {402.0, 243.0}}
+            Keyboard, 0x102cb94f0, {{0.0, 952.0}, {402.0, 243.0}}
+              Other, 0x102cb9610, {{0.0, 952.0}, {402.0, 243.0}}
+                Other, 0x102cb9730, {{0.0, 952.0}, {402.0, 243.0}}, identifier: 'UIKeyboardLayoutStar Preview'
+                  Key, 0x102cb9850, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102cb9970, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102cb9a90, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102cb9bb0, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102cb9cd0, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x102cb9df0, {{0.0, 952.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x102cb9f10, {{2.0, 959.0}, {40.0, 56.0}}, label: 'q'
+                  Key, 0x102cce0d0, {{42.0, 959.0}, {40.0, 56.0}}, label: 'w'
+                  Key, 0x102cce1f0, {{82.0, 959.0}, {40.0, 56.0}}, label: 'e'
+                  Key, 0x102cce310, {{122.0, 959.0}, {40.0, 56.0}}, label: 'r'
+                  Key, 0x102cce430, {{162.0, 959.0}, {40.0, 56.0}}, label: 't'
+                  Key, 0x102cce550, {{202.0, 959.0}, {40.0, 56.0}}, label: 'y'
+                  Key, 0x102cce670, {{242.0, 959.0}, {40.0, 56.0}}, label: 'u'
+                  Key, 0x102cce790, {{282.0, 959.0}, {40.0, 56.0}}, label: 'i'
+                  Key, 0x102cce8b0, {{322.0, 959.0}, {40.0, 56.0}}, label: 'o'
+                  Key, 0x102cce9d0, {{362.0, 959.0}, {40.0, 56.0}}, label: 'p'
+                  Key, 0x102cceaf0, {{22.0, 1015.0}, {40.0, 56.0}}, label: 'a'
+                  Key, 0x102ccec10, {{62.0, 1015.0}, {40.0, 56.0}}, label: 's'
+                  Key, 0x102cced30, {{102.0, 1015.0}, {40.0, 56.0}}, label: 'd'
+                  Key, 0x102ccee50, {{142.0, 1015.0}, {40.0, 56.0}}, label: 'f'
+                  Key, 0x102ccef70, {{182.0, 1015.0}, {40.0, 56.0}}, label: 'g'
+                  Key, 0x102ccf090, {{222.0, 1015.0}, {40.0, 56.0}}, label: 'h'
+                  Key, 0x102ccf1b0, {{262.0, 1015.0}, {40.0, 56.0}}, label: 'j'
+                  Key, 0x102ccf2d0, {{302.0, 1015.0}, {40.0, 56.0}}, label: 'k'
+                  Key, 0x102ccf3f0, {{342.0, 1015.0}, {40.0, 56.0}}, label: 'l'
+                  Button, 0x102ccf510, {{2.0, 1071.0}, {52.0, 56.0}}, identifier: 'shift', label: 'shift'
+                  Key, 0x102ccf630, {{62.0, 1071.0}, {40.0, 56.0}}, label: 'z'
+                  Key, 0x102ccf8a0, {{102.0, 1071.0}, {40.0, 56.0}}, label: 'x'
+                  Key, 0x102ccf9c0, {{142.0, 1071.0}, {40.0, 56.0}}, label: 'c'
+                  Key, 0x102ccfae0, {{182.0, 1071.0}, {40.0, 56.0}}, label: 'v'
+                  Key, 0x102ccfc00, {{222.0, 1071.0}, {40.0, 56.0}}, label: 'b'
+                  Key, 0x102ccfd20, {{262.0, 1071.0}, {40.0, 56.0}}, label: 'n'
+                  Key, 0x102ccfe40, {{302.0, 1071.0}, {40.0, 56.0}}, label: 'm'
+                  Key, 0x102ccff60, {{350.0, 1071.0}, {52.0, 56.0}}, identifier: 'delete', label: 'delete'
+                  Key, 0x102cd0080, {{2.0, 1127.0}, {100.0, 56.0}}, identifier: 'more', label: 'numbers'
+                  Key, 0x102cd01a0, {{102.0, 1127.0}, {200.0, 56.0}}, identifier: 'space', label: ' '
+                  Button, 0x102cd02c0, {{302.0, 1127.0}, {100.0, 56.0}}, identifier: 'Return', label: 'return'
+Path to element:
+ →Application, 0x102cb7b40, pid: 76695, label: 'Engram'
+Query chain:
+ →Find: Target Application 'dev.engram.study'
+  Output: {
+    Application, 0x102cbd590, pid: 76695, label: 'Engram'
+  }

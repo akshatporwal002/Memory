@@ -1,0 +1,63 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/8] Compiling Features EngramModel.swift
+[4/8] Compiling Features PDFLearningView.swift
+[5/8] Compiling Features PDFLearningController.swift
+[6/19] Emitting module Features
+[7/19] Compiling Features ContextualAssistant.swift
+[8/21] Compiling Features SettingsDetailPages.swift
+[9/21] Compiling Features ReviewView.swift
+[10/21] Compiling Features VoiceStudyController.swift
+[11/21] Compiling Features LibraryScreens.swift
+[12/21] Compiling Features ActivityView.swift
+[13/21] Compiling Features DeckCreationView.swift
+[14/21] Compiling Features DeckMemoryPanel.swift
+[15/21] Compiling Features DeckOverviewView.swift
+[16/21] Compiling Features MultipleChoiceReviewView.swift
+[17/21] Compiling Features NotebookView.swift
+[18/21] Compiling Features EditorView.swift
+[19/21] Compiling Features EngramRootView.swift
+[20/21] Compiling Features SettingsView.swift
+[21/24] Emitting module EngramTests
+[22/24] Compiling EngramTests NotebookModelTests.swift
+[23/24] Compiling EngramTests PDFLearningTests.swift
+[23/25] Write Objects.LinkFileList
+[24/25] Linking EngramPackageTests
+Build complete! (9.55s)
+Test Suite 'Selected tests' started at 2026-10-02 04:39:59.151.
+Test Suite 'EngramPackageTests.xctest' started at 2026-10-02 04:39:59.159.
+Test Suite 'PDFLearningTests' started at 2026-10-02 04:39:59.159.
+Test Case '-[EngramTests.PDFLearningTests testActualPDFImportExtractsTextAndPersistsSourceDraft]' started.
+Test Case '-[EngramTests.PDFLearningTests testActualPDFImportExtractsTextAndPersistsSourceDraft]' passed (0.575 seconds).
+Test Case '-[EngramTests.PDFLearningTests testBadScopeAndTextlessDocumentsAreRejected]' started.
+Test Case '-[EngramTests.PDFLearningTests testBadScopeAndTextlessDocumentsAreRejected]' passed (0.002 seconds).
+Test Case '-[EngramTests.PDFLearningTests testCitationMustBeAnExactSubstringOfSuppliedPassage]' started.
+Test Case '-[EngramTests.PDFLearningTests testCitationMustBeAnExactSubstringOfSuppliedPassage]' passed (0.005 seconds).
+Test Case '-[EngramTests.PDFLearningTests testEmptyQueryDiversifiesAcrossDocumentRatherThanOnlyBeginning]' started.
+Test Case '-[EngramTests.PDFLearningTests testEmptyQueryDiversifiesAcrossDocumentRatherThanOnlyBeginning]' passed (0.001 seconds).
+Test Case '-[EngramTests.PDFLearningTests testOldDeckStillDecodesWithoutPDFMetadata]' started.
+Test Case '-[EngramTests.PDFLearningTests testOldDeckStillDecodesWithoutPDFMetadata]' passed (0.001 seconds).
+Test Case '-[EngramTests.PDFLearningTests testPDFDeckCommitsAtomicallyAndRetriesWithoutDuplicates]' started.
+Test Case '-[EngramTests.PDFLearningTests testPDFDeckCommitsAtomicallyAndRetriesWithoutDuplicates]' passed (0.011 seconds).
+Test Case '-[EngramTests.PDFLearningTests testRejectsUnshufflableAmbiguousAndInvalidChoices]' started.
+Test Case '-[EngramTests.PDFLearningTests testRejectsUnshufflableAmbiguousAndInvalidChoices]' passed (0.001 seconds).
+Test Case '-[EngramTests.PDFLearningTests testRetrievalRespectsPageScopeAndRanksRelevantEvidence]' started.
+Test Case '-[EngramTests.PDFLearningTests testRetrievalRespectsPageScopeAndRanksRelevantEvidence]' passed (0.000 seconds).
+Test Case '-[EngramTests.PDFLearningTests testShuffledLettersKeepCanonicalAnswerAndStableResume]' started.
+Test Case '-[EngramTests.PDFLearningTests testShuffledLettersKeepCanonicalAnswerAndStableResume]' passed (0.001 seconds).
+Test Case '-[EngramTests.PDFLearningTests testUnverifiedContentCannotCreateDeckAndInvalidBatchLeavesNoPartialData]' started.
+Test Case '-[EngramTests.PDFLearningTests testUnverifiedContentCannotCreateDeckAndInvalidBatchLeavesNoPartialData]' passed (0.000 seconds).
+Test Case '-[EngramTests.PDFLearningTests testVerificationRejectsMissingDuplicateAndInventedIDs]' started.
+Test Case '-[EngramTests.PDFLearningTests testVerificationRejectsMissingDuplicateAndInventedIDs]' passed (0.001 seconds).
+Test Suite 'PDFLearningTests' passed at 2026-10-02 04:39:59.758.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.597 (0.599) seconds
+Test Suite 'EngramPackageTests.xctest' passed at 2026-10-02 04:39:59.758.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.597 (0.599) seconds
+Test Suite 'Selected tests' passed at 2026-10-02 04:39:59.758.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.597 (0.607) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
