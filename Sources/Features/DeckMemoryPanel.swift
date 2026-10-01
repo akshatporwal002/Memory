@@ -54,13 +54,14 @@ struct DeckMemoryPanel: View {
                         }
                     }
                     .chartYScale(domain: 0.0...100.0)
-                    .chartXAxis {
-                        AxisMarks(values: [0, 7]) { value in AxisValueLabel { Text(value.as(Int.self) == 0 ? "Today" : "7 days") } }
-                    }
+                    .chartXScale(domain: 0...7)
+                    .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks(position: .leading, values: [0, 50, 100]) }
                     .frame(height: 150)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
                     .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; curve assumes no reviews for seven days")
+                    HStack { Text("Today"); Spacer(); Text("7 days") }
+                        .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
                 }
                 if selected == nil {
                     VStack(alignment: .leading, spacing: 7) {

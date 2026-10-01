@@ -14,6 +14,7 @@ public struct EngramRootView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var scheme
+    @State private var assistantDockHeight: CGFloat = 72
     private var usesPhoneTodayTitle: Bool {
         #if os(iOS)
         UIDevice.current.userInterfaceIdiom == .phone
@@ -54,11 +55,6 @@ public struct EngramRootView: View {
                     } detail: { NavigationStack { page(model.destination) } }
                 }
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if model.loaded && !capturingScreenshots && !model.settingsPresented {
-                    Color.clear.frame(height: 72).allowsHitTesting(false)
-                }
-            }
             .overlay { if !model.loaded && model.error == nil { ProgressView("Opening your library…").padding().engramSurface() } }
         }
         .engramCanvas()
@@ -66,6 +62,7 @@ public struct EngramRootView: View {
         .overlay(alignment: .bottomTrailing) {
             if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
         }
+        .onPreferenceChange(AssistantDockHeight.self) { assistantDockHeight = max(72, $0 + 12) }
         .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
         .confirmationDialog("Delete deck?", isPresented: Binding(get: { model.deleteDeck != nil }, set: { if !$0 { model.deleteDeck = nil } }), titleVisibility: .visible) {
             if let deck = model.deleteDeck {
@@ -99,6 +96,7 @@ public struct EngramRootView: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh() } } }
         .environment(\.engramTheme, model.theme)
+        .environment(\.engramAssistantBottomInset, capturingScreenshots ? 0 : assistantDockHeight)
         .tint(scheme == .dark ? model.theme.palette(for: scheme).easyInk : model.theme.palette(for: scheme).anchor)
         .preferredColorScheme(model.appearance.colorScheme)
     }
@@ -111,28 +109,28 @@ public struct EngramRootView: View {
                 }.padding(EngramSpacing.regular)
             }
             switch destination {
-            case .today: TodayView(model: model, showsPageTitle: usesPhoneTodayTitle)
+            case .today: TodayView(model: model, showsPageTitle: usesPhoneTodayTitle).engramAssistantClearance()
             case .library:
                 #if os(iOS)
-                if usesPhoneTodayTitle { LibraryLandingView(model: model, importAction: portabilityAction) }
+                if usesPhoneTodayTitle { LibraryLandingView(model: model, importAction: portabilityAction).engramAssistantClearance() }
                 else { LibraryView(model: model) }
                 #else
                 LibraryView(model: model)
                 #endif
-            case .activity: ActivityView(model: model)
+            case .activity: ActivityView(model: model).engramAssistantClearance()
             }
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.editorPresented }, set: { model.editorPresented = $0 })) {
-            EditorView(model: model, embedded: true).engramCaptureSurface()
+            EditorView(model: model, embedded: true).engramAssistantClearance().engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.settingsPresented }, set: { model.settingsPresented = $0 })) {
             SettingsView(model: model, embedded: true, portabilityAction: portabilityAction).engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.creationPresented }, set: { model.creationPresented = $0 })) {
-            NotebookCreationPage(model: model).engramCaptureSurface()
+            NotebookCreationPage(model: model).engramAssistantClearance().engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.reviewPresented }, set: { model.reviewPresented = $0 })) {
-            ReviewView(model: model, embedded: true).engramCaptureSurface()
+            ReviewView(model: model, embedded: true).engramAssistantClearance().engramCaptureSurface()
         }
         .navigationDestination(item: Binding(get: { model.destination == destination ? model.notebookDeckID : nil }, set: { model.notebookDeckID = $0 })) { id in
             NotebookView(model: model, deckID: id, writingOnly: model.notebookWritingOnly).engramCaptureSurface()

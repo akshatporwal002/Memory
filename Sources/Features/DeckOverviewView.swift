@@ -42,6 +42,7 @@ struct DeckOverviewView: View {
                     .padding(EngramSpacing.section).padding(.bottom, 12)
                     .frame(maxWidth: 720).frame(maxWidth: .infinity)
                 }
+                .engramAssistantClearance()
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
@@ -132,6 +133,7 @@ struct DeckQuestionsView: View {
                     }
                 }.padding(EngramSpacing.section).frame(maxWidth: 720).frame(maxWidth: .infinity)
             }
+            .engramAssistantClearance()
             .onAppear {
                 if let id = model.notebookFocusNoteID { proxy.scrollTo(id, anchor: .top); model.notebookFocusNoteID = nil }
             }
@@ -191,7 +193,7 @@ struct QuestionReadingView: View {
                 CardContentView(text: prefix + front, media: media).font(.body.weight(.bold))
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Answer").font(.subheadline.weight(.semibold)).foregroundStyle(correctInk)
-                    CardContentView(text: back, media: media).font(.subheadline)
+                    CardContentView(text: back, media: media, ink: correctInk).font(.subheadline)
                 }
             }
         }.frame(maxWidth: .infinity, alignment: .leading)

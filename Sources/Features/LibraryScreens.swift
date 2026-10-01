@@ -112,6 +112,7 @@ struct LibraryView: View {
                         }
                     }.padding(EngramSpacing.section).frame(maxWidth: 760).frame(maxWidth: .infinity)
                 }
+                .engramAssistantClearance()
                 .searchable(text: $model.search, prompt: "Search decks or questions")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {

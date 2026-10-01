@@ -10,9 +10,10 @@ import Combine
 public struct CardContentView: View {
     public let text: String
     public let media: [MediaFile]
+    public let ink: Color?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
-    public init(text: String, media: [MediaFile] = []) { self.text = text; self.media = media }
+    public init(text: String, media: [MediaFile] = [], ink: Color? = nil) { self.text = text; self.media = media; self.ink = ink }
     public var body: some View {
         let document = SafeCardMarkup.inspect(text)
         VStack(alignment: .leading, spacing: EngramSpacing.regular) {
@@ -42,7 +43,7 @@ public struct CardContentView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .foregroundStyle(theme.palette(for: colorScheme).primaryText)
+        .foregroundStyle(ink ?? theme.palette(for: colorScheme).primaryText)
         .id(text)
     }
     private func formattedText(_ runs: [SafeCardRun]) -> Text {

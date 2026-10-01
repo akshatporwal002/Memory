@@ -88,6 +88,7 @@ struct NotebookView: View {
                 if model.busy { ProgressView() }
             }.padding(EngramSpacing.regular).background(palette.canvas)
         }
+        .engramAssistantClearance()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(editing ? "Done editing" : "Edit") { focusedBlock = nil; editing.toggle() }
@@ -204,21 +205,39 @@ struct NotebookView: View {
         VStack(alignment: .trailing, spacing: 0) {
             if visibleBlocks.count > 1 {
                 ForEach(railBlocks) { block in
-                    Button { jump(to: block.id, proxy: proxy) } label: {
-                        HStack(spacing: 0) {
-                            if activeBlockID == block.id {
-                                Text(sectionTitle(block)).font(.caption2.weight(.medium))
-                                    .foregroundStyle(palette.accentInk).lineLimit(2)
-                                    .frame(maxWidth: 104, alignment: .trailing)
-                            } else {
-                                Capsule().fill(palette.hairline).frame(width: 10, height: 2)
-                            }
-                        }.frame(width: 110, alignment: .trailing).frame(minHeight: 14)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(sectionTitle(block))
-                    .accessibilityAddTraits(activeBlockID == block.id ? [.isSelected] : [])
+                    HStack(spacing: 0) {
+                        if activeBlockID == block.id {
+                            Text(sectionTitle(block)).font(.caption2.weight(.medium))
+                                .foregroundStyle(palette.accentInk).lineLimit(1)
+                                .frame(maxWidth: 104, alignment: .trailing)
+                        } else {
+                            Capsule().fill(palette.hairline).frame(width: 10, height: 2)
+                        }
+                    }.frame(width: 110, height: 18, alignment: .trailing)
                 }
+            }
+        }
+        .frame(minHeight: visibleBlocks.count > 1 ? 44 : 0, alignment: .topTrailing)
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: 0).onEnded { value in
+            let blocks = railBlocks
+            guard visibleBlocks.count > 1, !blocks.isEmpty else { return }
+            let index = min(blocks.count - 1, max(0, Int(value.location.y / 18)))
+            jump(to: blocks[index].id, proxy: proxy)
+        })
+        .dynamicTypeSize(...DynamicTypeSize.large)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Notes contents")
+        .accessibilityValue(visibleBlocks.first { $0.id == activeBlockID }.map(sectionTitle) ?? "")
+        .accessibilityHint("Swipe up or down to choose a section. The Contents menu lists every heading.")
+        .accessibilityAdjustableAction { direction in
+            let blocks = visibleBlocks
+            guard !blocks.isEmpty else { return }
+            let current = blocks.firstIndex { $0.id == activeBlockID } ?? 0
+            switch direction {
+            case .increment: jump(to: blocks[min(blocks.count - 1, current + 1)].id, proxy: proxy)
+            case .decrement: jump(to: blocks[max(0, current - 1)].id, proxy: proxy)
+            @unknown default: break
             }
         }
         .padding(.trailing, 8).padding(.top, 8)

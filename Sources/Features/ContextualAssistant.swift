@@ -159,6 +159,9 @@ struct ContextualAssistant: View {
                     if open { assistantSurface(panel(height: geometry.size.height), open: true) }
                     else { dock(narrow: geometry.size.width < 600) }
                 }
+                .background(GeometryReader { dock in
+                    Color.clear.preference(key: AssistantDockHeight.self, value: open ? 72 : dock.size.height + 8)
+                })
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             .padding(.horizontal, 16).padding(.bottom, 8)
