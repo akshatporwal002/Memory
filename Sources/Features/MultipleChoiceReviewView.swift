@@ -51,6 +51,7 @@ struct MultipleChoiceReviewView: View {
         }.animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: item.assessment != nil)
             .sensoryFeedback(.selection, trigger: selected)
             .sensoryFeedback(.success, trigger: item.assessment?.outcome == .correct)
+            .onChange(of: item.presentationID) { _, _ in selected = nil }
     }
     private func confirm(_ id: String) { Task { await model.submitChoice(id, presentationID: item.presentationID) } }
 }
