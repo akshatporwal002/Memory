@@ -160,7 +160,10 @@ public enum PDFRetrieval {
                       !item.options.contains(where: { normalize($0).contains("all of the above") || normalize($0).contains("none of the above") }) else {
                     throw EngramError.invalid("Multiple-choice options are invalid or cannot be safely shuffled.")
                 }
-                guard MultipleChoiceQuestion.parse(front: item.front, back: item.back) != nil else {
+                guard let parsed = MultipleChoiceQuestion.parse(front: item.front, back: item.back),
+                      parsed.prompt == item.prompt,
+                      parsed.choices.map(\.text) == item.options,
+                      parsed.correctID == String(UnicodeScalar(65 + item.correctIndex)!) else {
                     throw EngramError.invalid("The generated question cannot be safely read as multiple choice.")
                 }
             } else if !item.options.isEmpty || item.correctIndex != -1 { throw EngramError.invalid("Unexpected options in generated notes or short answers.") }

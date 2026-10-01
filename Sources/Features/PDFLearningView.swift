@@ -207,9 +207,11 @@ struct PDFLearningView: View {
         Picker(title, selection: value) { ForEach(options, id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu)
     }
     private func suggestedTopics(_ source: PDFLearningSource) -> [String] {
-        Array(source.pages.flatMap { $0.text.components(separatedBy: .newlines) }
+        let headings = source.pages.flatMap { $0.text.components(separatedBy: .newlines) }
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { (5...90).contains($0.count) && !$0.hasSuffix(".") }.prefix(12))
+            .filter { (5...90).contains($0.count) && !$0.hasSuffix(".") }
+        var seen = Set<String>()
+        return Array(headings.filter { seen.insert($0).inserted }.prefix(12))
     }
     private func save() {
         guard let source = flow.draft.source, flow.draft.finished, !flow.busy else { return }

@@ -3,6 +3,9 @@ import LearningCore
 import StudyApplication
 import PersistenceAdapters
 import SchedulingAdapters
+@testable import Features
+import CoreGraphics
+import CoreText
 
 final class PDFLearningTests: XCTestCase {
     private var source: PDFLearningSource {
@@ -45,6 +48,18 @@ final class PDFLearningTests: XCTestCase {
         XCTAssertThrowsError(try PDFRetrieval.validate([invalid], against: source.chunks))
         invalid = item(); invalid.options[1] = "All of the above"
         XCTAssertThrowsError(try PDFRetrieval.validate([invalid], against: source.chunks))
+        invalid = item(); invalid.options[0] = "S3; B) something inside an option"
+        XCTAssertThrowsError(try PDFRetrieval.validate([invalid], against: source.chunks))
+    }
+    func testVerificationRejectsMissingDuplicateAndInventedIDs() throws {
+        let valid = #"{"checks":[{"id":"supported","supported":true,"reason":"Supported by source"}]}"#
+        XCTAssertEqual(try PDFGenerationRequest.checkedIDs(in: valid, items: [item()]), ["supported"])
+        let rejected = #"{"checks":[{"id":"supported","supported":false,"reason":"Source does not entail the answer"}]}"#
+        XCTAssertTrue(try PDFGenerationRequest.checkedIDs(in: rejected, items: [item()]).isEmpty)
+        XCTAssertThrowsError(try PDFGenerationRequest.checkedIDs(in: #"{"checks":[]}"#, items: [item()]))
+        XCTAssertThrowsError(try PDFGenerationRequest.checkedIDs(in: valid, items: []))
+        XCTAssertThrowsError(try PDFGenerationRequest.checkedIDs(in: #"{"checks":[{"id":"invented","supported":true,"reason":"guess"}]}"#, items: [item()]))
+        XCTAssertThrowsError(try PDFGenerationRequest.checkedIDs(in: "interrupted JSON", items: [item()]))
     }
     func testBadScopeAndTextlessDocumentsAreRejected() {
         var invalid = brief; invalid.firstPage = 3; invalid.lastPage = 1
@@ -91,5 +106,29 @@ final class PDFLearningTests: XCTestCase {
         let deck = Deck(name: "Legacy")
         let decoded = try JSONDecoder().decode(Deck.self, from: JSONEncoder().encode(deck))
         XCTAssertNil(decoded.pdfLearning)
+    }
+    @MainActor func testActualPDFImportExtractsTextAndPersistsSourceDraft() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let pdfURL = root.appendingPathComponent("source.pdf")
+        let storage = root.appendingPathComponent("draft.json")
+        let consumer = try XCTUnwrap(CGDataConsumer(url: pdfURL as CFURL))
+        var bounds = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let context = try XCTUnwrap(CGContext(consumer: consumer, mediaBox: &bounds, nil))
+        context.beginPDFPage(nil)
+        context.textPosition = CGPoint(x: 36, y: 740)
+        let string = NSAttributedString(string: "Amazon S3 stores objects in buckets.", attributes: [NSAttributedString.Key(kCTFontAttributeName as String): CTFontCreateWithName("Helvetica" as CFString, 14, nil)])
+        CTLineDraw(CTLineCreateWithAttributedString(string), context)
+        context.endPDFPage(); context.closePDF()
+        let flow = PDFLearningController(storageURL: storage)
+        flow.load(pdfURL)
+        for _ in 0..<100 where flow.busy { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertFalse(flow.busy); XCTAssertNil(flow.error)
+        XCTAssertTrue(flow.draft.source?.pages.first?.text.contains("Amazon S3") == true)
+        try await Task.sleep(for: .milliseconds(500))
+        let restored = PDFLearningController(storageURL: storage)
+        XCTAssertEqual(restored.draft.source, flow.draft.source)
+        XCTAssertEqual(restored.draft.brief.lastPage, 1)
     }
 }
