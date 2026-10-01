@@ -8,6 +8,7 @@ struct DeckOverviewView: View {
     let deckID: String
     private enum ContentRoute: String, Identifiable { case questions, notes; var id: String { rawValue } }
     @State private var contentRoute: ContentRoute?
+    @State private var showPDFSource = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
@@ -49,6 +50,9 @@ struct DeckOverviewView: View {
                             Button("Add question", systemImage: "plus") { model.newNote(deckID: deckID) }
                             Button("Edit notes", systemImage: "square.and.pencil") { openNotes() }
                             Button("Rename deck", systemImage: "pencil") { model.deckForm = DeckForm(deck: deck) }
+                            if deck.pdfLearning != nil {
+                                Button("PDF source pages", systemImage: "doc.text.magnifyingglass") { showPDFSource = true }
+                            }
                             Button("Delete deck", systemImage: "trash", role: .destructive) { model.deleteDeck = deck }
                         } label: { Image(systemName: "gearshape").frame(minWidth: 44, minHeight: 44) }
                             .accessibilityLabel("Deck actions").accessibilityIdentifier("deck-actions")
@@ -60,6 +64,9 @@ struct DeckOverviewView: View {
             }
         }
         .navigationTitle("").engramInlineTitle().engramCanvas()
+        .sheet(isPresented: $showPDFSource) {
+            if let source = deck?.pdfLearning?.source { PDFSourcePagesView(source: source) }
+        }
         .navigationDestination(item: $contentRoute) { route in
             switch route {
             case .questions: DeckQuestionsView(model: model, deckID: deckID)
@@ -112,6 +119,10 @@ struct DeckQuestionsView: View {
                     ForEach(Array(notes.enumerated()), id: \.element.id) { index, note in
                         VStack(alignment: .leading, spacing: 12) {
                             QuestionReadingView(front: note.front, back: note.back, number: index + 1, media: model.library.media)
+                            if !note.source.isEmpty {
+                                DisclosureGroup("Source evidence") { Text(note.source).font(.caption).textSelection(.enabled) }
+                                    .font(.caption).foregroundStyle(palette.secondaryText)
+                            }
                             HStack {
                                 Button("Edit question") {
                                     // Questions has its own reading destination; editing uses the existing card editor.

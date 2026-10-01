@@ -10,6 +10,33 @@ public struct MultipleChoiceQuestion: Codable, Equatable, Sendable {
     public let choices: [Choice]
     public let correctID: String
     public let explanation: String
+    /// Stable per presentation, including resumed sessions. Choice IDs retain their canonical identity.
+    public func ordered(for presentationID: String) -> Self {
+        var seed: UInt64 = 14695981039346656037
+        for byte in presentationID.utf8 { seed = (seed ^ UInt64(byte)) &* 1099511628211 }
+        var ordered = choices
+        guard ordered.count > 1 else { return self }
+        for index in stride(from: ordered.count - 1, through: 1, by: -1) {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            ordered.swapAt(index, Int(seed % UInt64(index + 1)))
+        }
+        return Self(prompt: prompt, choices: ordered, correctID: correctID, explanation: explanation)
+    }
+    public func displayLetter(for choiceID: String) -> String {
+        guard let index = choices.firstIndex(where: { $0.id == choiceID }) else { return choiceID }
+        return String(UnicodeScalar(65 + index)!)
+    }
+    public var displayedExplanation: String {
+        guard explanation.hasPrefix(correctID + ")") else { return explanation }
+        return displayLetter(for: correctID) + explanation.dropFirst(correctID.count)
+    }
+    public func resolvePresented(_ speech: String) -> String? {
+        let displayed = Self(prompt: prompt, choices: choices.enumerated().map {
+            Choice(id: String(UnicodeScalar(65 + $0.offset)!), text: $0.element.text)
+        }, correctID: displayLetter(for: correctID), explanation: displayedExplanation)
+        guard let letter = displayed.resolve(speech), let index = displayed.choices.firstIndex(where: { $0.id == letter }) else { return nil }
+        return choices[index].id
+    }
     public static func parse(front: String, back: String) -> Self? {
         let front = NotebookDocument.plainText(front), back = NotebookDocument.plainText(back)
         guard let expression = try? NSRegularExpression(pattern: #"(?:^|\s|;)([A-F])\)\s+"#) else { return nil }

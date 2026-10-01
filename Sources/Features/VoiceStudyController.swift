@@ -136,8 +136,8 @@ import LearningCore
     }
     private func questionText(_ model: EngramModel) throws -> String {
         guard let item = model.library.session?.current, let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) else { return "Review complete. Say stop to finish." }
-        if let assessment = item.assessment { return assessment.outcome.rawValue + ". " + assessment.reason + ". Say next, repeat, or stop." }
-        if let mcq = note.mcq { return mcq.prompt + ". " + mcq.choices.map { "Option \($0.id). \($0.text)" }.joined(separator: ". ") + ". Say the option letter or answer." }
+        if let assessment = item.assessment { return assessment.outcome.rawValue + ". " + (note.mcq?.ordered(for: item.presentationID).displayedExplanation ?? assessment.reason) + ". Say next, repeat, or stop." }
+        if let mcq = note.mcq?.ordered(for: item.presentationID) { return mcq.prompt + ". " + mcq.choices.map { "Option \(mcq.displayLetter(for: $0.id)). \($0.text)" }.joined(separator: ". ") + ". Say the option letter or answer." }
         let rendered = try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil)
         return item.revealedAt == nil ? rendered.prompt + ". Please answer." : (rendered.answer ?? "") + ". Say got it or try again to rate your recall."
     }
@@ -220,8 +220,8 @@ import LearningCore
         if command == "explain" {
             guard item.assessment != nil || item.revealedAt != nil else { speak("Answer first, or say reveal answer for help."); return }
             if let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) {
-                let detail = note.mcq?.explanation ?? (try? CardRenderer.render(note: note, card: item.card, revealed: true).answer) ?? ""
-                speak((item.assessment?.reason ?? "") + ". " + detail + ". Say next, repeat, or stop.")
+                let detail = note.mcq?.ordered(for: item.presentationID).displayedExplanation ?? (try? CardRenderer.render(note: note, card: item.card, revealed: true).answer) ?? ""
+                speak(detail + ". Say next, repeat, or stop.")
             }
             return
         }

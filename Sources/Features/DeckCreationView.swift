@@ -13,6 +13,7 @@ struct LibraryCreateDeckView: View {
     @State private var showHelp = false
     @State private var showFolder = false
     @State private var parsed = DeckDocument.parse("")
+    @State private var showPDF = false
     private enum Field { case title, subject, document }
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var subjects: [String] {
@@ -34,6 +35,9 @@ struct LibraryCreateDeckView: View {
                     .textFieldStyle(.plain).font(theme.font(.title)).focused($focus, equals: .title)
                     .accessibilityLabel("Deck title").accessibilityIdentifier("deck-title")
                 if showFolder || !model.deckCreationDraft.subject.isEmpty { subjectField }
+                Button(model.pdfLearning.draft.source == nil ? "Learn from a PDF" : "Resume PDF learning", systemImage: "doc.text") {
+                    focus = nil; showPDF = true
+                }.accessibilityIdentifier("deck-pdf-learning")
                 HStack(alignment: .firstTextBaseline) {
                     Text("Question: answer")
                         .font(.subheadline).foregroundStyle(palette.secondaryText)
@@ -103,6 +107,7 @@ struct LibraryCreateDeckView: View {
             focus = model.deckCreationDraft.title.isEmpty ? .title : .document
         }
         .onChange(of: model.deckCreationDraft.document) { _, value in parsed = DeckDocument.parse(value) }
+        .navigationDestination(isPresented: $showPDF) { PDFLearningView(model: model, created: created) }
     }
 
     private var subjectField: some View {

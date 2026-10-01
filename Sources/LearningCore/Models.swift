@@ -32,6 +32,8 @@ public struct ScheduleState: Codable, Equatable, Sendable {
     }
 }
 public struct Deck: Codable, Identifiable, Equatable, Sendable {
+    /// Source-preserving PDF learning metadata. Optional for old libraries and backups.
+    public var pdfLearning: PDFLearningRecord?
     public var id: String
     public var name: String
     public var deleted: Bool

@@ -3,7 +3,11 @@ import LearningCore
 
 struct MultipleChoiceReviewView: View {
     @Bindable var model: EngramModel
-    let question: MultipleChoiceQuestion
+    let originalQuestion: MultipleChoiceQuestion
+    var question: MultipleChoiceQuestion { originalQuestion.ordered(for: item.presentationID) }
+    init(model: EngramModel, question: MultipleChoiceQuestion, item: ReviewPresentation) {
+        self.model = model; self.originalQuestion = question; self.item = item
+    }
     let item: ReviewPresentation
     @State private var selected: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -23,7 +27,7 @@ struct MultipleChoiceReviewView: View {
                     else { withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.85)) { selected = choice.id } }
                 } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        Text(choice.id + ".").fontWeight(.semibold)
+                        Text(question.displayLetter(for: choice.id) + ".").fontWeight(.semibold)
                         Text(choice.text).frame(maxWidth: .infinity, alignment: .leading)
                         if correct { Image(systemName: "checkmark.circle.fill") }
                         else if wrong { Image(systemName: "xmark.circle.fill") }
@@ -34,7 +38,7 @@ struct MultipleChoiceReviewView: View {
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(border, lineWidth: active ? 2 : 1))
                         .scaleEffect(active && !reduceMotion ? 1.015 : 1)
                 }.buttonStyle(.plain).disabled(item.revealedAt != nil || model.busy || model.markingAnswer)
-                    .accessibilityLabel("Option \(choice.id), \(choice.text)")
+                    .accessibilityLabel("Option \(question.displayLetter(for: choice.id)), \(choice.text)")
                     .accessibilityValue(correct ? "Correct answer" : wrong ? "Your answer, incorrect" : active ? "Selected" : "Not selected")
                     .accessibilityHint("Tap to select. Tap the selected answer again to confirm.")
                     .accessibilityAction(named: Text("Confirm answer")) { if item.assessment == nil { confirm(choice.id) } }
@@ -42,7 +46,7 @@ struct MultipleChoiceReviewView: View {
             if item.assessment == nil { Text(selected == nil ? "Choose an answer." : "Tap the selected answer again to confirm.").font(.caption).foregroundStyle(.secondary) }
             if let result = item.assessment {
                 Label(result.outcome == .correct ? "Correct" : "Incorrect", systemImage: result.outcome == .correct ? "checkmark.circle.fill" : "xmark.circle.fill").font(.headline)
-                Text(result.reason).transition(.opacity)
+                Text(question.displayedExplanation).transition(.opacity)
             }
         }.animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: item.assessment != nil)
             .sensoryFeedback(.selection, trigger: selected)

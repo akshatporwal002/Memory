@@ -14,6 +14,48 @@ public actor StudyService {
     }
     public func snapshot() async throws -> LibrarySnapshot { try await repository.read() }
 
+    /// A reviewed PDF draft commits once, including its source evidence. No partial decks.
+    @discardableResult public func createPDFDeck(id: String, title: String, record: PDFLearningRecord, now: Date = Date()) async throws -> Deck {
+        guard UUID(uuidString: id) != nil, !record.items.isEmpty,
+              record.items.allSatisfy({ $0.verified == true || $0.userEdited == true }) else {
+            throw EngramError.invalid("Review the generated content before saving.")
+        }
+        try record.brief.validate(source: record.source)
+        try PDFRetrieval.validate(record.items, against: record.source.chunks)
+        var library = try await repository.read()
+        let name = try deckName(title, in: library, excluding: id)
+        if let existing = library.decks.first(where: { $0.id == id }) {
+            guard !existing.deleted, existing.name == name, existing.pdfLearning == record else { throw EngramError.conflict }
+            return existing
+        }
+        var deck = Deck(id: id, name: name, createdAt: now, modifiedAt: now)
+        deck.pdfLearning = record; deck.documentFormatVersion = 2
+        var blocks: [NotebookBlock] = []
+        for item in record.items {
+            let sourceText = item.citations.compactMap { citation -> String? in
+                guard let passage = record.source.chunks.first(where: { $0.id == citation.passageID }) else { return nil }
+                return "\(record.source.filename), p. \(passage.page): “\(citation.quote)”"
+            }.joined(separator: "\n")
+            if item.kind == "note" {
+                blocks.append(NotebookBlock(id: id + "-" + item.id, text: "# \(item.prompt)\n\(item.answer)\n\nSource · \(sourceText)"))
+            } else {
+                let note = Note(id: id + "-" + item.id, deckID: id, kind: .basic,
+                                front: DeckDocument.cardText(item.front), back: DeckDocument.cardText(item.back),
+                                tags: ["pdf-generated"], source: sourceText, modifiedAt: now)
+                _ = try CardRenderer.ordinals(for: NoteDraft(note: note))
+                library.notes.append(note)
+                library.cards.append(StudyCard(noteID: note.id, deckID: id, ordinal: 0,
+                                              schedule: try scheduler.initialState(now: now, settings: library.settings)))
+                blocks.append(NotebookBlock(id: note.id, kind: .question, text: item.front, answer: item.back, noteID: note.id))
+            }
+        }
+        deck.notebookBlocks = blocks; deck.sourceDocument = NotebookDocument.source(blocks)
+        library.decks.append(deck)
+        try Task.checkCancellation()
+        try await save(library)
+        return deck
+    }
+
     public func setDeckRetention(id: String, desiredRetention: Double?) async throws {
         guard desiredRetention.map({ $0.isFinite && (0.8...0.97).contains($0) }) ?? true else {
             throw EngramError.invalid("Choose a desired retention between 80% and 97%.")

@@ -21,6 +21,7 @@ public struct DeckForm: Identifiable {
 @MainActor @Observable public final class EngramModel {
     let voice = VoiceStudyController()
     let aiMarker = AIAnswerMarker()
+    let pdfLearning = PDFLearningController()
     public var answerFeedback: String?
     public var markingAnswer = false
     public let chatGPT = ChatGPTConnection.live()
@@ -145,7 +146,7 @@ public struct DeckForm: Identifiable {
               let note = library.liveNotes.first(where: { $0.id == item.card.noteID }) else { return }
         answerFeedback = nil
         if let question = note.mcq {
-            guard let choice = question.resolve(text) else { answerFeedback = "Please say one option letter or its answer text."; return }
+            guard let choice = question.ordered(for: item.presentationID).resolvePresented(text) else { answerFeedback = "Please say one option letter or its answer text."; return }
             await submitChoice(choice, presentationID: item.presentationID); return
         }
         markingAnswer = true; defer { markingAnswer = false }
