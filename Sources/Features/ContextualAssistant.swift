@@ -170,11 +170,6 @@ struct ContextualAssistant: View {
         .animation(motion, value: expanded)
         .animation(motion, value: thread.count)
         .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; close() }
-        #if DEBUG
-        .onChange(of: open) { old, new in
-            if ProcessInfo.processInfo.arguments.contains("--ui-testing") { print("Engram assistant open: \(old) -> \(new), context: \(context)") }
-        }
-        #endif
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
     }
 
@@ -337,7 +332,6 @@ struct ContextualAssistant: View {
         }
         .padding(12)
         .frame(maxWidth: 530)
-        .accessibilityIdentifier("assistant-panel")
     }
 
     private func send() {
