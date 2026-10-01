@@ -369,7 +369,7 @@ struct ContextualAssistant: View {
         let sourceOnly = documentSource != nil
         let allSources: [AssistantPassage]
         if let documentSource {
-            let brief = model.pdfLearningPresented ? model.pdfLearning.draft.brief : pdfRecord!.brief
+            let brief = model.pdfLearningPresented ? model.pdfLearning.draft.brief : (pdfRecord?.brief ?? model.pdfLearning.draft.brief)
             allSources = PDFRetrieval.retrieve(source: documentSource, brief: brief, query: search, limit: 5).map {
                 AssistantPassage(id: "pdf-" + $0.id, deckID: deckID ?? "pdf-draft", title: "\(documentSource.filename) · page \($0.page)", text: $0.text, noteID: nil, blockID: nil)
             }

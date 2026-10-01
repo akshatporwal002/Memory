@@ -119,6 +119,8 @@ struct PDFLearningView: View {
             Text("Does this feel right?").font(theme.font(.section))
             Text("Check the wording, difficulty and supporting evidence before generating the selected pages.")
                 .font(.subheadline).foregroundStyle(palette.secondaryText)
+            Text("Approved sample items are kept in the final draft. Generation adds to them and filters repeated questions.")
+                .font(.caption).foregroundStyle(palette.secondaryText)
             ForEach(flow.draft.sample) { item in itemPreview(item) }
             Button("Approve sample & generate") { flow.generateAll(model: model) }
                 .buttonStyle(.borderedProminent).accessibilityIdentifier("pdf-approve")
