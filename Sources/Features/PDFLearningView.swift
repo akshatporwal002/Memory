@@ -36,7 +36,7 @@ struct PDFLearningView: View {
                     Text("Turn your reading into questions and clear learning notes, with references back to the source.")
                         .foregroundStyle(palette.secondaryText)
                     Button("Choose PDF", systemImage: "doc.badge.plus") { importer = true }
-                        .buttonStyle(.borderedProminent).accessibilityIdentifier("pdf-choose")
+                        .buttonStyle(EngramButtonStyle()).accessibilityIdentifier("pdf-choose")
                     Text("Readable PDFs · up to 25 MB and 300 pages. Scanned pages and diagrams require a text-searchable version.")
                         .font(.caption).foregroundStyle(palette.secondaryText)
                 }
@@ -91,10 +91,10 @@ struct PDFLearningView: View {
                         Button(heading) { flow.draft.brief.topics = heading }
                     }
                 }
-                HStack {
-                    Stepper("From page \(flow.draft.brief.firstPage)", value: $flow.draft.brief.firstPage, in: 1...source.pages.count)
-                    Stepper("To page \(flow.draft.brief.lastPage)", value: $flow.draft.brief.lastPage, in: 1...source.pages.count)
-                }.font(.subheadline)
+                VStack(alignment: .leading, spacing: 12) {
+                    pageStepper("From page", value: $flow.draft.brief.firstPage, upperBound: source.pages.count)
+                    pageStepper("To page", value: $flow.draft.brief.lastPage, upperBound: source.pages.count)
+                }
             }
             picker("Difficulty", value: $flow.draft.brief.difficulty, options: ["Beginner", "Intermediate", "Advanced"])
             picker("Create", value: $flow.draft.brief.output, options: ["Questions and notes", "Questions only", "Notes only"])
@@ -108,7 +108,7 @@ struct PDFLearningView: View {
             Text("First, review a small sample. The full scope needs \(flow.batches.count) batches, each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.")
                 .font(.caption).foregroundStyle(palette.secondaryText)
             Button("Preview a sample") { flow.generateSample(model: model) }
-                .buttonStyle(.borderedProminent).accessibilityIdentifier("pdf-preview")
+                .buttonStyle(EngramButtonStyle()).accessibilityIdentifier("pdf-preview")
             if model.chatGPT.activeAccount == nil {
                 Button("Connect ChatGPT") { model.settingsPresented = true }
             }
@@ -123,7 +123,7 @@ struct PDFLearningView: View {
                 .font(.caption).foregroundStyle(palette.secondaryText)
             ForEach(flow.draft.sample) { item in itemPreview(item) }
             Button("Approve sample & generate") { flow.generateAll(model: model) }
-                .buttonStyle(.borderedProminent).accessibilityIdentifier("pdf-approve")
+                .buttonStyle(EngramButtonStyle()).accessibilityIdentifier("pdf-approve")
             Button("Adjust learning brief") { flow.changeBrief() }.accessibilityIdentifier("pdf-adjust")
             Button("Regenerate sample") { flow.generateSample(model: model) }
         }.disabled(flow.busy)
@@ -153,14 +153,14 @@ struct PDFLearningView: View {
             }
             if !flow.busy {
                 if flow.draft.finished {
-                    Button("Save learning deck", action: save).buttonStyle(.borderedProminent)
+                    Button("Save learning deck", action: save).buttonStyle(EngramButtonStyle())
                         .disabled(flow.draft.items.isEmpty || model.busy).accessibilityIdentifier("pdf-save")
                     if questionCount < flow.draft.brief.questionCount && flow.draft.brief.output != "Notes only" {
                         Text("\(questionCount) supported questions were retained from the requested maximum of \(flow.draft.brief.questionCount). A limited question set does not test every fact in the PDF.")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
                 } else {
-                    Button("Resume generation") { flow.generateAll(model: model) }.buttonStyle(.borderedProminent)
+                    Button("Resume generation") { flow.generateAll(model: model) }.buttonStyle(EngramButtonStyle())
                         .accessibilityIdentifier("pdf-resume")
                 }
                 Button("Start again with a different brief") { flow.changeBrief() }.disabled(model.busy)
@@ -207,7 +207,32 @@ struct PDFLearningView: View {
         }
     }
     private func picker(_ title: String, value: Binding<String>, options: [String]) -> some View {
-        Picker(title, selection: value) { ForEach(options, id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.caption).foregroundStyle(palette.secondaryText)
+            Menu {
+                ForEach(options, id: \.self) { option in
+                    Button { value.wrappedValue = option } label: {
+                        if value.wrappedValue == option { Label(option, systemImage: "checkmark") }
+                        else { Text(option) }
+                    }
+                }
+            } label: {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(value.wrappedValue).font(.body).multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 12)
+                    Image(systemName: "chevron.down").font(.caption)
+                }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
+            }.accessibilityLabel(title).accessibilityValue(value.wrappedValue)
+        }
+    }
+    private func pageStepper(_ title: String, value: Binding<Int>, upperBound: Int) -> some View {
+        Stepper(value: value, in: 1...upperBound) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.caption).foregroundStyle(palette.secondaryText)
+                Text(value.wrappedValue, format: .number).font(.body)
+            }.fixedSize(horizontal: false, vertical: true)
+        }.accessibilityLabel(title).accessibilityValue(String(value.wrappedValue))
     }
     private func suggestedTopics(_ source: PDFLearningSource) -> [String] {
         let headings = source.pages.flatMap { $0.text.components(separatedBy: .newlines) }
