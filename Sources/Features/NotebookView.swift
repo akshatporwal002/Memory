@@ -13,6 +13,7 @@ struct NotebookEditingDraft: Codable, Hashable {
 struct NotebookView: View {
     @Bindable var model: EngramModel
     let deckID: String
+    var writingOnly = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @State private var draft: NotebookEditingDraft?
@@ -40,26 +41,26 @@ struct NotebookView: View {
                     VStack(alignment: .leading, spacing: EngramSpacing.small) {
                         Text(model.deckName(deckID).replacingOccurrences(of: "::", with: " / "))
                             .font(theme.font(.title)).accessibilityAddTraits(.isHeader)
-                        Text("Your notes and questions, together. Changes to questions update their cards.")
+                        Text(writingOnly ? "Read, connect, remember." : "Your notes and questions, together. Changes to questions update their cards.")
                             .font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
                     }
                     if let error = model.error { EngramInlineError(message: error) }
-                    if otherCount > 0 {
+                    if otherCount > 0 && !writingOnly {
                         Text("\(otherCount) formatted or cloze notes remain in Cards. Their content and schedules are preserved.")
                             .font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
                     }
                     if let draft {
-                        ForEach(draft.blocks) { block in
+                        ForEach(visibleBlocks) { block in
                             notebookBlock(block).id(block.id)
                         }
-                        if draft.blocks.isEmpty {
-                            Text("Start with a thought, a heading, or a question.")
+                        if visibleBlocks.isEmpty {
+                            Text(writingOnly ? "Add the ideas and explanations you want to revisit." : "Start with a thought, a heading, or a question.")
                                 .foregroundStyle(palette.secondaryText).padding(.vertical, 32)
                         }
                     }
                     notebookActions.id("notebook-end")
                 }
-                .padding(EngramSpacing.section).padding(.trailing, 34)
+                .padding(EngramSpacing.section).padding(.trailing, writingOnly && visibleBlocks.count > 1 ? 88 : 34)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .disabled(model.busy)
             }
@@ -70,7 +71,7 @@ struct NotebookView: View {
                     setActive(nearest.key)
                 }
             }
-            .overlay(alignment: .trailing) { sectionRail(proxy: proxy) }
+            .overlay(alignment: .topTrailing) { sectionRail(proxy: proxy) }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: focusedBlock) { _, id in
                 if let id { setActive(id); proxy.scrollTo(id, anchor: .center) }
@@ -79,7 +80,7 @@ struct NotebookView: View {
                 if let id { jump(to: id, proxy: proxy); proxyScrollTarget = nil }
             }
         }
-        .navigationTitle("Notebook").engramInlineTitle().engramCanvas().engramHideStudyTabs()
+        .navigationTitle(writingOnly ? "Notes" : "Notebook").engramInlineTitle().engramCanvas().engramHideStudyTabs()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             HStack {
                 Text(status).font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
@@ -99,8 +100,8 @@ struct NotebookView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Menu {
-                    if let draft {
-                        ForEach(draft.blocks) { block in
+                    if draft != nil {
+                        ForEach(visibleBlocks) { block in
                             Button(sectionTitle(block)) {
                                 setActive(block.id)
                                 proxyScrollTarget = block.id
@@ -147,6 +148,10 @@ struct NotebookView: View {
     }
 
     private var status: String {
+        if writingOnly {
+            if model.busy { return "Saving notes…" }
+            return draft?.changed == true ? "Draft kept on this device" : saved ? "Saved" : "Up to date"
+        }
         let count = draft?.blocks.filter { $0.kind == .question }.count ?? 0
         if model.busy { return "Saving notebook and cards…" }
         if draft?.changed == true { return "\(count) questions · Draft kept on this device" }
@@ -163,7 +168,7 @@ struct NotebookView: View {
                 VStack(alignment: .leading, spacing: 8) { insertButtons }
             }
         } else {
-            Button { editing = true; insert(.question) } label: { Label("Add a question", systemImage: "plus") }
+            Button { editing = true; insert(writingOnly ? .text : .question) } label: { Label(writingOnly ? "Add writing" : "Add a question", systemImage: "plus") }
                 .buttonStyle(EngramButtonStyle(.secondary))
         }
     }
@@ -179,47 +184,40 @@ struct NotebookView: View {
         let title = first.trimmingCharacters(in: .whitespacesAndNewlines)
         return title.isEmpty ? (block.kind == .question ? "Untitled question" : "Untitled section") : String(title.prefix(48))
     }
+    private var visibleBlocks: [NotebookBlock] {
+        (draft?.blocks ?? []).filter { !writingOnly || $0.kind == .text }
+    }
     private var railBlocks: [NotebookBlock] {
-        guard let blocks = draft?.blocks else { return [] }
-        guard blocks.count > 12 else { return blocks }
+        let blocks = visibleBlocks
+        guard blocks.count > 7 else { return blocks }
         let center = blocks.firstIndex { $0.id == activeBlockID } ?? 0
-        let start = min(max(0, center - 5), blocks.count - 12)
-        return Array(blocks[start..<(start + 12)])
+        let start = min(max(0, center - 3), blocks.count - 7)
+        return Array(blocks[start..<(start + 7)])
     }
 
     private func sectionRail(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
-            if let draft, draft.blocks.count > 1 {
-                Menu {
-                    ForEach(draft.blocks) { block in
-                        Button(sectionTitle(block)) { jump(to: block.id, proxy: proxy) }
-                    }
-                } label: { Image(systemName: "list.bullet").frame(width: 44, height: 44) }
-                    .accessibilityLabel("Notebook contents")
+            if visibleBlocks.count > 1 {
                 ForEach(railBlocks) { block in
                     Button { jump(to: block.id, proxy: proxy) } label: {
-                        Capsule()
-                            .fill(activeBlockID == block.id ? palette.accent : palette.hairline)
-                            .frame(width: activeBlockID == block.id ? 24 : 10, height: 2)
-                            .frame(width: 44, height: 22, alignment: .trailing)
+                        HStack(spacing: 0) {
+                            if activeBlockID == block.id {
+                                Text(sectionTitle(block)).font(.caption2.weight(.medium))
+                                    .foregroundStyle(palette.accentInk).lineLimit(2)
+                                    .frame(maxWidth: 104, alignment: .trailing)
+                            } else {
+                                Capsule().fill(palette.hairline).frame(width: 10, height: 2)
+                            }
+                        }.frame(width: 110, alignment: .trailing).frame(minHeight: 14)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(sectionTitle(block))
                     .accessibilityAddTraits(activeBlockID == block.id ? [.isSelected] : [])
                 }
-                if let active = draft.blocks.first(where: { $0.id == activeBlockID }) {
-                    Text(sectionTitle(active))
-                        .font(.caption2.weight(.semibold)).foregroundStyle(palette.accentInk)
-                        .lineLimit(1).fixedSize()
-                        .rotationEffect(.degrees(90))
-                        .frame(width: 32, height: 140)
-                        .accessibilityHidden(true)
-                }
             }
-            Spacer()
         }
-        .padding(.trailing, 8)
-        .background(palette.canvas.opacity(0.9))
+        .padding(.trailing, 8).padding(.top, 8)
+        .accessibilityIdentifier("notes-contents-rail")
     }
 
     private func jump(to id: String, proxy: ScrollViewProxy) {
@@ -229,9 +227,7 @@ struct NotebookView: View {
     private func blockReader(_ block: NotebookBlock) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             if block.kind == .question {
-                Text("RECALL PROMPT").font(.caption2.weight(.semibold)).foregroundStyle(palette.accentInk)
-                Text(block.text).font(.system(.title3, design: .serif))
-                Text(block.answer).font(theme.font(.body)).foregroundStyle(palette.secondaryText)
+                QuestionReadingView(front: block.text, back: block.answer)
             } else {
                 let lines = block.text.components(separatedBy: "\n")
                 if let first = lines.first, first.hasPrefix("#") {
@@ -254,8 +250,10 @@ struct NotebookView: View {
     @ViewBuilder private var insertButtons: some View {
         Button { insert(.text) } label: { Label("Add writing", systemImage: "text.alignleft") }
             .buttonStyle(EngramButtonStyle(.secondary))
-        Button { insert(.question) } label: { Label("Add question", systemImage: "plus") }
-            .buttonStyle(EngramButtonStyle(.secondary))
+        if !writingOnly {
+            Button { insert(.question) } label: { Label("Add question", systemImage: "plus") }
+                .buttonStyle(EngramButtonStyle(.secondary))
+        }
     }
     private func blockEditor(_ block: NotebookBlock) -> some View {
         VStack(alignment: .leading, spacing: EngramSpacing.small) {

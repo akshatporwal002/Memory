@@ -118,10 +118,30 @@ private struct ApplicationRoot: View {
                 let scheduler = FSRSScheduler(), now = Date()
                 var snapshot = LibrarySnapshot()
                 snapshot.decks = [Deck(id: "ui-deck", name: "AWS Cloud Practitioner")]
+                if ProcessInfo.processInfo.arguments.contains("--ui-minimalist") {
+                    snapshot.decks[0].notebookBlocks = [
+                        NotebookBlock(id: "ui-cloud", text: "# Cloud fundamentals\nCloud computing provides on-demand access to computing resources. Instead of buying servers before you know how much capacity you need, provision resources when they are useful and release them when they are not.\n\nElasticity matches capacity to demand. Scalability describes the ability to grow. These ideas are related, but they describe different decisions. Pay-as-you-go pricing helps connect spending to actual usage."),
+                        NotebookBlock(id: "ui-cloudfront", text: "# AWS CloudFront\nCloudFront is a content delivery network. It caches content at edge locations close to users, reducing latency and the number of requests reaching the origin. The origin can be an S3 bucket or a web server.\n\nAn edge location is not an Availability Zone. Edge locations deliver cached content; Availability Zones provide isolated infrastructure within a Region. Remember this distinction when choosing an answer about global content delivery."),
+                        NotebookBlock(id: "ui-security", text: "# Shared responsibility\nAWS protects the infrastructure that runs its services. Customers protect their data and configure access to the services they use. The boundary changes with the service: managing an EC2 guest operating system is a customer responsibility, while an S3 customer configures access to stored objects.\n\nUse least privilege when granting permissions. IAM policies define allowed actions on resources. CloudTrail records account activity, helping you investigate who performed an action."),
+                        NotebookBlock(id: "ui-cost", text: "# Cost and billing\nAWS Budgets helps you compare spending against a planned amount and configure alerts. Cost Explorer helps you investigate spending patterns over time. Pricing Calculator estimates costs before you deploy.\n\nChoose the service that matches the question: an estimate before deployment, an analysis of past spending, or an alert when costs cross a limit. These are different needs and should not be treated as interchangeable.")
+                    ]
+                }
+                let studyQuestions = [
+                    ("Which service delivers cached content close to users? A) Amazon EC2 B) Amazon CloudFront C) AWS CloudTrail D) Amazon RDS", "B) Amazon CloudFront. It caches content at edge locations, reducing latency and origin load."),
+                    ("What is cloud computing?", "On-demand access to computing resources."),
+                    ("Who manages the guest operating system on Amazon EC2? A) AWS B) The customer C) The internet provider D) The hardware manufacturer", "B) The customer. AWS manages the underlying infrastructure; customers patch and secure the guest operating system."),
+                    ("What is the difference between elasticity and scalability?", "Elasticity adjusts capacity to current demand. Scalability is the ability to handle increasing demand by adding capacity."),
+                    ("Which tool can alert you when spending exceeds a planned amount? A) AWS Budgets B) Amazon Route 53 C) AWS CloudTrail D) Amazon CloudFront", "A) AWS Budgets. Configure cost or usage budgets and alerts to track spending against your plan.")
+                ]
                 for index in 0..<5 {
                     let id = "ui-card-\(index)"
-                    snapshot.notes.append(Note(id: id, deckID: "ui-deck", kind: .basic, front: "What is cloud computing?", back: "On-demand access to computing resources."))
-                    let state = try scheduler.initialState(now: now, settings: snapshot.settings)
+                    let question = ProcessInfo.processInfo.arguments.contains("--ui-minimalist") ? studyQuestions[index] : ("What is cloud computing?", "On-demand access to computing resources.")
+                    snapshot.notes.append(Note(id: id, deckID: "ui-deck", kind: .basic, front: question.0, back: question.1))
+                    var state = try scheduler.initialState(now: now, settings: snapshot.settings)
+                    if ProcessInfo.processInfo.arguments.contains("--ui-minimalist") && index < 4 {
+                        state = try scheduler.importState(due: now.addingTimeInterval(Double(index - 1) * 86400), phase: .review,
+                            sourceValues: ["s": String(3 + index * 2), "d": "5", "lrt": String(now.addingTimeInterval(-Double(index + 1) * 86400).timeIntervalSince1970), "ivl": "5", "reps": "3", "lapses": "0"], settings: snapshot.settings)
+                    }
                     snapshot.cards.append(StudyCard(id: id, noteID: id, deckID: "ui-deck", schedule: state))
                     for day in 0..<7 where (index + day) % 3 != 0 {
                         let time = now.addingTimeInterval(-Double(day) * 86400 - 60)

@@ -31,7 +31,7 @@ public struct EngramRootView: View {
                 if geometry.size.width < 600 {
                     TabView(selection: $model.destination) {
                         ForEach(EngramDestination.allCases) { destination in
-                            NavigationStack { page(destination) }
+                            NavigationStack { page(destination) }.engramHideStudyTabs()
                                 .tabItem { Label(destination.title, systemImage: destination.symbol) }
                                 .tag(destination)
                         }
@@ -52,6 +52,11 @@ public struct EngramRootView: View {
                         }
                         .navigationTitle("Engram").navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 280)
                     } detail: { NavigationStack { page(model.destination) } }
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if model.loaded && !capturingScreenshots && !model.settingsPresented {
+                    Color.clear.frame(height: 72).allowsHitTesting(false)
                 }
             }
             .overlay { if !model.loaded && model.error == nil { ProgressView("Opening your library…").padding().engramSurface() } }
@@ -129,11 +134,15 @@ public struct EngramRootView: View {
             ReviewView(model: model, embedded: true).engramCaptureSurface()
         }
         .navigationDestination(item: Binding(get: { model.destination == destination ? model.notebookDeckID : nil }, set: { model.notebookDeckID = $0 })) { id in
-            NotebookView(model: model, deckID: id).engramCaptureSurface()
+            NotebookView(model: model, deckID: id, writingOnly: model.notebookWritingOnly).engramCaptureSurface()
+        }
+        .navigationDestination(item: Binding(get: { model.destination == destination ? model.questionsDeckID : nil }, set: { model.questionsDeckID = $0 })) { id in
+            DeckQuestionsView(model: model, deckID: id).engramCaptureSurface()
         }
         .navigationTitle(usesPhoneTodayTitle && destination != .activity ? "" : destination.title)
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
+              if model.activeDeckOverviewID == nil && model.notebookDeckID == nil && model.questionsDeckID == nil && !model.reviewPresented && !model.editorPresented && !model.creationPresented {
                 if let portabilityAction { Button(action: portabilityAction) { Label("Import and export", systemImage: "square.and.arrow.up.on.square") } }
                 Button { model.settingsPresented = true } label: { Label("Settings", systemImage: "gearshape") }
                 if let screenshotAction {
@@ -143,6 +152,7 @@ public struct EngramRootView: View {
                     } label: { Label("More", systemImage: "ellipsis.circle") }
                     .accessibilityIdentifier("screenshot-menu")
                 }
+              }
             }
         }
         .toolbarBackground(model.theme.palette(for: scheme).surface,

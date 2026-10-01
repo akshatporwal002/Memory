@@ -108,14 +108,17 @@ struct ContextualAssistant: View {
     @State private var error: String?
     @State private var selectedDeckID: String?
     @FocusState private var composerFocused: Bool
+    @Namespace private var glassNamespace
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var deckID: String? {
         if model.creationPresented && model.notebookDeckID == nil { return nil }
-        return model.notebookDeckID ?? model.draft?.deckID ?? model.library.session?.deckID ?? selectedDeckID ?? model.selectedDeckID ?? model.library.liveDecks.first?.id
+        return model.questionsDeckID ?? model.notebookDeckID ?? (model.editorPresented ? model.draft?.deckID : nil) ?? (model.reviewPresented ? model.library.session?.deckID : nil) ?? selectedDeckID ?? model.selectedDeckID ?? model.library.liveDecks.first?.id
     }
     private var deckName: String { deckID.map(model.deckName) ?? (model.creationPresented ? "New notebook" : "Your study material") }
     private var context: String {
-        let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.creationPresented ? "creation" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue
+        let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.creationPresented ? "creation" : model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue
         return workflow + ":" + (deckID ?? "none")
     }
     private var thread: [AssistantMessage] { messages[context] ?? [] }
@@ -150,47 +153,105 @@ struct ContextualAssistant: View {
 
     var body: some View {
         GeometryReader { geometry in
-            VStack {
+            VStack(alignment: .trailing, spacing: 0) {
                 Spacer(minLength: 0)
-                if open {
-                    panel(height: geometry.size.height)
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                }
-                else {
-                    Button { open = true; composerFocused = true } label: {
-                        Image(systemName: "sparkle").font(.system(size: 17, weight: .medium))
-                            .frame(width: 44, height: 44)
-                            .background(palette.surface, in: RoundedRectangle(cornerRadius: 12))
-                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(palette.hairline) }
-                    }
-                    .accessibilityLabel("Ask the study assistant")
-                    .padding(.trailing, 16)
+                glassContainer {
+                    if open { assistantSurface(panel(height: geometry.size.height), open: true) }
+                    else { dock(narrow: geometry.size.width < 600) }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.bottom, 68)
+            .padding(.horizontal, 16).padding(.bottom, 8)
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: open)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: expanded)
-        .onChange(of: context) { _, _ in prompt = ""; error = nil }
+        .animation(motion, value: open)
+        .animation(motion, value: expanded)
+        .animation(motion, value: thread.count)
+        .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; close() }
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
     }
 
+    private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.88) }
+    private var showsNavigation: Bool {
+        !model.reviewPresented && !model.editorPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil
+    }
+    @ViewBuilder private func glassContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
+            GlassEffectContainer(spacing: 12, content: content)
+        } else { content() }
+        #else
+        content()
+        #endif
+    }
+    @ViewBuilder private func assistantSurface<Content: View>(_ content: Content, open: Bool) -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
+            content.glassEffect(.regular.tint(open ? palette.selection : .clear).interactive(), in: .rect(cornerRadius: open ? 24 : 25))
+                .glassEffectID("assistant", in: glassNamespace)
+        } else { fallbackSurface(content, open: open) }
+        #else
+        fallbackSurface(content, open: open)
+        #endif
+    }
+    private func fallbackSurface<Content: View>(_ content: Content, open: Bool) -> some View {
+        content.background(open ? palette.selection : palette.surface, in: RoundedRectangle(cornerRadius: open ? 24 : 25))
+            .matchedGeometryEffect(id: reduceMotion ? (open ? "panel" : "button") : "assistant", in: glassNamespace)
+    }
+    private func dock(narrow: Bool) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            if showsNavigation && narrow { navigationDock }
+            else { Spacer(minLength: 0) }
+            assistantSurface(Button {
+                withAnimation(motion) { open = true }
+                composerFocused = true
+            } label: {
+                Image(systemName: "sparkle").font(.system(size: 18, weight: .medium))
+                    .frame(width: 50, height: 50).foregroundStyle(palette.primaryText)
+            }.buttonStyle(.plain).accessibilityLabel("Ask the study assistant").accessibilityIdentifier("assistant-entry"), open: false)
+        }
+    }
+    @ViewBuilder private var navigationDock: some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
+            navigationButtons.glassEffect(.regular.interactive(), in: .capsule)
+        } else { navigationButtons.background(.regularMaterial, in: Capsule()) }
+        #else
+        navigationButtons.background(palette.surface, in: Capsule())
+        #endif
+    }
+    private var navigationButtons: some View {
+        HStack(spacing: 0) {
+            ForEach(EngramDestination.allCases) { destination in
+                Button { model.destination = destination } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: destination.symbol).font(.system(size: 18))
+                        Text(destination.title).font(.caption2.weight(.medium))
+                    }.frame(maxWidth: .infinity, minHeight: 50)
+                        .foregroundStyle(model.destination == destination ? palette.anchor : palette.secondaryText)
+                        .background(model.destination == destination ? palette.selection : .clear, in: Capsule())
+                }.buttonStyle(.plain).accessibilityIdentifier("tab-" + destination.rawValue)
+                    .accessibilityAddTraits(model.destination == destination ? [.isSelected] : [])
+            }
+        }.padding(5)
+    }
+    private func close() { composerFocused = false; withAnimation(motion) { open = false } }
+
     private func panel(height: CGFloat) -> some View {
         VStack(spacing: 0) {
+          if !thread.isEmpty {
             HStack(spacing: 8) {
                 Image(systemName: "sparkle").foregroundStyle(palette.accentInk)
                 Text(deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
                 if !thread.isEmpty {
-                    Button { expanded.toggle() } label: { Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }
+                    Button { composerFocused = false; expanded.toggle() } label: { Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") }.frame(width: 44, height: 44)
                         .accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
                 }
-                Button { open = false } label: { Image(systemName: "xmark") }
+                Button(action: close) { Image(systemName: "xmark") }.frame(width: 44, height: 44)
                     .accessibilityLabel("Close assistant")
             }
             .buttonStyle(.plain).frame(minHeight: 44)
-            if !model.library.liveDecks.isEmpty && !model.creationPresented {
+            if !model.library.liveDecks.isEmpty && !model.creationPresented && expanded {
                 Menu {
                     ForEach(model.library.liveDecks) { deck in
                         Button(deck.name) { selectedDeckID = deck.id; prompt = "" }
@@ -221,35 +282,40 @@ struct ContextualAssistant: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                                .background(message.isUser ? palette.selection : palette.canvas,
-                                            in: RoundedRectangle(cornerRadius: 12))
+                                .padding(.vertical, 4)
                             }
                             if busy { ProgressView("Thinking…").font(.caption).id("assistant-end") }
                         }.padding(.vertical, 10)
                     }
-                    .frame(height: expanded ? max(180, height * 0.57) : max(145, height * 0.25))
+                    .frame(height: min(max(90, height * (expanded ? 0.60 : 0.32)), max(90, height - 170)))
                     .onChange(of: thread.count) { _, _ in
                         if let id = thread.last?.id { proxy.scrollTo(id, anchor: .bottom) }
                     }
                 }
             }
+          }
             if let error { Text(error).font(.caption).foregroundStyle(palette.againInk).frame(maxWidth: .infinity, alignment: .leading) }
-            if model.chatGPT.activeAccount == nil {
-                Button("Connect ChatGPT in Settings") { open = false; model.settingsPresented = true }
+            if model.chatGPT.activeAccount == nil && error != nil {
+                Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
                     .font(.caption.weight(.medium)).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
             HStack(spacing: 10) {
+                if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(palette.accentInk) }
                 TextField("Ask about your notes…", text: $prompt, axis: .vertical)
                     .lineLimit(1...3).focused($composerFocused)
                     .submitLabel(.send).onSubmit { send() }
                     .accessibilityLabel("Message the study assistant")
-                Button(action: send) { Image(systemName: "arrow.up").font(.headline).frame(width: 36, height: 36) }
+                    .accessibilityIdentifier("assistant-composer")
+                Button(action: send) { Image(systemName: "arrow.up").font(.headline).frame(width: 44, height: 44) }
                     .disabled(busy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityLabel("Send message")
+                if thread.isEmpty {
+                    Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Close assistant")
+                }
             }
-            .padding(8).background(palette.canvas, in: RoundedRectangle(cornerRadius: 12))
-            if thread.isEmpty {
+            .padding(.horizontal, 4).padding(.vertical, 2)
+            if thread.isEmpty && expanded {
                 Button(model.reviewPresented ? "Give me a hint" : model.editorPresented || model.creationPresented ? "Suggest a question" : "Explain this simply") {
                     prompt = model.reviewPresented ? "Give me a hint without revealing the answer" :
                         model.editorPresented || model.creationPresented ? "Draft one question and answer from these notes" :
@@ -258,16 +324,21 @@ struct ContextualAssistant: View {
                 }.font(.caption).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
         }
-        .padding(14)
+        .padding(12)
         .frame(maxWidth: 530)
-        .background(palette.surface, in: RoundedRectangle(cornerRadius: 17))
-        .overlay { RoundedRectangle(cornerRadius: 17).stroke(palette.hairline) }
-        .padding(.horizontal, 12)
+        .accessibilityIdentifier("assistant-panel")
     }
 
     private func send() {
         let question = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty, !busy else { return }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-assistant-fixture") {
+            messages[context, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
+            messages[context, default: []].append(AssistantMessage(isUser: false, text: "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
+            prompt = ""; composerFocused = false; return
+        }
+        #endif
         guard model.chatGPT.activeAccount != nil else {
             error = "Connect ChatGPT to ask about your notes."
             return
@@ -283,7 +354,7 @@ struct ContextualAssistant: View {
         let draftMode = (model.editorPresented || model.creationPresented) && question.lowercased().contains("draft one question")
         let account = model.chatGPT.activeClientID
         messages[key, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
-        prompt = ""; busy = true; error = nil
+        prompt = ""; busy = true; error = nil; composerFocused = false
         Task {
             do {
                 if model.aiMarker.selectedModel.isEmpty { await model.aiMarker.loadModels(connection: model.chatGPT) }
@@ -328,13 +399,17 @@ struct ContextualAssistant: View {
             let separator = model.deckCreationDraft.document.isEmpty ? "" : "\n\n"
             model.deckCreationDraft.document += separator + question + ": " + answer
         }
-        open = false
+        close()
     }
 
     private func openSource(_ source: AssistantPassage) {
-        model.notebookFocusNoteID = source.noteID
-        model.notebookFocusBlockID = source.blockID
-        model.notebookDeckID = source.deckID
-        open = false
+        if source.noteID != nil {
+            model.notebookFocusNoteID = source.noteID
+            model.questionsDeckID = source.deckID
+        } else {
+            model.notebookFocusBlockID = source.blockID
+            model.notebookWritingOnly = true; model.notebookDeckID = source.deckID
+        }
+        close()
     }
 }

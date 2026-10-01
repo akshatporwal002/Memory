@@ -43,6 +43,9 @@ public struct DeckForm: Identifiable {
     public var notebookFocusNoteID: String?
     public var notebookFocusBlockID: String?
     public var notebookDeckID: String?
+    public var notebookWritingOnly = false
+    public var questionsDeckID: String?
+    public var activeDeckOverviewID: String?
     public var selectedNoteID: String?
     public var selectedCardID: String?
     /// Presentation-only memory prevents replaying the completion flourish on sheet re-entry.
@@ -173,7 +176,7 @@ public struct DeckForm: Identifiable {
         error = nil
         if NotebookDocument.supports(note), let deck = library.liveDecks.first(where: { $0.id == note.deckID }),
            deck.sourceDocument != nil || deck.notebookBlocks != nil {
-            notebookFocusNoteID = note.id; notebookDeckID = deck.id
+            notebookWritingOnly = false; notebookFocusNoteID = note.id; notebookDeckID = deck.id
         } else { draft = NoteDraft(note: note); editorPresented = true }
     }
     public func saveDraft() async {

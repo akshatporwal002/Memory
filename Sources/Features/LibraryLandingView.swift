@@ -261,7 +261,8 @@ struct LibraryLandingView: View {
     private func deckMenu(_ entry: LibraryDeckSummary) -> some View {
         Menu {
             Button("Open deck") { open(entry.id) }
-            Button("Open notebook", systemImage: "book.pages") { model.notebookDeckID = entry.id }
+            Button("Questions", systemImage: "rectangle.stack") { model.questionsDeckID = entry.id }
+            Button("Notes", systemImage: "book.pages") { model.notebookWritingOnly = true; model.notebookDeckID = entry.id }
             Button("Choose cover photo…", systemImage: "photo") {
                 coverDeckID = entry.id; photo = nil; choosingCover = true
             }
@@ -382,7 +383,7 @@ private struct LibraryDeckDestination: View {
     var body: some View {
         Group {
             if let deck = model.library.liveDecks.first(where: { $0.id == deckID }) {
-                LibraryView(model: model, deckScoped: true)
+                DeckOverviewView(model: model, deckID: deckID)
                     .navigationTitle(deck.name.components(separatedBy: "::").last ?? deck.name)
             } else { ContentUnavailableView("Deck unavailable", systemImage: "rectangle.stack", description: Text("This deck may have been removed.")) }
         }

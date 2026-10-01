@@ -91,9 +91,7 @@ struct DeckMemoryPanel: View {
                 Text("FSRS estimates for studied cards. The curve assumes no further reviews; learning and unsupported cards are excluded from the average.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
-            .padding(16)
-            .background(palette.surface, in: RoundedRectangle(cornerRadius: 16))
-            .task(id: "\(model.library.revision)-\(deck.id)") {
+            .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {
                 self.outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
             }
             .sheet(isPresented: $editingTarget) {
@@ -125,7 +123,7 @@ struct DeckMemoryPanel: View {
             }
         } else {
             ProgressView("Calculating memory outlook…")
-                .task(id: "\(model.library.revision)-\(deck.id)") {
+                .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {
                     outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
                 }
         }
