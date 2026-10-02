@@ -10,11 +10,20 @@ struct RichContentView: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(Document(parsing: source).children.enumerated()), id: \.offset) { _, block in
+            ForEach(Array(MarkdownCache.document(source).children.enumerated()), id: \.offset) { _, block in
                 RichMarkdownBlock(block: block)
             }
         }.frame(maxWidth: .infinity, alignment: .leading)
             .foregroundStyle(theme.palette(for: scheme).primaryText)
+    }
+}
+
+@MainActor private enum MarkdownCache {
+    private final class Box: NSObject { let document: Document; init(_ source: String) { document = Document(parsing:source) } }
+    private static let cache: NSCache<NSString,Box> = { let cache = NSCache<NSString,Box>(); cache.countLimit = 128; cache.totalCostLimit = 2_000_000; return cache }()
+    static func document(_ source: String) -> Document {
+        if let value = cache.object(forKey:source as NSString) { return value.document }
+        let value = Box(source); cache.setObject(value,forKey:source as NSString,cost:source.utf8.count); return value.document
     }
 }
 
@@ -53,7 +62,7 @@ private struct RichMarkdownBlock: View {
                 RichFormulaView(kind: "displayMath", source: String(raw.dropFirst(2).dropLast(2)))
             } else if raw.contains("\\(") || raw.contains("$") {
                 // Math-bearing paragraphs use the same bounded offline renderer.
-                RichFormulaView(kind: "paragraph", source: raw)
+                RichFormulaView(kind: "richParagraph", source: safeInlineHTML(paragraph))
             } else { inline(paragraph).lineSpacing(4).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
         } else if block is HTMLBlock {
             SwiftUI.Text(verbatim: block.format()).font(.system(.body, design: .monospaced)).textSelection(.enabled)
@@ -84,6 +93,17 @@ private struct RichMarkdownBlock: View {
         if let image = markup as? Markdown.Image { return SwiftUI.Text(image.plainText).italic() }
         return result
     }
+    private func safeInlineHTML(_ markup: any Markup) -> String {
+        func escape(_ text: String) -> String { text.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;") }
+        if let text = markup as? Markdown.Text { return escape(text.string) }
+        if let code = markup as? InlineCode { return "<code>" + escape(code.code) + "</code>" }
+        if markup is SoftBreak { return " " }; if markup is LineBreak { return "<br>" }
+        let children = markup.children.map { safeInlineHTML($0) }.joined()
+        if markup is Strong { return "<strong>" + children + "</strong>" }
+        if markup is Emphasis { return "<em>" + children + "</em>" }
+        if markup is Strikethrough { return "<s>" + children + "</s>" }
+        return children
+    }
 }
 
 private struct RichFormulaView: View {
@@ -91,8 +111,9 @@ private struct RichFormulaView: View {
     let source: String
     @Environment(\.colorScheme) private var scheme
     @State private var height: CGFloat = 64
+    @ScaledMetric(relativeTo: .body) private var fontSize = 17.0
     var body: some View {
-        FormulaWebView(kind: kind, source: source, dark: scheme == .dark, height: $height)
+        FormulaWebView(kind: kind, source: source, dark: scheme == .dark, fontSize: fontSize, height: $height)
             .frame(height: height).accessibilityLabel(kind == "mermaid" ? "Diagram: \(source)" : "Mathematical content: \(source)")
     }
 }
@@ -101,6 +122,7 @@ private struct FormulaWebView {
     let kind: String
     let source: String
     let dark: Bool
+    let fontSize: Double
     @Binding var height: CGFloat
     func makeCoordinator() -> Coordinator { Coordinator(height: $height) }
     func create(_ coordinator: Coordinator) -> WKWebView {
@@ -115,7 +137,7 @@ private struct FormulaWebView {
         return view
     }
     func update(_ view: WKWebView, coordinator: Coordinator) {
-        let key = "\(kind):\(dark):\(source)"
+        let key = "\(kind):\(dark):\(fontSize):\(source)"
         guard key != coordinator.key else { return }; coordinator.key = key
         guard source.utf8.count <= 30_000, let script = Bundle.module.url(forResource: "render", withExtension: "js", subdirectory: "RichContent"),
               let css = Bundle.module.url(forResource: "katex", withExtension: "css", subdirectory: "RichContent"),
@@ -135,8 +157,8 @@ private struct FormulaWebView {
         let html = """
         <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'">
-        <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:17px -apple-system}#content{padding:8px 0;overflow:auto}svg{max-width:100%;height:auto}</style>
-        <div id="content"></div><script>\(safeScript)</script><script>engramRender(...\(safeArgs));</script>
+        <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:\(fontSize)px -apple-system}#content{padding:8px 0;overflow:auto}svg{max-width:100%;height:auto}</style>
+        <div id="content"><pre>\(escape(source))</pre></div><script>\(safeScript)</script><script>engramRender(...\(safeArgs));</script>
         """
         view.loadHTMLString(html, baseURL: nil)
     }
