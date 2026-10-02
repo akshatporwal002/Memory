@@ -1,6 +1,6 @@
 # Product requirements and user notes — 2 October 2026
 
-Status: recorded for planning. This document does not authorize or claim implementation of the features below. Requirements reflect the user's feedback on the installed app; architecture suggestions and unresolved decisions are labelled separately.
+Status: implementation authorized by the subsequently approved unified Engram plan. This document records the original user notes; implementation and validation status are tracked separately. Requirements reflect the user's feedback on the installed app; architecture suggestions and unresolved decisions are labelled separately.
 
 ## 1. Design direction to preserve
 

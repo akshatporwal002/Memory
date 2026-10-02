@@ -153,8 +153,8 @@ private struct ApplicationRoot: View {
             }
             #endif
             let location = try libraryLocation()
-            let repository = try await Task.detached(priority: .userInitiated) { try AtomicFileRepository(url: location) }.value
-            let opened = EngramModel(service: StudyService(repository: repository, scheduler: FSRSScheduler()))
+            let repository = try await Task.detached(priority: .userInitiated) { try SQLiteLibraryRepository(url: location.deletingLastPathComponent().appendingPathComponent("library.sqlite"), migrating: location) }.value
+            let opened = EngramModel(service: StudyService(repository: repository, scheduler: FSRSScheduler()), repository: repository)
             model = opened
             transfer = PortabilityModel(model: opened, backupDirectory: location.deletingLastPathComponent().appendingPathComponent("Backups", isDirectory: true))
             failure = nil
@@ -187,6 +187,19 @@ private struct ApplicationRoot: View {
                 try StartupLibraryRecovery.restore(candidate, to: target, expectedOriginal: original,
                     preservingOriginalIn: target.deletingLastPathComponent().appendingPathComponent("Recovery originals", isDirectory: true))
             }.value
+            let dataDirectory = target.deletingLastPathComponent()
+            let sqlite = dataDirectory.appendingPathComponent("library.sqlite")
+            if FileManager.default.fileExists(atPath:sqlite.path) {
+                let archive = dataDirectory.appendingPathComponent("Recovery originals",isDirectory:true).appendingPathComponent(UUID().uuidString,isDirectory:true)
+                try FileManager.default.createDirectory(at:archive,withIntermediateDirectories:true)
+                let files = [sqlite,URL(fileURLWithPath:sqlite.path + "-wal"),URL(fileURLWithPath:sqlite.path + "-shm")].filter { FileManager.default.fileExists(atPath:$0.path) }
+                for file in files {
+                    let copy = archive.appendingPathComponent(file.lastPathComponent)
+                    try FileManager.default.copyItem(at:file,to:copy)
+                    guard try Data(contentsOf:file) == Data(contentsOf:copy) else { throw EngramError.storage("Database recovery archive verification failed.") }
+                }
+                for file in files { try FileManager.default.removeItem(at:file) }
+            }
             clearRecoveryInspection()
             await openLibrary()
             if model != nil {

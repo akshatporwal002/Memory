@@ -130,6 +130,9 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
             .navigationDestination(isPresented: Binding(get: { captureAcknowledgements }, set: { _ in })) { AcknowledgementsPage() }
+            .navigationDestination(item: $model.settingsRoute) { route in
+                if let page = SettingsPage(rawValue: route) { destination(page) }
+            }
             .toolbar { if !embedded { ToolbarItem(placement: .confirmationAction) { Button("Done") { model.settingsPresented = false; dismiss() } } } }
         }.modifier(EngramTaskSizing(embedded: embedded, width: 680, height: 700))
     }

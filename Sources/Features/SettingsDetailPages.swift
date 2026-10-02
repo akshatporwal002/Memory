@@ -106,6 +106,7 @@ struct AISettingsPage: View {
     @Bindable var model: EngramModel
     var body: some View {
         Form {
+            EngramListSection { NavigationLink("Engram account") { CloudAccountView(model:model) } }
             EngramListSection("ChatGPT account") { ChatGPTConnectionView(connection: model.chatGPT) }
             EngramListSection {
                 Toggle("AI answer marking", isOn: Binding(get: { model.aiMarker.enabled }, set: { model.aiMarker.enabled = $0 }))
@@ -118,7 +119,10 @@ struct AISettingsPage: View {
                             Button("Refresh available models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }.disabled(model.aiMarker.loading)
                             if model.aiMarker.loading { ProgressView("Loading models…") }
                             if !model.aiMarker.models.isEmpty {
-                                Picker("Model", selection: Binding(get: { model.aiMarker.selectedModel }, set: { model.aiMarker.selectedModel = $0 })) {
+                                Picker("Grading model", selection: Binding(get: { model.aiMarker.selectedModel }, set: { model.aiMarker.selectedModel = $0 })) {
+                                    ForEach(model.aiMarker.models, id: \.self) { Text($0).tag($0) }
+                                }
+                                Picker("PDF generation", selection: Binding(get: { model.aiMarker.pdfModel }, set: { model.aiMarker.pdfModel = $0 })) {
                                     ForEach(model.aiMarker.models, id: \.self) { Text($0).tag($0) }
                                 }
                             }

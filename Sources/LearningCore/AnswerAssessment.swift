@@ -94,6 +94,9 @@ public struct AnswerAssessment: Codable, Equatable, Sendable {
     public var choiceID: String?
     public var method: String
     public var evidenceIDs: [String]?
+    public var annotations: [AnswerAnnotation]?
+    public var additions: [AnswerAddition]?
+    public var proposedAnswer: String?
     public init(outcome: Outcome, reason: String, choiceID: String? = nil, method: String) {
         self.outcome = outcome; self.reason = reason; self.choiceID = choiceID; self.method = method
     }

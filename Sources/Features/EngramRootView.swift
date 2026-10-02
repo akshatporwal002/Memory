@@ -62,6 +62,7 @@ public struct EngramRootView: View {
         .overlay(alignment: .bottomTrailing) {
             if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
         }
+        .task { await model.cloud.restore(model:model) }
         .onPreferenceChange(AssistantDockHeight.self) { assistantDockHeight = max(72, $0 + 12) }
         .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
         .confirmationDialog("Delete deck?", isPresented: Binding(get: { model.deleteDeck != nil }, set: { if !$0 { model.deleteDeck = nil } }), titleVisibility: .visible) {
@@ -95,6 +96,10 @@ public struct EngramRootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh() } } }
+        .onChange(of: model.portabilityRequested) { _, value in
+            if value { model.portabilityRequested = false; portabilityAction?() }
+        }
+        .sheet(isPresented: $model.actionReviewPresented) { AIActionReviewView(model: model) }
         .environment(\.engramTheme, model.theme)
         .environment(\.engramAssistantBottomInset, capturingScreenshots ? 0 : assistantDockHeight)
         .tint(scheme == .dark ? model.theme.palette(for: scheme).easyInk : model.theme.palette(for: scheme).anchor)

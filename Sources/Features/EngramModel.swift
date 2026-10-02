@@ -4,6 +4,7 @@ import LearningCore
 import StudyApplication
 import DesignSystem
 import ChatGPTAuth
+import PersistenceAdapters
 
 public enum EngramDestination: String, CaseIterable, Identifiable { case today, library, activity
     public var id: String { rawValue }
@@ -22,6 +23,16 @@ public struct DeckForm: Identifiable {
     let voice = VoiceStudyController()
     let aiMarker = AIAnswerMarker()
     let pdfLearning = PDFLearningController()
+    let cloud: CloudAccountController
+    let assistant = AssistantController()
+    let typedAnswer = TypedAnswerController()
+    var pendingAttempt: AnswerAttempt? {
+        guard let id = library.session?.current?.presentationID else { return nil }
+        return library.answerAttempts?.last { $0.presentationID == id && $0.committedAt == nil }
+    }
+    public var settingsRoute: String?
+    public var portabilityRequested = false
+    var actionReviewPresented = false
     var pdfLearningPresented = false
     public var answerFeedback: String?
     public var markingAnswer = false
@@ -72,8 +83,9 @@ public struct DeckForm: Identifiable {
     public private(set) var now = Date()
     @ObservationIgnored private let defaults: UserDefaults
 
-    public init(service: StudyService, defaults: UserDefaults = .standard) {
+    public init(service: StudyService, defaults: UserDefaults = .standard, repository: SQLiteLibraryRepository? = nil) {
         self.service = service; self.defaults = defaults
+        cloud = CloudAccountController(repository:repository)
         lastBackupExport = defaults.object(forKey: "engram.lastBackupExport.v1") as? Date
         deckCreationDraft = defaults.data(forKey: "engram.deckCreationDraft.v1")
             .flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
@@ -127,7 +139,9 @@ public struct DeckForm: Identifiable {
         if await perform({ _ = try await $0.refreshSession(now: Date()) }) { reviewPresented = true }
     }
     public func reveal(sessionID: String, presentationID: String) async {
-        _ = await perform { _ = try await $0.reveal(sessionID: sessionID, presentationID: presentationID, now: Date()) }
+        _ = await perform { service in
+            if self.pendingAttempt != nil { try await service.markAttemptAssisted(presentationID: presentationID) }
+            _ = try await service.reveal(sessionID: sessionID, presentationID: presentationID, now: Date()) }
     }
     public func grade(_ rating: Grade, sessionID: String, presentationID: String) async {
         // Stable presentation-derived mutation ID supports retry after uncertain completion.

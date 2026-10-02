@@ -11,6 +11,7 @@ struct ReviewView: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @State private var typing = false
     @AccessibilityFocusState private var answerFocused: Bool
     @State private var completionVisible = false
     @State private var optionsPresented = false
@@ -100,6 +101,12 @@ struct ReviewView: View {
                     .font(theme.font(card.prompt.count < 160 ? .prompt : .body))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .contain).accessibilityLabel("Question")
+                if (typing && item.revealedAt == nil) || model.pendingAttempt?.assessment != nil {
+                    TypedAnswerView(model:model,item:item)
+                } else if item.revealedAt == nil {
+                    Button("Type answer",systemImage:"keyboard") { typing = true }
+                        .buttonStyle(EngramButtonStyle(.secondary))
+                }
                 if let answer = card.answer {
                     Divider()
                     CardContentView(text: answer, media: model.library.media).font(theme.font(.body))
@@ -155,7 +162,9 @@ struct ReviewView: View {
     }
 
     @ViewBuilder private func controls(session: StudySession, item: ReviewPresentation, width: CGFloat) -> some View {
-        if let assessment = item.assessment {
+        if model.pendingAttempt?.assessment != nil {
+            EmptyView()
+        } else if let assessment = item.assessment {
             VStack(spacing: 12) {
                 Text(assessment.outcome.rawValue.capitalized + " · " + (assessment.rating?.label ?? "Ungraded")).font(.headline)
                 if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq == nil { Text(assessment.reason) }

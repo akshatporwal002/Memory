@@ -1,4 +1,5 @@
 import Foundation
+import AIInfrastructure
 import Observation
 import PDFKit
 import LearningCore
@@ -109,8 +110,8 @@ struct PDFLearningDraft: Codable {
                 #endif
                 if !fixture {
                     guard model.chatGPT.activeAccount != nil else { throw EngramError.invalid("Connect ChatGPT in Settings to generate learning material. Reading the PDF is available offline.") }
-                    if model.aiMarker.selectedModel.isEmpty { await model.aiMarker.loadModels(connection: model.chatGPT) }
-                    guard !model.aiMarker.selectedModel.isEmpty else { throw EngramError.invalid(model.aiMarker.error ?? "Choose an available model in Settings.") }
+                    if model.aiMarker.pdfModel.isEmpty { await model.aiMarker.loadModels(connection: model.chatGPT) }
+                    guard !model.aiMarker.pdfModel.isEmpty else { throw EngramError.invalid(model.aiMarker.error ?? "Choose an available model in Settings.") }
                 }
                 let account = model.chatGPT.activeClientID
                 let requests = sample ? [PDFRetrieval.retrieve(source: source, brief: brief, query: brief.topics + " " + brief.goal)] : groups
@@ -124,9 +125,9 @@ struct PDFLearningDraft: Codable {
                     var items: [PDFLearningItem]
                     #if DEBUG
                     if fixture { try await Task.sleep(for: .milliseconds(800)); items = Self.fixtureItems(passages: passages, brief: brief, count: count) }
-                    else { items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken()) }
+                    else { items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken()) }
                     #else
-                    items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())
+                    items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
                     #endif
                     try PDFRetrieval.validate(items, against: passages)
                     guard items.filter({ $0.kind != "note" }).count <= count,
@@ -141,9 +142,9 @@ struct PDFLearningDraft: Codable {
                     status = "Checking answers against the PDF…"
                     #if DEBUG
                     if fixture { try await Task.sleep(for: .milliseconds(800)) }
-                    let accepted = fixture ? Set(items.map(\.id)) : try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())
+                    let accepted = fixture ? Set(items.map(\.id)) : try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
                     #else
-                    let accepted = try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.selectedModel, token: try await model.chatGPT.validAccessToken())
+                    let accepted = try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
                     #endif
                     try Task.checkCancellation()
                     guard account == model.chatGPT.activeClientID, draft.source?.id == source.id, draft.brief == brief else { throw EngramError.conflict }
@@ -215,32 +216,6 @@ enum PDFGenerationRequest {
         return Set(checks.filter(\.supported).map(\.id))
     }
     static func request(instructions: String, input: String, model: String, token: String) async throws -> String {
-        let session = URLSession(configuration: .ephemeral, delegate: PDFNoRedirect(), delegateQueue: nil)
-        defer { session.invalidateAndCancel() }
-        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/responses")!)
-        request.httpMethod = "POST"; request.timeoutInterval = 90
-        request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["model": model, "store": false, "stream": true, "instructions": instructions, "input": [["role": "user", "content": input]]])
-        let (bytes, response) = try await session.bytes(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw EngramError.invalid("Generation unavailable. Check ChatGPT connection, model access or plan usage limits. Your draft is kept.") }
-        var text = ""; var completed = false
-        for try await line in bytes.lines {
-            try Task.checkCancellation()
-            guard line.hasPrefix("data: "), let data = line.dropFirst(6).data(using: .utf8), let event = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
-            switch event["type"] as? String {
-            case "response.output_text.delta": text += event["delta"] as? String ?? ""
-            case "response.completed": completed = true
-            case "response.failed", "response.incomplete", "error": throw EngramError.invalid("The AI request did not complete. No unchecked content was saved; retry this batch.")
-            default: break
-            }
-            guard text.utf8.count <= 150_000 else { throw EngramError.invalid("Generation exceeded its output limit. Narrow the selected pages.") }
-            if completed { break }
-        }
-        guard completed else { throw EngramError.invalid("The response was interrupted. Resume to retry the unfinished batch.") }
-        return text
+        try await AIClient.text(instructions: instructions, input: input, model: model, token: token)
     }
-}
-private final class PDFNoRedirect: NSObject, URLSessionTaskDelegate {
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
 }

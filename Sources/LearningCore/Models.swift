@@ -117,6 +117,7 @@ public struct StudyCard: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct ReviewEvent: Codable, Identifiable, Equatable, Sendable {
+    public var settingsSnapshot: StudySettings?
     public var assessment: AnswerAssessment?
     public var id: String
     public var cardID: String
@@ -183,6 +184,8 @@ public struct StudySession: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct LibrarySnapshot: Codable, Equatable, Sendable {
+    public var assistantState: LearningAssistantState?
+    public var answerAttempts: [AnswerAttempt]?
     public var schemaVersion = 1
     public var revision = 0
     public var libraryID = UUID().uuidString

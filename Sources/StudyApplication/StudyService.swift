@@ -152,7 +152,7 @@ public actor StudyService {
     }
 
     /// Keep materialized notebook text current after card edits, moves and deletions.
-    private func syncNotebooks(_ library: inout LibrarySnapshot, deckIDs: Set<String>) {
+    func syncNotebooks(_ library: inout LibrarySnapshot, deckIDs: Set<String>) {
         for index in library.decks.indices where deckIDs.contains(library.decks[index].id) {
             let deck = library.decks[index]
             guard deck.sourceDocument != nil || deck.notebookBlocks != nil else { continue }
@@ -324,6 +324,7 @@ public actor StudyService {
         library.cards[index].schedule = outcome; library.cards[index].version += 1
         library.reviews.append(ReviewEvent(id: mutationID, cardID: item.card.id, deckID: item.card.deckID, sessionID: session.id,
             rating: rating, reviewedAt: revealedAt, committedAt: now, before: item.card.schedule, after: outcome))
+        library.reviews[library.reviews.count - 1].settingsSnapshot = library.settings
         session.completed += 1
         refresh(&session, in: library, now: now); library.session = session
         try await save(library)

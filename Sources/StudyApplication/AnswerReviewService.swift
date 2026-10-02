@@ -30,6 +30,7 @@ extension StudyService {
         library.cards[cardIndex].schedule = outcome; library.cards[cardIndex].version += 1
         var event = ReviewEvent(id: mutationID, cardID: item.card.id, deckID: item.card.deckID, sessionID: sessionID,
             rating: rating, reviewedAt: now, committedAt: now, before: item.card.schedule, after: outcome)
+        event.settingsSnapshot = library.settings
         event.assessment = assessment; library.reviews.append(event)
         item.revealedAt = now; item.outcomes = outcomes; item.assessment = assessment
         session.current = item; session.completed += 1; library.session = session

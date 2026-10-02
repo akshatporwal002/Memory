@@ -54,6 +54,7 @@ struct DeckOverviewView: View {
                             if deck.pdfLearning != nil {
                                 Button("PDF source pages", systemImage: "doc.text.magnifyingglass") { showPDFSource = true }
                             }
+                            NavigationLink { DeckSharingView(model:model,deckID:deckID) } label: { Label("Share deck",systemImage:"person.2") }
                             Button("Delete deck", systemImage: "trash", role: .destructive) { model.deleteDeck = deck }
                         } label: { Image(systemName: "gearshape").frame(minWidth: 44, minHeight: 44) }
                             .accessibilityLabel("Deck actions").accessibilityIdentifier("deck-actions")
