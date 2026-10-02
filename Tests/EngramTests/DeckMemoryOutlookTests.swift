@@ -27,6 +27,7 @@ final class DeckMemoryOutlookTests: XCTestCase {
         let initial = try FSRSScheduler().initialState(now: now, settings: library.settings)
         var reviewed = initial
         reviewed.phase = .review
+        reviewed.due = now.addingTimeInterval(2 * 86_400)
         library.cards = [StudyCard(id: "studied", noteID: "one", deckID: deck.id, schedule: reviewed),
                          StudyCard(id: "new", noteID: "two", deckID: deck.id, schedule: initial)]
         let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: ConstantEstimator())
@@ -37,6 +38,8 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(outlook.newCount, 1)
         XCTAssertEqual(outlook.average.count, 8)
         XCTAssertEqual(outlook.cards.first?.prompt, "What is S3?")
+        XCTAssertEqual(outlook.nextPlannedReview,reviewed.due)
+        XCTAssertEqual(outlook.scheduledWithinWeek,1)
         let activity = ActivitySummary.make(in: library, period: .all, now: now, estimator: ConstantEstimator())
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
     }

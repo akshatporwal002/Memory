@@ -36,11 +36,17 @@ final class CloudSyncTests: XCTestCase {
         try await a.selectAccount(user.uuidString.lowercased()); try await b.selectAccount(user.uuidString.lowercased())
         var library = try await a.read(),deck = Deck(id:"pdf-deck",name:"PDF")
         let original = Data("%PDF-1.7 fixture".utf8),source = PDFLearningSource(filename:"source.pdf",pages:[PDFPageText(number:1,text:"ATP stores energy")],originalPDFData:original)
-        deck.pdfLearning = PDFLearningRecord(source:source,brief:PDFLearningBrief(),items:[]); library.decks = [deck]
+        deck.pdfLearning = PDFLearningRecord(source:source,brief:PDFLearningBrief(),items:[])
+        let markdown = Data("# Energy\nATP stores energy".utf8)
+        deck.documents = [LibraryDocument(name:"energy.md",kind:.markdown,pages:[PDFPageText(number:1,text:String(decoding:markdown,as:UTF8.self))],originalData:markdown)]
+        library.decks = [deck]
+        let projection = try CloudProjection.entities(library,userID:user,ownedDecks:[deck.id])
+        XCTAssertNil(try projection.first(where: { $0.kind == "deck" })?.payload.decode(Deck.self).documents)
         try await a.commit(library,expectedRevision:library.revision)
         let ea = CloudSyncEngine(repository:a,client:server,scheduler:FSRSScheduler()),eb = CloudSyncEngine(repository:b,client:server,scheduler:FSRSScheduler())
         _ = try await ea.synchronize(); _ = try await eb.synchronize()
         let received = try await b.read(); XCTAssertEqual(received.liveDecks.first?.pdfLearning?.source.originalPDFData,original)
+        XCTAssertEqual(received.liveDecks.first?.documents?.first?.originalData,markdown)
         let data = try PrivateCloudDocument.encode(try XCTUnwrap(deck.pdfLearning)),path = PrivateCloudDocument.path(data:data,userID:user)
         XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:Data("corrupt".utf8),userID:user))
         XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:data,userID:UUID()))

@@ -361,7 +361,7 @@ private enum DeckCoverImage {
     }
 }
 
-private struct LibraryDeckDestination: View {
+struct LibraryDeckDestination: View {
     @Bindable var model: EngramModel
     let deckID: String
     var body: some View {

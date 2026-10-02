@@ -39,6 +39,13 @@ public enum LibraryValidation {
         var total = 0
         let mediaNames = Set(library.media.map(\.name))
         for deck in library.decks {
+            let documents = deck.documents ?? []
+            guard documents.count <= 20, Set(documents.map(\.id)).count == documents.count,
+                  documents.reduce(0, { $0 + $1.originalData.count }) <= 25_000_000,
+                  documents.reduce(0, { $0 + $1.pages.reduce(0, { $0 + $1.text.utf8.count }) }) <= 4_000_000 else {
+                throw EngramError.invalid("A notebook can hold up to 20 source files, 25 MB of originals and 4 MB of extracted text.")
+            }
+            for document in documents { try document.validate() }
             if let learning = deck.pdfLearning {
                 try learning.brief.validate(source: learning.source)
                 try PDFRetrieval.validate(learning.items, against: learning.source.chunks)

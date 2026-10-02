@@ -135,8 +135,7 @@ public struct EngramRootView: View {
             case .today: TodayView(model: model, showsPageTitle: usesPhoneTodayTitle).engramAssistantClearance()
             case .library:
                 #if os(iOS)
-                if usesPhoneTodayTitle { LibraryLandingView(model: model, importAction: portabilityAction).engramAssistantClearance() }
-                else { LibraryView(model: model) }
+                LibraryExplorerView(model: model, importAction: portabilityAction).engramAssistantClearance()
                 #else
                 LibraryView(model: model)
                 #endif

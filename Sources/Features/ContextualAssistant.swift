@@ -10,6 +10,7 @@ private struct AssistantPassage: Identifiable, Sendable {
     let text: String
     let noteID: String?
     let blockID: String?
+    let documentID: String?
 }
 
 private struct AssistantMessage: Identifiable {
@@ -22,7 +23,7 @@ private struct AssistantMessage: Identifiable {
 private enum AssistantRetrieval {
     static func passages(query: String, deckID: String, library: LibrarySnapshot) -> [AssistantPassage] {
         EvidenceRetrieval.retrieve(query:query,deckID:deckID,library:library,limit:5).map {
-            AssistantPassage(id:$0.id,deckID:$0.deckID,title:$0.title,text:$0.text,noteID:$0.noteID,blockID:$0.blockID)
+            AssistantPassage(id:$0.id,deckID:$0.deckID,title:$0.title,text:$0.text,noteID:$0.noteID,blockID:$0.blockID,documentID:$0.documentID)
         }
     }
 }
@@ -39,6 +40,7 @@ struct ContextualAssistant: View {
     @State private var error: String?
     @State private var selectedDeckID: String?
     @State private var pdfSource: PDFLearningSource?
+    @State private var openLibraryDocument: LibraryDocument?
     @FocusState private var composerFocused: Bool
     @Namespace private var glassNamespace
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -118,11 +120,12 @@ struct ContextualAssistant: View {
         .sheet(isPresented: Binding(get: { pdfSource != nil }, set: { if !$0 { pdfSource = nil } })) {
             if let pdfSource { PDFSourcePagesView(source: pdfSource) }
         }
+        .sheet(item:$openLibraryDocument) { document in LibraryDocumentReader(document:document) }
     }
 
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.88) }
     private var showsNavigation: Bool {
-        !model.reviewPresented && !model.editorPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil && model.activeContentDeckID == nil
+        !model.reviewPresented && !model.editorPresented && !model.creationPresented && model.notebookDeckID == nil && model.questionsDeckID == nil && model.activeContentDeckID == nil && model.activeDeckOverviewID == nil
     }
     @ViewBuilder private func glassContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         #if os(iOS)
@@ -176,16 +179,27 @@ struct ContextualAssistant: View {
         HStack(spacing: 0) {
             ForEach(EngramDestination.allCases) { destination in
                 Button { model.destination = destination } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: destination.symbol).font(.system(size: 18))
+                    let selected = model.destination == destination
+                    let content = VStack(spacing: 3) {
+                        Image(systemName: destination.symbol).font(.system(size: 17,weight:selected ? .semibold : .regular))
                         Text(destination.title).font(.caption2.weight(.medium))
                     }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Capsule())
-                        .foregroundStyle(model.destination == destination ? (scheme == .dark ? palette.easyInk : palette.anchor) : palette.secondaryText)
-                        .background(model.destination == destination ? palette.selection : .clear, in: Capsule())
+                        .foregroundStyle(selected ? (scheme == .dark ? palette.easyInk : palette.anchor) : palette.secondaryText)
+                    navigationSelection(content, selected:selected)
                 }.buttonStyle(.plain).accessibilityIdentifier("tab-" + destination.rawValue)
                     .accessibilityAddTraits(model.destination == destination ? [.isSelected] : [])
             }
         }.padding(3)
+    }
+    @ViewBuilder private func navigationSelection<Content:View>(_ content:Content,selected:Bool) -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0,*),!reduceTransparency,contrast != .increased {
+            if selected { content.glassEffect(.regular.tint(palette.selection).interactive(),in:.capsule) }
+            else { content }
+        } else { content.background(selected ? palette.selection : .clear,in:Capsule()) }
+        #else
+        content.background(selected ? palette.selection : .clear,in:Capsule())
+        #endif
     }
     private func close() { composerFocused = false; withAnimation(motion) { open = false } }
 
@@ -324,13 +338,14 @@ struct ContextualAssistant: View {
         let search = question + " " + (currentReviewPrompt ?? "")
         let pdfRecord = deckID.flatMap { id in model.library.liveDecks.first(where: { $0.id == id })?.pdfLearning }
         let documentSource = model.pdfLearningPresented ? model.pdfLearning.draft.source : pdfRecord?.source
-        let sourceOnly = documentSource != nil
+        let sourceOnly = documentSource != nil || deckID.flatMap { id in model.library.liveDecks.first(where: { $0.id == id })?.documents }?.isEmpty == false
         let allSources: [AssistantPassage]
         if let documentSource {
             let brief = model.pdfLearningPresented ? model.pdfLearning.draft.brief : (pdfRecord?.brief ?? model.pdfLearning.draft.brief)
-            allSources = EvidenceRetrieval.retrieve(source: documentSource, brief: brief, query: search, limit: 5).map {
-                AssistantPassage(id: "pdf-" + $0.id, deckID: deckID ?? "pdf-draft", title: "\(documentSource.filename) · page \($0.page ?? 0)", text: $0.text, noteID: nil, blockID: nil)
+            let pdf = EvidenceRetrieval.retrieve(source: documentSource, brief: brief, query: search, limit: 4).map {
+                AssistantPassage(id: "pdf-" + $0.id, deckID: deckID ?? "pdf-draft", title: "\(documentSource.filename) · page \($0.page ?? 0)", text: $0.text, noteID: nil, blockID: nil,documentID:nil)
             }
+            allSources = pdf + (deckID.map { AssistantRetrieval.passages(query:search,deckID:$0,library:model.library) } ?? [])
         } else { allSources = deckID.map { AssistantRetrieval.passages(query: search, deckID: $0, library: model.library) } ?? [] }
         let currentNoteID = model.library.session?.current?.card.noteID
         let sources = hideReviewAnswer ? allSources.filter { $0.noteID != currentNoteID } : allSources
@@ -340,6 +355,10 @@ struct ContextualAssistant: View {
                               evidence: evidence, sourceOnly: sourceOnly, model: model)
     }
     private func openSource(_ source: AssistantPassage) {
+        if let documentID = source.documentID,
+           let document = model.library.liveDecks.first(where: { $0.id == source.deckID })?.documents?.first(where: { $0.id == documentID }) {
+            openLibraryDocument = document; close(); return
+        }
         if source.id.hasPrefix("pdf-") {
             pdfSource = model.pdfLearningPresented ? model.pdfLearning.draft.source : model.library.liveDecks.first(where: { $0.id == source.deckID })?.pdfLearning?.source
             close(); return

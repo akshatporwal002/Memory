@@ -350,7 +350,7 @@ enum AssistantOutputPresentation {
         case "deck":
             guard let deck = library.liveDecks.first(where: { $0.id == id }) else { throw EngramError.missing("deck") }
             // Do not disclose private full PDF records in broad assistant browsing.
-            var readable = deck; readable.pdfLearning = nil
+            var readable = deck; readable.pdfLearning = nil; readable.documents = nil
             readable.notebookBlocks = readable.notebookBlocks.map { Array($0.prefix(12)) }
             readable.sourceDocument = readable.sourceDocument.map { String($0.prefix(12000)) }
             if library.session?.current?.card.deckID == id,library.session?.current?.revealedAt == nil {

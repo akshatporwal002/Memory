@@ -3,8 +3,10 @@ import XCTest
 final class MinimalistStudyUITests: XCTestCase {
     @MainActor func testPDFSampleApprovalAndSourceLinkedSave() {
         let app = launch(extra: ["--ui-pdf-fixture"])
-        XCTAssertTrue(app.buttons["New deck"].waitForExistence(timeout: 15))
-        app.buttons["New deck"].tap()
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))
+        app.buttons["tab-library"].tap()
+        app.buttons["Add notebook or source file"].tap()
+        app.buttons["New notebook"].tap()
         XCTAssertTrue(app.buttons["deck-pdf-learning"].waitForExistence(timeout: 5))
         app.buttons["deck-pdf-learning"].tap()
         XCTAssertTrue(app.buttons["pdf-source-inspect"].waitForExistence(timeout: 5))
@@ -37,6 +39,7 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15))
         capture("Today-Green-Study", app)
         app.buttons["tab-library"].tap()
+        capture("Library-Explorer",app)
         XCTAssertTrue(app.buttons["library-deck-ui-deck"].waitForExistence(timeout: 5))
         app.buttons["library-deck-ui-deck"].tap()
         XCTAssertTrue(app.buttons["deck-actions"].waitForExistence(timeout: 5))

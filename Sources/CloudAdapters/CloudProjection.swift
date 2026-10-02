@@ -18,10 +18,11 @@ public enum CloudProjection {
             result.append(CloudProjectionEntity(kind:"private",id:prefix + category + ":" + id,deckID:nil,payload:.object(["category":.string(category),"id":.string(id),"deckID":deckID.map(JSONValue.string) ?? .null,"value":try JSONValue.encode(value)]),deleted:false))
         }
         for deck in library.decks {
-            var shared = deck; shared.pdfLearning = nil; shared.coverMediaName = nil; shared.desiredRetention = nil
+            var shared = deck; shared.pdfLearning = nil; shared.documents = nil; shared.coverMediaName = nil; shared.desiredRetention = nil
             result.append(CloudProjectionEntity(kind:"deck",id:deck.id,deckID:deck.id,payload:try .encode(shared),deleted:deck.deleted))
             var extras: [String:JSONValue] = ["desiredRetention":deck.desiredRetention.map(JSONValue.number) ?? .null,"coverMediaName":deck.coverMediaName.map(JSONValue.string) ?? .null]
             if ownedDecks.contains(deck.id),let pdf = deck.pdfLearning { extras["pdfLearningBlob"] = .string(PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(pdf),userID:userID)) }
+            if ownedDecks.contains(deck.id),let documents = deck.documents,!documents.isEmpty { extras["libraryDocumentsBlob"] = .string(PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(documents),userID:userID)) }
             try personal("deckExtras",deck.id,extras,deckID:deck.id)
         }
         for note in library.notes {
@@ -62,7 +63,7 @@ public enum CloudProjection {
     public static func apply(_ entity: CloudProjectionEntity,to library: inout LibrarySnapshot) throws {
         if entity.kind == "deck" {
             var deck = try entity.payload.decode(Deck.self)
-            if let previous = library.decks.first(where: { $0.id == deck.id }) { deck.pdfLearning = previous.pdfLearning; deck.desiredRetention = previous.desiredRetention; deck.coverMediaName = previous.coverMediaName }
+            if let previous = library.decks.first(where: { $0.id == deck.id }) { deck.pdfLearning = previous.pdfLearning; deck.documents = previous.documents; deck.desiredRetention = previous.desiredRetention; deck.coverMediaName = previous.coverMediaName }
             replace(deck,in:&library.decks); return
         }
         if entity.kind == "note" {
@@ -95,6 +96,8 @@ public enum CloudProjection {
             if case .number(let retention) = extras["desiredRetention"] { library.decks[index].desiredRetention = retention } else { library.decks[index].desiredRetention = nil }
             if case .string(let cover) = extras["coverMediaName"] { library.decks[index].coverMediaName = cover } else { library.decks[index].coverMediaName = nil }
             if let pdf = extras["pdfLearning"] { library.decks[index].pdfLearning = try pdf.decode(PDFLearningRecord.self) }
+            if let documents = extras["libraryDocuments"] { library.decks[index].documents = try documents.decode([LibraryDocument].self) }
+            else if extras["libraryDocumentsBlob"] == nil { library.decks[index].documents = nil }
         case "noteOrigin": if let index = library.notes.firstIndex(where: { $0.id == id }) { library.notes[index].origin = try value.decode(ImportOrigin.self) }
         case "card": replace(try value.decode(StudyCard.self),in:&library.cards)
         case "review": replace(try value.decode(ReviewEvent.self),in:&library.reviews)

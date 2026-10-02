@@ -27,17 +27,23 @@ struct TodayView: View {
                         Text("cards available now").font(theme.font(.section))
                         Text("\(model.due.filter { $0.schedule.phase == .new }.count) new · \(model.due.filter { $0.schedule.phase != .new }.count) due, within daily limits")
                             .font(theme.font(.metadata))
-                        Button(model.due.isEmpty ? "Check study queue" : "Start review") { Task { await model.beginReview() } }
-                            .buttonStyle(EngramButtonStyle(.secondary)).disabled(model.busy)
+                        Button { Task { await model.beginReview() } } label: {
+                            HStack(spacing:8) {
+                                Text(model.due.isEmpty ? "Check study queue" : "Start review")
+                                Image(systemName:"arrow.up.right").font(.caption)
+                            }.font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                        }.buttonStyle(.plain).disabled(model.busy)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(EngramSpacing.section)
                     .foregroundStyle(theme.palette(for: scheme).onAnchor)
                     .background(theme.palette(for: scheme).anchor, in: RoundedRectangle(cornerRadius: EngramShape.study, style: .continuous))
                     if model.library.session?.current != nil {
-                        Button { Task { await model.resumeReview() } } label: { Label("Resume saved session", systemImage: "arrow.uturn.forward") }
-                            .buttonStyle(EngramButtonStyle(.secondary)).disabled(model.busy)
+                        Button { Task { await model.resumeReview() } } label: {
+                            Label("Resume saved session", systemImage: "arrow.uturn.forward")
+                                .font(.subheadline.weight(.medium)).frame(minHeight:44)
+                        }.buttonStyle(.plain).disabled(model.busy)
                     }
-                    HStack { Text("Your decks").font(theme.font(.section)); Spacer(); Button("New deck") { model.creationPresented = true } }
+                    Text("Your notebooks").font(theme.font(.section))
                     LazyVStack(spacing: 0) {
                         ForEach(model.library.liveDecks.prefix(6)) { deck in
                             Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
@@ -46,8 +52,6 @@ struct TodayView: View {
                     }
                     Text("\(model.todaysReviews.count) reviews saved today").font(theme.font(.body))
                         .engramNumericTransition(value: model.todaysReviews.count)
-                    Text("Each installation has its own library. Export a backup to protect your cards and review history.")
-                        .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 }
             }
             .frame(maxWidth: 1000, alignment: .leading).padding(EngramSpacing.section).frame(maxWidth: .infinity)

@@ -16,6 +16,8 @@ public struct DeckMemoryOutlook: Sendable {
     public let unavailableCount: Int
     public let average: [Double]
     public let cards: [MemoryCardEstimate]
+    public let nextPlannedReview: Date?
+    public let scheduledWithinWeek: Int
 
     public static func make(deck: Deck, library: LibrarySnapshot, now: Date, estimator: (any MemoryEstimating)?) -> Self {
         let target = deck.desiredRetention ?? library.settings.desiredRetention
@@ -36,10 +38,13 @@ public struct DeckMemoryOutlook: Sendable {
             estimated.append(MemoryCardEstimate(id: card.id, prompt: notes[card.noteID]?.front ?? "Question", probabilities: points))
         }
         let average = (0...7).map { day in estimated.isEmpty ? 0 : estimated.reduce(0) { $0 + $1.probabilities[day] } / Double(estimated.count) }
+        let scheduled = cards.filter { $0.schedule.phase != .new }.map(\.schedule.due)
         return Self(target: target, inheritsTarget: deck.desiredRetention == nil,
                     aboveTarget: estimated.filter { $0.probabilities[0] >= target }.count,
                     belowTarget: estimated.filter { $0.probabilities[0] < target }.count,
                     newCount: newCount, unavailableCount: unavailable,
-                    average: average, cards: estimated)
+                    average: average, cards: estimated,
+                    nextPlannedReview: scheduled.min(),
+                    scheduledWithinWeek: scheduled.filter { $0 <= now.addingTimeInterval(7 * 86_400) }.count)
     }
 }

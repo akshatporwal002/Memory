@@ -53,7 +53,7 @@ public struct LibraryDeckSummary: Identifiable, Sendable {
                 availableCount: min(newCount, newBudget) + min(reviews, reviewBudget) + learning,
                 nextReview: studyCards.filter { $0.schedule.phase != .new }.map(\.schedule.due).min(),
                 lastEdited: ([deck.modifiedAt] + deckNotes.map { Optional($0.modifiedAt) }).compactMap { $0 }.max(),
-                searchText: ([deck.name, deck.sourceDocument ?? ""] + deckNotes.flatMap { [$0.front, $0.tags.joined(separator: " ")] }).joined(separator: " "))
+                searchText: ([deck.name, deck.sourceDocument ?? ""] + (deck.documents ?? []).map(\.name) + deckNotes.flatMap { [$0.front, $0.tags.joined(separator: " ")] }).joined(separator: " "))
         }
     }
 

@@ -140,9 +140,7 @@ public actor CloudSyncEngine {
                 if state.conflicts.contains(where: { $0.id == entity.key }) { continue }
                 let baseline = state.baselines[entity.key]
                 if baseline?.entity.payload == entity.payload,baseline?.entity.deleted == entity.deleted { continue }
-                if let path = PrivateCloudDocument.reference(in:entity),let deckID = CloudProjection.associatedDeck(entity),let record = library.decks.first(where: { $0.id == deckID })?.pdfLearning {
-                    let data = try PrivateCloudDocument.encode(record)
-                    try PrivateCloudDocument.validate(path:path,data:data,userID:user)
+                for (path,data) in try PrivateCloudDocument.uploads(for:entity,library:library,userID:user) {
                     try await client.uploadPrivateDocument(path:path,data:data)
                 }
                 let result = try await client.apply(CloudApply(operationID:Self.operationID(operation.id + entity.key + String(baseline?.version ?? 0) + (try Self.canonical(entity.payload))),kind:entity.kind,id:entity.id,deckID:entity.deckID,version:baseline?.version ?? 0,content:entity.payload,deleted:entity.deleted))

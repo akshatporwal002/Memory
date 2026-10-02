@@ -198,6 +198,29 @@ public actor StudyService {
         library.decks[index].modifiedAt = now
         try await save(library)
     }
+    public func addDocument(_ document: LibraryDocument, to deckID: String, now: Date = Date()) async throws {
+        try document.validate()
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == deckID && !$0.deleted }) else { throw EngramError.missing("notebook") }
+        var documents = library.decks[index].documents ?? []
+        guard documents.count < 20,
+              documents.reduce(0, { $0 + $1.originalData.count }) + document.originalData.count <= 25_000_000,
+              documents.reduce(0, { $0 + $1.pages.reduce(0, { $0 + $1.text.utf8.count }) }) + document.pages.reduce(0, { $0 + $1.text.utf8.count }) <= 4_000_000 else {
+            throw EngramError.invalid("This notebook can hold up to 20 source files, 25 MB of originals and 4 MB of extracted text.")
+        }
+        documents.append(document)
+        library.decks[index].documents = documents
+        library.decks[index].modifiedAt = now
+        try await save(library)
+    }
+    public func removeDocument(id: String, from deckID: String, now: Date = Date()) async throws {
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == deckID && !$0.deleted }),
+              library.decks[index].documents?.contains(where: { $0.id == id }) == true else { throw EngramError.missing("source file") }
+        library.decks[index].documents?.removeAll { $0.id == id }
+        library.decks[index].modifiedAt = now
+        try await save(library)
+    }
     /// Caller presents a destructive confirmation. Tombstones retain historical evidence for backup.
     public func deleteDeck(id: String) async throws {
         var library = try await repository.read()

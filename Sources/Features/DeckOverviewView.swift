@@ -1,6 +1,7 @@
 import SwiftUI
 import LearningCore
 import DesignSystem
+import UniformTypeIdentifiers
 
 /// A single reading surface: memory, practice, then the two ways into a deck's content.
 struct DeckOverviewView: View {
@@ -9,6 +10,8 @@ struct DeckOverviewView: View {
     private enum ContentRoute: String, Identifiable { case questions, notes; var id: String { rawValue } }
     @State private var contentRoute: ContentRoute?
     @State private var showPDFSource = false
+    @State private var openedDocument: LibraryDocument?
+    @State private var importingDocument = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
@@ -31,14 +34,32 @@ struct DeckOverviewView: View {
                         DeckMemoryPanel(model: model, deck: deck)
                             .accessibilityIdentifier("deck-memory-outlook")
                         Button { Task { await model.beginReview(deckID: deck.id) } } label: {
-                            HStack { Text("Study deck"); Spacer(); Image(systemName: "arrow.right") }
-                        }.buttonStyle(EngramButtonStyle()).disabled(model.busy)
+                            HStack { Text("Study notebook"); Spacer(); Image(systemName: "arrow.up.right") }
+                                .font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                                .contentShape(Rectangle())
+                        }.buttonStyle(.plain).disabled(model.busy)
                             .accessibilityIdentifier("deck-study")
                         Divider()
                         if textSize.isAccessibilitySize {
                             VStack(spacing: 12) { contentLinks }
                         } else {
                             HStack(alignment: .top, spacing: 20) { contentLinks }
+                        }
+                        if let documents = deck.documents,!documents.isEmpty {
+                            VStack(alignment:.leading,spacing:4) {
+                                Text("Source files").font(theme.font(.section))
+                                ForEach(documents) { document in
+                                    Button { openedDocument = document } label: {
+                                        HStack(spacing:10) {
+                                            Image(systemName:document.kind == .pdf ? "doc.richtext" : "doc.text")
+                                                .frame(width:20)
+                                            Text(document.name).lineLimit(1)
+                                            Spacer(minLength:8)
+                                            Image(systemName:"arrow.up.right").font(.caption)
+                                        }.font(.subheadline).frame(minHeight:44).contentShape(Rectangle())
+                                    }.buttonStyle(.plain)
+                                }
+                            }
                         }
                     }
                     .padding(EngramSpacing.section).padding(.bottom, 12)
@@ -50,6 +71,7 @@ struct DeckOverviewView: View {
                         Menu {
                             Button("Add question", systemImage: "plus") { model.newNote(deckID: deckID) }
                             Button("Edit notes", systemImage: "square.and.pencil") { openNotes() }
+                            Button("Add PDF or Markdown", systemImage:"doc.badge.plus") { importingDocument = true }
                             Button("Rename deck", systemImage: "pencil") { model.deckForm = DeckForm(deck: deck) }
                             if deck.pdfLearning != nil {
                                 Button("PDF source pages", systemImage: "doc.text.magnifyingglass") { showPDFSource = true }
@@ -68,6 +90,19 @@ struct DeckOverviewView: View {
         .navigationTitle("").engramInlineTitle().engramCanvas()
         .sheet(isPresented: $showPDFSource) {
             if let source = deck?.pdfLearning?.source { PDFSourcePagesView(source: source) }
+        }
+        .sheet(item:$openedDocument) { document in LibraryDocumentReader(document:document) }
+        .fileImporter(isPresented:$importingDocument,
+                      allowedContentTypes:[.pdf,UTType(filenameExtension:"md") ?? .plainText],
+                      allowsMultipleSelection:true) { result in
+            Task {
+                do {
+                    for url in try result.get() {
+                        let document = try await Task.detached(priority:.userInitiated) { try LibraryDocumentImport.read(url) }.value
+                        guard await model.perform({ try await $0.addDocument(document,to:deckID) }) else { return }
+                    }
+                } catch { model.error = "The source file could not be imported. \(error.localizedDescription)" }
+            }
         }
         .navigationDestination(item: $contentRoute) { route in
             switch route {

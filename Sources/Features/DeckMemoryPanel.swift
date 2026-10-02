@@ -20,6 +20,12 @@ struct DeckMemoryPanel: View {
     private var curveColor: Color { scheme == .dark ? palette.easyInk : palette.anchor }
     private var selected: MemoryCardEstimate? { outlook?.cards.first { $0.id == selectedCardID } }
     private var values: [Double] { selected?.probabilities ?? outlook?.average ?? [] }
+    private var plannedDay: Double? {
+        guard selected == nil else { return nil }
+        guard let date = outlook?.nextPlannedReview else { return nil }
+        let day = max(0,date.timeIntervalSince(model.now) / 86_400)
+        return day <= 7 ? day : nil
+    }
     private struct Point: Identifiable { let id: Int; let probability: Double }
 
     var body: some View {
@@ -47,11 +53,19 @@ struct DeckMemoryPanel: View {
                         RuleMark(y: .value("Target", outlook.target * 100))
                             .foregroundStyle(palette.accentInk.opacity(0.7))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        if let plannedDay {
+                            RuleMark(x: .value("Planned review", plannedDay))
+                                .foregroundStyle(palette.accentInk.opacity(0.65))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
+                        }
                         ForEach(values.enumerated().map { Point(id: $0.offset, probability: $0.element) }) { point in
                             LineMark(x: .value("Day", point.id), y: .value("Recall", point.probability * 100))
                                 .foregroundStyle(curveColor)
+                                .lineStyle(StrokeStyle(lineWidth: 1.6, dash: [4, 4]))
                                 .interpolationMethod(.monotone)
                         }
+                        PointMark(x:.value("Today",0),y:.value("Recall today",(values.first ?? 0) * 100))
+                            .foregroundStyle(curveColor).symbolSize(64)
                     }
                     .chartYScale(domain: 0.0...100.0)
                     .chartXScale(domain: 0...7)
@@ -59,9 +73,18 @@ struct DeckMemoryPanel: View {
                     .chartYAxis { AxisMarks(position: .leading, values: [0, 50, 100]) }
                     .frame(height: 150)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
-                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; curve assumes no reviews for seven days")
+                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; dotted curve assumes no reviews for seven days")
                     HStack { Text("Today"); Spacer(); Text("7 days") }
                         .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
+                    if selected == nil,let next = outlook.nextPlannedReview {
+                        HStack(alignment:.firstTextBaseline) {
+                            Text(next <= model.now ? "Review due now" : "Next planned review · " + next.formatted(.dateTime.month(.abbreviated).day()))
+                                .font(.subheadline.weight(.medium))
+                            Spacer(minLength:8)
+                            Text("\(outlook.scheduledWithinWeek) in 7 days")
+                                .font(.caption).foregroundStyle(palette.secondaryText)
+                        }
+                    }
                 }
                 if selected == nil {
                     VStack(alignment: .leading, spacing: 7) {
@@ -89,7 +112,7 @@ struct DeckMemoryPanel: View {
                     Text(selected?.prompt ?? "").font(.subheadline).lineLimit(2)
                     Button("All cards") { selectedCardID = nil }.frame(minHeight: 44)
                 }
-                Text("FSRS estimates for studied cards. The curve assumes no further reviews; learning and unsupported cards are excluded from the average.")
+                Text("Dotted line: recall if no reviews happen. The review marker shows a scheduled date, not a predicted increase. New and unsupported cards are excluded from the average.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
             .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {

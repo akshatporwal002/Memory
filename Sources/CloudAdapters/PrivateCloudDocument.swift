@@ -4,7 +4,7 @@ import LearningCore
 
 /// Content-addressed owner-private blobs keep full documents out of shared rows and RPC limits.
 enum PrivateCloudDocument {
-    static func encode(_ record: PDFLearningRecord) throws -> Data {
+    static func encode<T: Encodable>(_ record: T) throws -> Data {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(record)
         guard data.count <= 45_000_000 else { throw EngramError.invalid("Private document exceeds the current 45 MB storage limit.") }
@@ -21,22 +21,47 @@ enum PrivateCloudDocument {
         try validatePath(path,userID:userID)
         guard data.count <= 45_000_000,self.path(data:data,userID:userID) == path else { throw EngramError.invalid("Private document failed integrity verification.") }
     }
-    static func reference(in entity: CloudProjectionEntity) -> String? {
-        guard entity.kind == "private",case .object(let envelope) = entity.payload,envelope["category"] == .string("deckExtras"),case .object(let extras) = envelope["value"],case .string(let path) = extras["pdfLearningBlob"] else { return nil }
-        return path
+    static func uploads(for entity: CloudProjectionEntity,library: LibrarySnapshot,userID: UUID) throws -> [(String,Data)] {
+        guard entity.kind == "private",case .object(let envelope) = entity.payload,
+              envelope["category"] == .string("deckExtras"),case .string(let id) = envelope["id"],
+              case .object(let extras) = envelope["value"],let deck = library.decks.first(where: { $0.id == id }) else { return [] }
+        var result: [(String,Data)] = []
+        if case .string(let path) = extras["pdfLearningBlob"],let record = deck.pdfLearning {
+            result.append((path,try encode(record)))
+        }
+        if case .string(let path) = extras["libraryDocumentsBlob"],let documents = deck.documents {
+            result.append((path,try encode(documents)))
+        }
+        for (path,data) in result { try validate(path:path,data:data,userID:userID) }
+        return result
     }
     static func materialize(_ entity: CloudProjectionEntity,library: LibrarySnapshot,userID: UUID,client: any CloudTransport) async throws -> CloudProjectionEntity {
-        guard let path = reference(in:entity),case .object(var envelope) = entity.payload,case .object(var extras) = envelope["value"] else { return entity }
-        try validatePath(path,userID:userID)
-        let record: PDFLearningRecord
-        if let id = CloudProjection.associatedDeck(entity),let local = library.decks.first(where: { $0.id == id })?.pdfLearning,try self.path(data:encode(local),userID:userID) == path { record = local }
-        else {
-            let bytes = try await client.downloadPrivateDocument(path:path)
-            try validate(path:path,data:bytes,userID:userID)
-            record = try JSONDecoder().decode(PDFLearningRecord.self,from:bytes)
-            try record.source.validate(); try record.brief.validate(source:record.source)
+        guard entity.kind == "private",case .object(var envelope) = entity.payload,
+              envelope["category"] == .string("deckExtras"),case .object(var extras) = envelope["value"] else { return entity }
+        let local = CloudProjection.associatedDeck(entity).flatMap { id in library.decks.first(where: { $0.id == id }) }
+        if case .string(let path) = extras["pdfLearningBlob"] {
+            let record: PDFLearningRecord
+            if let existing = local?.pdfLearning,try self.path(data:encode(existing),userID:userID) == path { record = existing }
+            else {
+                let bytes = try await client.downloadPrivateDocument(path:path)
+                try validate(path:path,data:bytes,userID:userID)
+                record = try JSONDecoder().decode(PDFLearningRecord.self,from:bytes)
+                try record.source.validate(); try record.brief.validate(source:record.source)
+            }
+            extras["pdfLearning"] = try .encode(record)
         }
-        extras["pdfLearning"] = try .encode(record); envelope["value"] = .object(extras)
+        if case .string(let path) = extras["libraryDocumentsBlob"] {
+            let documents: [LibraryDocument]
+            if let existing = local?.documents,try self.path(data:encode(existing),userID:userID) == path { documents = existing }
+            else {
+                let bytes = try await client.downloadPrivateDocument(path:path)
+                try validate(path:path,data:bytes,userID:userID)
+                documents = try JSONDecoder().decode([LibraryDocument].self,from:bytes)
+                for document in documents { try document.validate() }
+            }
+            extras["libraryDocuments"] = try .encode(documents)
+        }
+        envelope["value"] = .object(extras)
         var hydrated = entity; hydrated.payload = .object(envelope); return hydrated
     }
 }

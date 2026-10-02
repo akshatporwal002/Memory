@@ -9,6 +9,7 @@ public struct RetrievedEvidence: Codable, Equatable, Identifiable, Sendable {
     public var noteID: String?
     public var blockID: String?
     public var page: Int?
+    public var documentID: String? = nil
 }
 /// One bounded retrieval entry point. Access filtering belongs to the repository's account projection.
 public enum EvidenceRetrieval {
@@ -18,7 +19,9 @@ public enum EvidenceRetrieval {
         // Rank deck context before retrieving passages, keeping library-wide work bounded.
         let ranked = library.liveDecks.enumerated().sorted { a,b in
             func score(_ deck: Deck) -> Int {
-                terms.intersection(tokens(deck.name)).count * 4 + library.liveNotes.filter { $0.deckID == deck.id }.reduce(0) { $0 + terms.intersection(tokens($1.front + " " + $1.back)).count }
+                terms.intersection(tokens(deck.name)).count * 4 +
+                (deck.documents ?? []).reduce(0) { $0 + terms.intersection(tokens($1.name + " " + $1.pages.prefix(3).map(\.text).joined(separator:" "))).count } +
+                library.liveNotes.filter { $0.deckID == deck.id }.reduce(0) { $0 + terms.intersection(tokens($1.front + " " + $1.back)).count }
             }
             let lhs = score(a.element),rhs = score(b.element)
             return lhs == rhs ? a.offset < b.offset : lhs > rhs
@@ -42,6 +45,17 @@ public enum EvidenceRetrieval {
         if let pdf = deck.pdfLearning {
             candidates += retrieve(source:pdf.source,brief:pdf.brief,query:query,deckID:deckID,limit:bounded)
         }
+        for document in deck.documents ?? [] {
+            let source = PDFLearningSource(id:document.id,filename:document.name,pages:document.pages)
+            var brief = PDFLearningBrief()
+            brief.lastPage = document.pages.map(\.number).max() ?? 1
+            candidates += retrieve(source:source,brief:brief,query:query,deckID:deckID,limit:bounded).map { item in
+                var result = item
+                result.id = document.id + ":" + item.id
+                result.documentID = document.id
+                return result
+            }
+        }
         return Array(candidates.enumerated().sorted { a,b in
             let ascore = terms.intersection(tokens(a.element.text)).count + (preferredNoteID != nil && a.element.noteID == preferredNoteID ? 10000 : 0)
             let bscore = terms.intersection(tokens(b.element.text)).count + (preferredNoteID != nil && b.element.noteID == preferredNoteID ? 10000 : 0)
@@ -57,6 +71,11 @@ public enum EvidenceRetrieval {
                 return evidence.version == (deck.modifiedAt.map { String($0.timeIntervalSince1970) } ?? "legacy")
             }
             if let source = deck.pdfLearning?.source,source.chunks.contains(where: { $0.id == evidence.id }) { return evidence.version == source.id }
+            if let documents = deck.documents {
+                for document in documents where evidence.id.hasPrefix(document.id + ":") {
+                    return evidence.version == document.id
+                }
+            }
         }
         return false
     }
