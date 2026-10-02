@@ -174,6 +174,11 @@ private struct ApplicationRoot: View {
                         snapshot.reviews.append(ReviewEvent(id: "ui-review-\(index)-\(day)", cardID: id, deckID: "ui-deck", sessionID: "ui-session", rating: .good, reviewedAt: time, committedAt: time, before: state, after: state))
                     }
                 }
+                if ProcessInfo.processInfo.arguments.contains("--ui-review-mcq-fixture") {
+                    snapshot.notes = Array(snapshot.notes.prefix(1))
+                    snapshot.cards = Array(snapshot.cards.prefix(1))
+                    snapshot.reviews = snapshot.reviews.filter { $0.cardID == "ui-card-0" }
+                }
                 model = EngramModel(service: StudyService(repository: MemoryRepository(initial: snapshot), scheduler: scheduler), defaults: defaults)
                 return
             }

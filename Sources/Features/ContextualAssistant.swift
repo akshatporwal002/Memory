@@ -28,15 +28,16 @@ private enum AssistantRetrieval {
     }
 }
 struct ContextualAssistant: View {
+    private enum PanelStage { case closed, compact, expanded }
     @Bindable var model: EngramModel
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var open = false
-    @State private var expanded = false
+    @State private var stage: PanelStage = .closed
     @State private var showingHistory = false
     @State private var selectedHistoryID: String?
     @State private var prompt = ""
+    @State private var composerEpoch = 0
     @State private var messages: [String: [AssistantMessage]] = [:]
     private var busy: Bool { model.assistant.busy }
     @State private var error: String?
@@ -48,6 +49,8 @@ struct ContextualAssistant: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var open: Bool { stage != .closed }
+    private var expanded: Bool { stage == .expanded }
     private var deckID: String? {
         if model.pdfLearningPresented { return nil }
         if model.creationPresented && model.notebookDeckID == nil && model.activeDeckOverviewID == nil && model.activeContentDeckID == nil { return nil }
@@ -152,10 +155,9 @@ struct ContextualAssistant: View {
         } message: {
             Text(model.library.assistantState?.runs.flatMap(\.actions).last(where: { $0.id == model.assistant.pendingConfirmation?.id })?.summary ?? "Review this requested change before accepting.")
         }
-        .animation(motion, value: open)
-        .animation(motion, value: expanded)
+        .animation(motion, value: stage)
         .animation(motion, value: thread.count)
-        .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; showingHistory = false; selectedHistoryID = nil; close() }
+        .onChange(of: context) { _, _ in prompt = ""; error = nil; showingHistory = false; selectedHistoryID = nil; close() }
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
         .sheet(isPresented: Binding(get: { pdfSource != nil }, set: { if !$0 { pdfSource = nil } })) {
             if let pdfSource { PDFSourcePagesView(source: pdfSource) }
@@ -195,7 +197,7 @@ struct ContextualAssistant: View {
             if showsNavigation && narrow { navigationDock }
             else { Spacer(minLength: 0) }
             Button {
-                withAnimation(motion) { open = true }
+                withAnimation(motion) { stage = .compact }
                 composerFocused = true
             } label: {
                 assistantSurface(Image(systemName: "sparkle").font(.system(size: 17, weight: .medium))
@@ -241,12 +243,17 @@ struct ContextualAssistant: View {
         content.background(selected ? palette.selection : .clear,in:Capsule())
         #endif
     }
-    private func close() { composerFocused = false; withAnimation(motion) { open = false } }
+    private func close() { composerFocused = false; showingHistory = false; withAnimation(motion) { stage = .closed } }
 
     private func panel(height: CGFloat) -> some View {
         VStack(spacing: 0) {
           Capsule().fill(palette.secondaryText.opacity(0.5)).frame(width:32,height:4)
-            .frame(maxWidth:.infinity,minHeight:18).accessibilityLabel("Swipe up for chat history")
+            .frame(maxWidth:.infinity,minHeight:44).contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance:8).onEnded { value in changeStage(for:value.translation.height) })
+            .accessibilityLabel("Drag up to expand chat or down to collapse")
+            .accessibilityIdentifier("assistant-drag-handle")
+            .accessibilityAction(named:Text("Expand chat")) { changeStage(for:-100) }
+            .accessibilityAction(named:Text("Collapse chat")) { changeStage(for:100) }
           if !thread.isEmpty || !recentConversations.isEmpty {
             HStack(spacing: 8) {
                 Image(systemName: "sparkle").foregroundStyle(palette.accentInk)
@@ -254,11 +261,11 @@ struct ContextualAssistant: View {
                 Spacer(minLength: 8)
                 Button {
                     composerFocused = false
-                    withAnimation(motion) { expanded = true; showingHistory.toggle() }
+                    withAnimation(motion) { stage = .expanded; showingHistory.toggle() }
                 } label: { Image(systemName:showingHistory ? "chevron.left" : "clock.arrow.circlepath").frame(width:44,height:44).contentShape(Rectangle()) }
                     .accessibilityLabel(showingHistory ? "Back to chat" : "Chat history")
                 if !thread.isEmpty {
-                    Button { composerFocused = false; expanded.toggle() } label: {
+                    Button { composerFocused = false; withAnimation(motion) { stage = expanded ? .compact : .expanded } } label: {
                         Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
                             .frame(width: 44, height: 44).contentShape(Rectangle())
                     }
@@ -323,15 +330,19 @@ struct ContextualAssistant: View {
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, 4)
+                                .id(message.id)
                             }
                             if busy, !model.assistant.output.isEmpty { RichContentView(source: model.assistant.output) }
-                            if busy { ProgressView("Thinking…").font(.caption).id("assistant-end") }
+                            if busy { ProgressView("Thinking…").font(.caption) }
+                            Color.clear.frame(height:1).id("assistant-bottom")
                         }.padding(.vertical, 10)
                     }
+                    .scrollDismissesKeyboard(.never)
                     .frame(height: min(max(90, height * (expanded ? 0.60 : 0.32)), max(90, height - 170)))
-                    .onChange(of: thread.count) { _, _ in
-                        if let id = thread.last?.id { proxy.scrollTo(id, anchor: .bottom) }
-                    }
+                    .defaultScrollAnchor(.bottom)
+                    .onAppear { scrollChatToBottom(proxy) }
+                    .onChange(of: thread.count) { _, _ in scrollChatToBottom(proxy) }
+                    .onChange(of: expanded) { _, _ in scrollChatToBottom(proxy) }
                 }
             }
           }
@@ -365,6 +376,8 @@ struct ContextualAssistant: View {
                 if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(palette.accentInk) }
                 TextField(model.pdfLearningPresented ? "Ask about this PDF…" : "Ask about your notes…", text: $prompt, axis: .vertical)
                     .lineLimit(1...3).focused($composerFocused)
+                    .simultaneousGesture(TapGesture().onEnded { composerFocused = true })
+                    .id(composerEpoch)
                     .submitLabel(.send).onSubmit { send() }
                     .accessibilityLabel("Message the study assistant")
                     .accessibilityIdentifier("assistant-composer")
@@ -388,14 +401,23 @@ struct ContextualAssistant: View {
         }
         .padding(12)
         .frame(maxWidth: 530)
-        .simultaneousGesture(DragGesture(minimumDistance:24).onEnded { value in
-            if value.translation.height < -35 && !expanded {
-                composerFocused = false
-                withAnimation(motion) { expanded = true; showingHistory = !recentConversations.isEmpty }
-            } else if value.translation.height > 35 && showingHistory {
-                withAnimation(motion) { showingHistory = false; expanded = false }
-            }
-        })
+    }
+
+    private func changeStage(for translation: CGFloat) {
+        guard abs(translation) > 18 else { return }
+        composerFocused = false
+        withAnimation(motion) {
+            if translation < 0 { stage = .expanded }
+            else if showingHistory { showingHistory = false; stage = .compact }
+            else { stage = expanded ? .compact : .closed }
+        }
+    }
+    private func scrollChatToBottom(_ proxy: ScrollViewProxy) {
+        Task { @MainActor in
+            await Task.yield()
+            guard open else { return }
+            proxy.scrollTo("assistant-bottom", anchor:.bottom)
+        }
     }
 
     private func send() {
@@ -415,7 +437,7 @@ struct ContextualAssistant: View {
         if ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-assistant-fixture") {
             messages[activeConversationID, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
             messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
-            prompt = ""; composerFocused = false; return
+            prompt = ""; composerFocused = false; composerEpoch += 1; return
         }
         #endif
         guard model.chatGPT.activeAccount != nil else {
@@ -445,7 +467,7 @@ struct ContextualAssistant: View {
         let currentNoteID = model.library.session?.current?.card.noteID
         let sources = hideReviewAnswer ? allSources.filter { $0.noteID != currentNoteID } : allSources
         let evidence = sources.enumerated().map { "[\($0.offset + 1)] \($0.element.title)\n\($0.element.text)" }.joined(separator: "\n\n")
-        prompt = ""; error = nil; composerFocused = false
+        prompt = ""; error = nil; composerFocused = false; composerEpoch += 1
         model.assistant.start(question: question, contextID: key, context: studyContext + "\nWorkflow: " + key,
                               evidence: evidence, sourceOnly: sourceOnly, model: model)
     }

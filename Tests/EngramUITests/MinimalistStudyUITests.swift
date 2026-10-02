@@ -130,6 +130,68 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Return to this screen's chat"].exists)
         capture("Assistant-History",app)
     }
+    @MainActor func testMCQTextChoicesAndInlineExplanation() {
+        let app = launch(extra:["--ui-review-mcq-fixture"])
+        let start = app.buttons["Start review"]
+        XCTAssertTrue(start.waitForExistence(timeout:15)); start.tap()
+        let correct = app.buttons["review-option-B"]
+        XCTAssertTrue(correct.waitForExistence(timeout:5))
+        XCTAssertFalse(app.staticTexts["Tap an option twice to confirm, or speak its letter or answer."].exists)
+        capture("Review-MCQ-Choices",app)
+        correct.tap()
+        XCTAssertEqual(correct.value as? String,"Selected")
+        capture("Review-MCQ-Selected",app)
+        correct.tap()
+        XCTAssertTrue(app.staticTexts["review-explanation"].waitForExistence(timeout:5))
+        XCTAssertEqual(correct.value as? String,"Correct answer")
+        capture("Review-MCQ-Feedback",app)
+    }
+    @MainActor func testMCQIncorrectChoiceShowsBothOutcomes() {
+        let app = launch(extra:["--ui-review-mcq-fixture"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15))
+        app.buttons["Start review"].tap()
+        let wrong = app.buttons["review-option-A"]
+        XCTAssertTrue(wrong.waitForExistence(timeout:5))
+        wrong.tap(); wrong.tap()
+        XCTAssertEqual(wrong.value as? String,"Your answer, incorrect")
+        XCTAssertEqual(app.buttons["review-option-B"].value as? String,"Correct answer")
+        XCTAssertTrue(app.staticTexts["review-explanation"].exists)
+        capture("Review-MCQ-Incorrect",app)
+    }
+    @MainActor func testAssistantDragStagesAndKeyboardReturn() {
+        let app = launch()
+        let entry = app.buttons["assistant-entry"]
+        XCTAssertTrue(entry.waitForExistence(timeout:15)); entry.tap()
+        let composer = app.textFields["assistant-composer"].firstMatch.exists ? app.textFields["assistant-composer"].firstMatch : app.textViews["assistant-composer"].firstMatch
+        XCTAssertTrue(composer.waitForExistence(timeout:5)); composer.tap()
+        composer.typeText("Explain CloudFront")
+        app.buttons["Send message"].tap()
+        XCTAssertTrue(app.staticTexts["UI review fixture — no live AI request was made."].waitForExistence(timeout:5))
+        let keyboard = app.keyboards.firstMatch
+        let dismissed = XCTNSPredicateExpectation(predicate:NSPredicate { _,_ in !keyboard.exists || keyboard.frame.minY >= app.frame.maxY },object:nil)
+        wait(for:[dismissed],timeout:5)
+        composer.tap()
+        composer.typeText("More")
+        XCTAssertTrue((composer.value as? String ?? "").contains("More"))
+        XCTAssertTrue(keyboard.waitForExistence(timeout:5))
+        XCTAssertGreaterThan(keyboard.frame.height,180)
+        print("Keyboard return frames: keyboard=\(keyboard.frame), app=\(app.frame), composer=\(composer.frame)")
+        if keyboard.frame.minY < app.frame.maxY {
+            XCTAssertLessThanOrEqual(composer.frame.maxY,keyboard.frame.minY + 2)
+        }
+        XCTAssertTrue(app.staticTexts["UI review fixture — no live AI request was made."].isHittable)
+        capture("Assistant-Keyboard-Return",app)
+        let handle = app.otherElements["assistant-drag-handle"]
+        XCTAssertTrue(handle.exists)
+        handle.swipeUp()
+        XCTAssertTrue(app.buttons["Collapse assistant"].waitForExistence(timeout:5))
+        capture("Assistant-Expanded-Swipe",app)
+        handle.swipeDown()
+        XCTAssertTrue(app.buttons["Expand assistant"].waitForExistence(timeout:5))
+        capture("Assistant-Compact-Swipe",app)
+        handle.swipeDown()
+        XCTAssertTrue(entry.waitForExistence(timeout:5))
+    }
 
     @MainActor func testDarkAndLargeTextLayout() {
         let app = launch(extra: ["--ui-dark", "--ui-large-text"])

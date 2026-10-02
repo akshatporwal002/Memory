@@ -35,7 +35,7 @@ struct ReviewView: View {
                                         .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 }
                             }
-                            if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil {
+                            if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil && (note.mcq == nil || item.assessment != nil) {
                             controls(session: session, item: item, width: geometry.size.width)
                                 .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 .background(theme.palette(for: scheme).canvas)
@@ -92,8 +92,7 @@ struct ReviewView: View {
     }
     @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation, minimumHeight: CGFloat) -> some View {
         if let question = note.mcq {
-            MultipleChoiceReviewView(model: model, question: question, item: item)
-                .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .topLeading).engramSurface()
+            MultipleChoiceReviewView(model: model, question: question, item: item, minimumHeight: minimumHeight)
         } else {
         let rendered = Result { try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil) }
         switch rendered {
@@ -167,14 +166,28 @@ struct ReviewView: View {
         if model.pendingAttempt?.assessment != nil {
             EmptyView()
         } else if let assessment = item.assessment {
-            VStack(spacing: 12) {
-                Text(assessment.outcome.rawValue.capitalized + " · " + (assessment.rating?.label ?? "Ungraded")).font(.headline)
-                if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq == nil { Text(assessment.reason) }
-                EngramActionButton("Next", busy: model.busy) { Task { await model.nextAnswer() } }
-                Button("Undo assessment") { Task { await model.undo() } }.disabled(model.busy)
+            if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq != nil {
+                HStack {
+                    Button("Undo",systemImage:"arrow.uturn.backward") { Task { await model.undo() } }
+                        .frame(minHeight:44).contentShape(Rectangle())
+                    Spacer()
+                    Button("Next question",systemImage:"arrow.right") { Task { await model.nextAnswer() } }
+                        .frame(minHeight:44).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.palette(for:scheme).accentInk)
+                .frame(maxWidth: EngramShape.readingWidth,minHeight:44)
+                .disabled(model.busy)
+            } else {
+                VStack(spacing: 12) {
+                    Text(assessment.outcome.rawValue.capitalized + " · " + (assessment.rating?.label ?? "Ungraded")).font(.headline)
+                    Text(assessment.reason)
+                    EngramActionButton("Next", busy: model.busy) { Task { await model.nextAnswer() } }
+                    Button("Undo assessment") { Task { await model.undo() } }.disabled(model.busy)
+                }
             }
         } else if model.library.liveNotes.first(where: { $0.id == item.card.noteID })?.mcq != nil {
-            Text("Tap an option twice to confirm, or speak its letter or answer.").font(.caption)
+            EmptyView()
         } else {
         // Reserve the actual grade controls' height before reveal so the reading surface stays still.
         ZStack(alignment: .bottom) {
