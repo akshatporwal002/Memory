@@ -17,6 +17,8 @@ import SchedulingAdapters
     var conflicts: [CloudConflict] = []
     var invitation: CloudInvitation?
     var invitationDeckID: String?
+    private(set) var members: [CloudMembership] = []
+    private(set) var membersDeckID: String?
     var confirmationUserID: UUID?
     var pendingJoinToken: String?
     var configured: Bool { client != nil }
@@ -61,7 +63,7 @@ import SchedulingAdapters
     func signOut(model: EngramModel) async {
         guard let client,let repository,!busy else { return }; busy = true; defer { busy = false }
         guard !model.busy,!model.typedAnswer.busy else { error = "Finish the current edit or answer review before switching accounts."; return }
-        do { await model.assistant.stopAndWait(); try await client.signOut(); notificationTask?.cancel(); notificationTask = nil; model.voice.stop(); model.pdfLearning.selectAccount(nil); try await repository.selectAccount(nil); userID = nil; conflicts = []; status = "Local library"; await model.refresh() }
+        do { await model.assistant.stopAndWait(); try await client.signOut(); notificationTask?.cancel(); notificationTask = nil; model.voice.stop(); model.pdfLearning.selectAccount(nil); try await repository.selectAccount(nil); userID = nil; conflicts = []; members = []; membersDeckID = nil; status = "Local library"; await model.refresh() }
         catch { self.error = error.localizedDescription }
     }
     private func startNotifications(model: EngramModel) {
@@ -105,5 +107,22 @@ import SchedulingAdapters
         guard let client,let invitation,let deck = invitationDeckID else { return }
         do { try await client.revoke(deckID:deck,invitationID:invitation.id); self.invitation = nil }
         catch { self.error = error.localizedDescription }
+    }
+    func loadMembers(deckID: String) async {
+        guard let client,let userID else { members = []; membersDeckID = nil; return }
+        do {
+            guard try await client.decks().contains(where: { $0.id == deckID && $0.owner_id == userID }) else { members = []; membersDeckID = nil; return }
+            let rows = try await client.memberships()
+            members = rows.filter { $0.deck_id == deckID && $0.user_id != userID }.sorted { $0.user_id.uuidString < $1.user_id.uuidString }
+            membersDeckID = deckID; error = nil
+        } catch { members = []; membersDeckID = nil; self.error = error.localizedDescription }
+    }
+    func revokeMember(deckID: String,memberID: UUID,model: EngramModel) async {
+        guard let client,let userID,memberID != userID else { return }
+        do {
+            guard try await client.decks().contains(where: { $0.id == deckID && $0.owner_id == userID }) else { throw EngramError.invalid("Only the owner can remove a member.") }
+            try await client.revoke(deckID:deckID,userID:memberID)
+            await sync(model:model); await loadMembers(deckID:deckID)
+        } catch { self.error = error.localizedDescription }
     }
 }

@@ -82,6 +82,12 @@ public protocol CloudTransport: Sendable {
     func changes(after sequence: Int64) async throws -> [CloudChange]
     func decks() async throws -> [CloudDeckAccess]
     func memberships() async throws -> [CloudMembership]
+    func uploadPrivateDocument(path: String,data: Data) async throws
+    func downloadPrivateDocument(path: String) async throws -> Data
+}
+public extension CloudTransport {
+    func uploadPrivateDocument(path: String,data: Data) async throws { throw EngramError.storage("Private document storage is unavailable; local work remains saved.") }
+    func downloadPrivateDocument(path: String) async throws -> Data { throw EngramError.storage("Private document storage is unavailable; try synchronization again.") }
 }
 public actor SupabaseCloudClient: CloudTransport {
     private let client: SupabaseClient
@@ -105,6 +111,17 @@ public actor SupabaseCloudClient: CloudTransport {
     public func changes(after sequence: Int64) async throws -> [CloudChange] { try await client.from("engram_changes").select().gt("sequence",value:String(sequence)).order("sequence").limit(500).execute().value }
     public func decks() async throws -> [CloudDeckAccess] { try await client.from("engram_decks").select().execute().value }
     public func memberships() async throws -> [CloudMembership] { try await client.from("engram_members").select().execute().value }
+    public func uploadPrivateDocument(path: String,data: Data) async throws {
+        try PrivateCloudDocument.validate(path:path,data:data,userID:try await currentUserID())
+        _ = try await client.storage.from("engram-private-pdfs").upload(path,data:data,options:FileOptions(cacheControl:"0",contentType:"application/json",upsert:true))
+    }
+    public func downloadPrivateDocument(path: String) async throws -> Data {
+        let user = try await currentUserID()
+        try PrivateCloudDocument.validatePath(path,userID:user)
+        let data = try await client.storage.from("engram-private-pdfs").download(path:path)
+        try PrivateCloudDocument.validate(path:path,data:data,userID:user)
+        return data
+    }
     /// Notifications are only download hints. The incremental HTTP cursor remains authoritative.
     public func notifications() -> AsyncThrowingStream<Void,Error> {
         let client = self.client

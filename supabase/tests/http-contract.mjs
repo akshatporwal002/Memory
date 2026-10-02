@@ -8,12 +8,12 @@ const jwt = role => {
   const body = Buffer.from(JSON.stringify({role,iss:'supabase',iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+600})).toString('base64url');
   return `${head}.${body}.${createHmac('sha256',secret).update(`${head}.${body}`).digest('base64url')}`;
 };
-const admin = jwt('service_role'), anon = jwt('anon'), users = [], deck = `http-test-${randomUUID()}`;
-let socket;
+const admin = jwt('service_role'), anon = jwt('anon'), users = [], deck = `http-test-${randomUUID()}`, destination = `http-test-${randomUUID()}`;
+let socket,blobPath;
 async function request(path,token,body,method = body === undefined ? 'GET' : 'POST',expected = 200) {
   const response = await fetch(url+path,{method,headers:{apikey:anon,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:body === undefined ? undefined : JSON.stringify(body),signal:AbortSignal.timeout(15000)});
   const value = await response.json().catch(()=>null);
-  if (response.status !== expected) throw new Error(`${path}: expected ${expected}, received ${response.status}`);
+  if (response.status !== expected) throw new Error(`${path}: expected ${expected}, received ${response.status}: ${value?.message ?? value?.error ?? ''}`);
   return value;
 }
 function assert(value,message) { if (!value) throw new Error(message); }
@@ -37,6 +37,13 @@ try {
   const rows = await request(`/rest/v1/engram_entities?deck_id=eq.${deck}`,editor.token);
   assert(rows.length===2 && rows.every(x=>x.kind!=='private'),'Shared scope exposed private attempt');
   assert((await request('/rest/v1/engram_entities?kind=eq.private',editor.token)).length===0,'Private attempt exposed');
+  blobPath = `${owner.id}/${randomBytes(32).toString('hex')}.json`;
+  const privateDocument = {source:{filename:'owner-private.pdf',pages:[{number:1,text:'Owner-private full extraction'}],originalPDFData:Buffer.from('%PDF-1.7 owner-private').toString('base64')}};
+  await request(`/storage/v1/object/engram-private-pdfs/${blobPath}`,owner.token,privateDocument);
+  const downloaded = await request(`/storage/v1/object/engram-private-pdfs/${blobPath}`,owner.token);
+  assert(downloaded.source.originalPDFData===privateDocument.source.originalPDFData,'Original private document did not round-trip');
+  const denied = await fetch(`${url}/storage/v1/object/engram-private-pdfs/${blobPath}`,{headers:{apikey:anon,Authorization:`Bearer ${editor.token}`},signal:AbortSignal.timeout(15000)});
+  assert(!denied.ok,'Shared editor downloaded the owner-private original/extraction');
   const notifications = [];
   socket = new WebSocket(`ws://127.0.0.1:54321/realtime/v1/websocket?apikey=${anon}&vsn=1.0.0`);
   await new Promise((resolve,reject)=> {
@@ -56,18 +63,28 @@ try {
   assert(notifications.some(x=>x.entity_id===note),'Authorized Realtime hint missing');
   assert(notifications.every(x=>x.kind!=='private'),'Realtime exposed private learner state');
   assert((await apply(owner,op('note',note,1,{...original.content,back:'Wrong stale value'}))).status==='conflict','Stale edit accepted');
+  const createDestination = {...op('deck',destination,0,{id:destination,name:'Private destination'}),target_deck:destination};
+  assert((await apply(owner,createDestination)).status==='saved','Destination deck failed');
+  const move = {...op('note',note,2,{...original.content,deckID:destination,front:'Private destination question'}),target_deck:destination};
+  assert((await apply(owner,move)).version===4,'Question move failed');
+  assert((await apply(owner,move)).version===4,'Question move retry repeated mutation');
+  const oldChanges = await request(`/rest/v1/engram_changes?entity_id=eq.${note}&order=sequence.asc`,editor.token);
+  assert(oldChanges.some(x=>x.deleted && x.deck_id===deck),'Old-only editor did not receive removal');
+  assert(oldChanges.every(x=>x.payload.front!=='Private destination question'),'Old-only editor saw destination content');
+  assert((await request(`/rest/v1/engram_entities?id=eq.${note}`,editor.token)).length===0,'Old-only editor still sees moved question');
   await request('/rest/v1/rpc/engram_revoke',owner.token,{target_deck:deck,member_user:editor.id,invitation_id:null},'POST',204);
   assert((await request(`/rest/v1/engram_entities?deck_id=eq.${deck}`,editor.token)).length===0,'Revoked cache still downloadable');
   await request('/rest/v1/rpc/engram_apply',editor.token,op('note',note,2,original.content),'POST',400);
   const remove = op('deck',deck,1,{id:deck,name:'Deleted',deleted:true},true);
   await apply(owner,remove); assert((await apply(owner,remove)).version===2,'Owner deletion retry failed');
   assert((await apply(owner,op('deck',deck,2,{id:deck,name:'Restored',deleted:false}))).version===3,'Owner restoration failed');
-  console.log('PASS: localhost Auth, RPC encoding, two-user sharing, private isolation including Realtime, CAS, revocation and owner recovery. No hosted pilot enabled.');
+  console.log('PASS: localhost Auth, RPC encoding, two-user sharing, private document Storage and Realtime isolation, CAS, revocation and owner recovery. No hosted pilot enabled.');
 } finally {
   socket?.close();
+  if (blobPath && users[0]?.token) await request('/storage/v1/object/engram-private-pdfs',users[0].token,{prefixes:[blobPath]},'DELETE');
   const ids = users.map(x=>x.id);
   if (ids.every(id=>/^[0-9a-f-]{36}$/.test(id))) {
-    const sql = `begin; delete from engram_private.invitations where deck_id='${deck}'; delete from engram_private.operations where user_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_changes where deck_id='${deck}' or learner_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_entities where deck_id='${deck}' or learner_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_members where deck_id='${deck}'; delete from public.engram_decks where id='${deck}'; commit;`;
+    const sql = `begin; delete from engram_private.invitations where deck_id in ('${deck}','${destination}'); delete from engram_private.operations where user_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_changes where deck_id in ('${deck}','${destination}') or learner_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_entities where deck_id in ('${deck}','${destination}') or learner_id in (${ids.map(id=>`'${id}'`).join(',') || "null"}); delete from public.engram_members where deck_id in ('${deck}','${destination}'); delete from public.engram_decks where id in ('${deck}','${destination}'); commit;`;
     execFileSync('docker',['exec','-i','supabase_db_Memory-minimalist-review','psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'],{input:sql,stdio:['pipe','ignore','pipe']});
     for (const user of users) await request(`/auth/v1/admin/users/${user.id}`,admin,undefined,'DELETE');
   }

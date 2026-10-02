@@ -21,7 +21,7 @@ public enum CloudProjection {
             var shared = deck; shared.pdfLearning = nil; shared.coverMediaName = nil; shared.desiredRetention = nil
             result.append(CloudProjectionEntity(kind:"deck",id:deck.id,deckID:deck.id,payload:try .encode(shared),deleted:deck.deleted))
             var extras: [String:JSONValue] = ["desiredRetention":deck.desiredRetention.map(JSONValue.number) ?? .null,"coverMediaName":deck.coverMediaName.map(JSONValue.string) ?? .null]
-            if ownedDecks.contains(deck.id),let pdf = deck.pdfLearning { extras["pdfLearning"] = try .encode(pdf) }
+            if ownedDecks.contains(deck.id),let pdf = deck.pdfLearning { extras["pdfLearningBlob"] = .string(PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(pdf),userID:userID)) }
             try personal("deckExtras",deck.id,extras,deckID:deck.id)
         }
         for note in library.notes {

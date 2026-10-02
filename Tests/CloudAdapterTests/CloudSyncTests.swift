@@ -6,6 +6,47 @@ import PersistenceAdapters
 import SchedulingAdapters
 
 final class CloudSyncTests: XCTestCase {
+    func testMovingSharedQuestionHidesDestinationFromOldOnlyMember() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        let owner = UUID(),viewer = UUID(),server = FakeCloud(user:owner)
+        let a = try SQLiteLibraryRepository(url:directory.appendingPathComponent("a.sqlite")),b = try SQLiteLibraryRepository(url:directory.appendingPathComponent("b.sqlite"))
+        try await a.selectAccount(owner.uuidString.lowercased()); try await b.selectAccount(viewer.uuidString.lowercased())
+        let app = StudyService(repository:a,scheduler:FSRSScheduler())
+        let source = try await app.createDeck(name:"Shared"),destination = try await app.createDeck(name:"Private destination")
+        let note = try await app.saveNote(NoteDraft(deckID:source.id,front:"Energy?",back:"ATP"),now:Date())
+        let ea = CloudSyncEngine(repository:a,client:server,scheduler:FSRSScheduler()),eb = CloudSyncEngine(repository:b,client:server,scheduler:FSRSScheduler())
+        _ = try await ea.synchronize(); await server.grant(source.id,to:viewer); await server.setUser(viewer); _ = try await eb.synchronize()
+        let before = try await b.read(); XCTAssertEqual(before.liveNotes.first?.id,note.id); XCTAssertFalse(before.liveDecks.contains(where: { $0.id == destination.id }))
+        await server.setUser(owner)
+        var draft = NoteDraft(note:note); draft.deckID = destination.id; draft.front = "Private destination question"
+        _ = try await app.saveNote(draft,now:Date())
+        let report = try await ea.synchronize(); XCTAssertTrue(report.conflicts.isEmpty)
+        await server.setUser(viewer); _ = try await eb.synchronize()
+        let after = try await b.read()
+        XCTAssertFalse(after.liveNotes.contains(where: { $0.id == note.id }))
+        XCTAssertFalse(after.liveDecks.contains(where: { $0.id == destination.id }))
+        XCTAssertTrue(after.cards.filter { $0.noteID == note.id }.allSatisfy(\.retired))
+    }
+    func testPrivateDocumentSyncPreservesOriginalAndRejectsForeignScope() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        let user = UUID(),server = FakeCloud(user:user)
+        let a = try SQLiteLibraryRepository(url:directory.appendingPathComponent("a.sqlite")),b = try SQLiteLibraryRepository(url:directory.appendingPathComponent("b.sqlite"))
+        try await a.selectAccount(user.uuidString.lowercased()); try await b.selectAccount(user.uuidString.lowercased())
+        var library = try await a.read(),deck = Deck(id:"pdf-deck",name:"PDF")
+        let original = Data("%PDF-1.7 fixture".utf8),source = PDFLearningSource(filename:"source.pdf",pages:[PDFPageText(number:1,text:"ATP stores energy")],originalPDFData:original)
+        deck.pdfLearning = PDFLearningRecord(source:source,brief:PDFLearningBrief(),items:[]); library.decks = [deck]
+        try await a.commit(library,expectedRevision:library.revision)
+        let ea = CloudSyncEngine(repository:a,client:server,scheduler:FSRSScheduler()),eb = CloudSyncEngine(repository:b,client:server,scheduler:FSRSScheduler())
+        _ = try await ea.synchronize(); _ = try await eb.synchronize()
+        let received = try await b.read(); XCTAssertEqual(received.liveDecks.first?.pdfLearning?.source.originalPDFData,original)
+        let data = try PrivateCloudDocument.encode(try XCTUnwrap(deck.pdfLearning)),path = PrivateCloudDocument.path(data:data,userID:user)
+        XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:Data("corrupt".utf8),userID:user))
+        XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:data,userID:UUID()))
+        let projected = try CloudProjection.entities(library,userID:user,ownedDecks:[deck.id])
+        XCTAssertFalse(String(decoding:try JSONEncoder().encode(projected),as:UTF8.self).contains("originalPDFData"))
+    }
     func testPrivateRPCIncludesNullDeckArgument() throws {
         let operation = CloudApply(operationID:UUID(),kind:"private",id:"learner:memory:id",deckID:nil,version:0,content:.null)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with:JSONEncoder().encode(operation)) as? [String:Any])
@@ -105,9 +146,12 @@ private actor FakeCloud: CloudTransport {
     private var operations: [UUID:CloudApplyResult] = [:]
     private var owners: [String:UUID] = [:]
     private var access: [String:Set<UUID>] = [:]
+    private var documents: [String:Data] = [:]
     init(user: UUID) { self.user = user }
     func setUser(_ id: UUID) { user = id }
     func currentUserID() -> UUID { user }
+    func uploadPrivateDocument(path: String,data: Data) throws { try PrivateCloudDocument.validate(path:path,data:data,userID:user); documents[path] = data }
+    func downloadPrivateDocument(path: String) throws -> Data { try PrivateCloudDocument.validatePath(path,userID:user); guard let data = documents[path] else { throw EngramError.missing("document") }; return data }
     func grant(_ deck: String,to member: UUID) { access[deck,default:[]].insert(member) }
     func revoke(_ deck: String,from member: UUID) { access[deck]?.remove(member) }
     func apply(_ op: CloudApply) throws -> CloudApplyResult {
@@ -115,10 +159,17 @@ private actor FakeCloud: CloudTransport {
         let key = op.entity_kind + ":" + op.entity_id
         let version = rows[key]?.version ?? 0
         guard version == op.base_version else { return CloudApplyResult(status:"conflict",version:version,payload:rows[key]?.payload,deleted:false) }
-        let row = CloudChange(sequence:Int64(log.count+1),kind:op.entity_kind,entity_id:op.entity_id,deck_id:op.target_deck,learner_id:op.entity_kind == "private" ? user : nil,version:version+1,payload:op.content,deleted:op.is_deleted)
+        let moved = op.entity_kind == "note" && rows[key] != nil && rows[key]?.deck_id != op.target_deck
+        if moved,let previous = rows[key] {
+            var tombstone = previous
+            tombstone.sequence = Int64(log.count+1); tombstone.version = version+1; tombstone.deleted = true
+            if case .object(var object) = tombstone.payload { object["deleted"] = .bool(true); tombstone.payload = .object(object) }
+            log.append(tombstone)
+        }
+        let row = CloudChange(sequence:Int64(log.count+1),kind:op.entity_kind,entity_id:op.entity_id,deck_id:op.target_deck,learner_id:op.entity_kind == "private" ? user : nil,version:version+(moved ? 2 : 1),payload:op.content,deleted:op.is_deleted)
         rows[key] = row; log.append(row)
         if op.entity_kind == "deck",owners[op.entity_id] == nil { owners[op.entity_id] = user }
-        let result = CloudApplyResult(status:"saved",version:version+1,payload:nil,deleted:nil); operations[op.operation_id] = result
+        let result = CloudApplyResult(status:"saved",version:row.version,payload:nil,deleted:nil); operations[op.operation_id] = result
         return result
     }
     func changes(after sequence: Int64) -> [CloudChange] { Array(log.filter { $0.sequence > sequence && ($0.kind == "private" ? $0.learner_id == user : $0.deck_id.map { owners[$0] == user || access[$0]?.contains(user) == true } == true) }.prefix(500)) }

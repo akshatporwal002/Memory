@@ -77,6 +77,14 @@ public actor CloudSyncEngine {
                 state.cursor = max(state.cursor,change.sequence)
                 if let deckID = CloudProjection.associatedDeck(entity),revoked.contains(deckID) { continue }
                 if let baseline = state.baselines[key],baseline.version >= change.version { continue }
+                // A move emits a removal in the old deck followed by the new scoped row.
+                // The mover may already hold the destination locally; the intermediate
+                // removal is for old-only members and must not conflict with that edit.
+                if entity.kind == "note",entity.deleted,let local = latest[key],local.deckID != entity.deckID,
+                   local.payload != entity.payload,permissions[local.deckID ?? ""] != nil {
+                    state.baselines[key] = CloudBaseline(entity:entity,version:change.version)
+                    continue
+                }
                 if let local = latest[key],let base = state.baselines[key], local.payload != base.entity.payload,local.payload != entity.payload {
                     // Card schedules are derived from immutable review events below, not field-merged.
                     if key.contains(":card:") { try CloudProjection.apply(entity,to:&library) }
@@ -84,13 +92,17 @@ public actor CloudSyncEngine {
                         let merge = try ContentMerge.merge(base:JSONEncoder().encode(base.entity.payload),yours:JSONEncoder().encode(local.payload),theirs:JSONEncoder().encode(entity.payload))
                         if let data = merge.merged {
                             var merged = entity; merged.payload = try JSONDecoder().decode(JSONValue.self,from:data); latest[key] = merged
-                            try CloudProjection.apply(merged,to:&library)
+                            try CloudProjection.apply(try await PrivateCloudDocument.materialize(merged,library:library,userID:user,client:client),to:&library)
                         } else {
                             state.conflicts.removeAll { $0.id == key }
                             state.conflicts.append(CloudConflict(id:key,entity:entity,base:base.entity.payload,yours:local.payload,theirs:entity.payload,remoteVersion:change.version,paths:merge.conflictingPaths))
                         }
                     }
-                } else { try CloudProjection.apply(entity,to:&library); latest[key] = entity }
+                } else {
+                    try CloudProjection.apply(try await PrivateCloudDocument.materialize(entity,library:library,userID:user,client:client),to:&library)
+                    latest[key] = entity
+                    state.conflicts.removeAll { $0.id == key }
+                }
                 state.baselines[key] = CloudBaseline(entity:entity,version:change.version)
             }
             if changes.count < 500 { break }
@@ -128,6 +140,11 @@ public actor CloudSyncEngine {
                 if state.conflicts.contains(where: { $0.id == entity.key }) { continue }
                 let baseline = state.baselines[entity.key]
                 if baseline?.entity.payload == entity.payload,baseline?.entity.deleted == entity.deleted { continue }
+                if let path = PrivateCloudDocument.reference(in:entity),let deckID = CloudProjection.associatedDeck(entity),let record = library.decks.first(where: { $0.id == deckID })?.pdfLearning {
+                    let data = try PrivateCloudDocument.encode(record)
+                    try PrivateCloudDocument.validate(path:path,data:data,userID:user)
+                    try await client.uploadPrivateDocument(path:path,data:data)
+                }
                 let result = try await client.apply(CloudApply(operationID:Self.operationID(operation.id + entity.key + String(baseline?.version ?? 0) + (try Self.canonical(entity.payload))),kind:entity.kind,id:entity.id,deckID:entity.deckID,version:baseline?.version ?? 0,content:entity.payload,deleted:entity.deleted))
                 if result.status == "saved",let version = result.version { state.baselines[entity.key] = CloudBaseline(entity:entity,version:version) }
                 else if let theirs = result.payload {
@@ -149,7 +166,10 @@ public actor CloudSyncEngine {
         let payload: JSONValue
         switch choice { case "base": payload = conflict.base; case "yours": payload = conflict.yours; case "theirs": payload = conflict.theirs; default: throw EngramError.invalid("Choose Base, Yours, or Theirs.") }
         var entity = conflict.entity; entity.payload = payload
-        var library = try await repository.read(); try CloudProjection.apply(entity,to:&library)
+        let user = try await client.currentUserID()
+        guard await repository.activeAccountID() == user.uuidString.lowercased() else { throw EngramError.conflict }
+        var library = try await repository.read()
+        try CloudProjection.apply(try await PrivateCloudDocument.materialize(entity,library:library,userID:user,client:client),to:&library)
         try await repository.commit(library,expectedRevision:library.revision)
         state.baselines[conflict.id] = CloudBaseline(entity:CloudProjectionEntity(kind:entity.kind,id:entity.id,deckID:entity.deckID,payload:conflict.theirs,deleted:entity.deleted),version:conflict.remoteVersion)
         state.conflicts.removeAll { $0.id == conflictID }; try await repository.saveCloudState(JSONEncoder().encode(state))

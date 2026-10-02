@@ -243,6 +243,7 @@ enum AIActionRegistry {
         case "delete_deck": operation = .deleteDeck(id)
         case "save_note":
             var draft = note.map(NoteDraft.init(note:)) ?? NoteDraft(deckID:args["deck_id"] ?? "")
+            if let destination = args["deck_id"],!destination.isEmpty { draft.deckID = destination }
             draft.front = args["front"] ?? ""; draft.back = args["back"] ?? ""
             if let value = args["kind"],!value.isEmpty { guard let kind = NoteKind(rawValue:value) else { throw AIProviderError.invalidTool }; draft.kind = kind }
             if let value = args["tags"],!value.isEmpty { draft.tags = value.split(whereSeparator:\.isWhitespace).map(String.init) }

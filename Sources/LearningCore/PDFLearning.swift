@@ -11,10 +11,15 @@ public struct PDFLearningSource: Codable, Equatable, Sendable {
     public var filename: String
     public var pages: [PDFPageText]
     public var warnings: [String]
-    public init(id: String = UUID().uuidString, filename: String, pages: [PDFPageText], warnings: [String] = []) {
-        self.id = id; self.filename = filename; self.pages = pages; self.warnings = warnings
+    /// Owner-private original, retained in native backups and private document storage.
+    public var originalPDFData: Data?
+    public init(id: String = UUID().uuidString, filename: String, pages: [PDFPageText], warnings: [String] = [],originalPDFData: Data? = nil) {
+        self.id = id; self.filename = filename; self.pages = pages; self.warnings = warnings; self.originalPDFData = originalPDFData
     }
     public func validate() throws {
+        if let originalPDFData {
+            guard originalPDFData.count <= 25_000_000,originalPDFData.starts(with:Data("%PDF-".utf8)) else { throw EngramError.invalid("Original PDF must be a PDF smaller than 25 MB.") }
+        }
         guard !filename.isEmpty, (1...300).contains(pages.count),
               Set(pages.map(\.number)).count == pages.count,
               pages.allSatisfy({ $0.number > 0 }),

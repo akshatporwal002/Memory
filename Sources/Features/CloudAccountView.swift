@@ -78,6 +78,7 @@ struct DeckSharingView: View {
     @State private var role = "viewer"
     @State private var confirmInvite = false
     @State private var confirmRevoke = false
+    @State private var pendingMemberRemoval: UUID?
     var body: some View {
         Form {
             if model.cloud.userID == nil { Text("Connect your Engram account to share a deck."); NavigationLink("Engram account") { CloudAccountView(model:model) } }
@@ -90,10 +91,28 @@ struct DeckSharingView: View {
                     Text("Expires after seven days. Original PDF files and your personal study history stay private.").font(.caption).engramSecondaryText()
                     Button("Revoke invitation",role:.destructive) { confirmRevoke = true }
                 }
+                if model.cloud.membersDeckID == deckID && !model.cloud.members.isEmpty {
+                    EngramListSection("People with access") {
+                        ForEach(model.cloud.members,id:\.user_id) { member in
+                            HStack {
+                                VStack(alignment:.leading) {
+                                    Text("Member · " + String(member.user_id.uuidString.prefix(8)))
+                                    Text(member.role.capitalized).font(.caption).engramSecondaryText()
+                                }
+                                Spacer()
+                                Button("Remove access",role:.destructive) { pendingMemberRemoval = member.user_id }
+                            }
+                        }
+                    }
+                }
             }
             if let error = model.cloud.error { EngramInlineError(message:error) }
         }.modifier(UtilityListStyle()).navigationTitle("Share deck")
+            .task(id:deckID) { await model.cloud.loadMembers(deckID:deckID) }
             .confirmationDialog("Create a \(role) invitation?",isPresented:$confirmInvite) { Button("Create invitation") { Task { await model.cloud.sync(model:model); await model.cloud.invite(deckID:deckID,role:role) } } }
             .confirmationDialog("Revoke this invitation?",isPresented:$confirmRevoke) { Button("Revoke",role:.destructive) { Task { await model.cloud.revokeInvitation() } } }
+            .confirmationDialog("Remove this person's deck access?",isPresented:Binding(get:{pendingMemberRemoval != nil},set:{if !$0 { pendingMemberRemoval = nil }})) {
+                if let memberID = pendingMemberRemoval { Button("Remove access",role:.destructive) { pendingMemberRemoval = nil; Task { await model.cloud.revokeMember(deckID:deckID,memberID:memberID,model:model) } } }
+            } message: { Text("Their cached shared deck is removed when their device reconnects. Exported copies cannot be recalled.") }
     }
 }

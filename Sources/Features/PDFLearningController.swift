@@ -66,7 +66,8 @@ struct PDFLearningDraft: Codable {
                     defer { if access { url.stopAccessingSecurityScopedResource() } }
                     let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                     guard size <= 25_000_000 else { throw EngramError.invalid("Choose a PDF smaller than 25 MB.") }
-                    guard let pdf = PDFDocument(url: url), !pdf.isLocked else { throw EngramError.invalid("This PDF is locked or unreadable. Export an unlocked copy first.") }
+                    let original = try Data(contentsOf:url)
+                    guard original.count <= 25_000_000,original.starts(with:Data("%PDF-".utf8)),let pdf = PDFDocument(data:original), !pdf.isLocked else { throw EngramError.invalid("This PDF is locked or unreadable. Export an unlocked copy first.") }
                     guard (1...300).contains(pdf.pageCount) else { throw EngramError.invalid("Choose a PDF with 1–300 pages.") }
                     var pages: [PDFPageText] = []; var empty: [Int] = []; var bytes = 0
                     for index in 0..<pdf.pageCount {
@@ -78,7 +79,7 @@ struct PDFLearningDraft: Codable {
                         pages.append(PDFPageText(number: index + 1, text: text))
                     }
                     let warnings = empty.isEmpty ? [] : ["No selectable text on pages \(empty.map(String.init).joined(separator: ", ")). Scans and diagrams on these pages are not included. Import a text-searchable PDF to cover them."]
-                    let source = PDFLearningSource(filename: url.lastPathComponent, pages: pages, warnings: warnings)
+                    let source = PDFLearningSource(filename: url.lastPathComponent, pages: pages, warnings: warnings,originalPDFData:original)
                     try source.validate(); return source
                 }.value
                 try Task.checkCancellation()

@@ -176,7 +176,10 @@ struct SettingsView: View {
                     else { Text("No complete backup has been exported from this installation.").engramSecondaryText() }
                     if let portabilityAction { Button("Import, export & recovery backups", action: portabilityAction) }
                 } footer: { Text("Complete backups include cards, media and review history. Save a copy outside the app before changing devices or removing Engram.") }
-                EngramListSection { LabeledContent("Cloud sync", value: "Unavailable") } footer: { Text("This library stays on this device. A ChatGPT connection does not sync it.") }
+                EngramListSection {
+                    LabeledContent("Engram sync", value: model.cloud.status)
+                    Button("Engram account & sharing") { model.cloudAccountPresented = true }
+                } footer: { Text("An Engram account can synchronize your library. ChatGPT sign-in provides AI access separately.") }
             }.modifier(UtilityListStyle()).navigationTitle(page.rawValue)
         case .about:
             Form {

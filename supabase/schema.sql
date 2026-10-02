@@ -34,8 +34,8 @@ revoke all on public.engram_decks,public.engram_members,public.engram_entities,p
 grant select on public.engram_decks,public.engram_members,public.engram_entities,public.engram_changes to authenticated;
 
 -- All writes use the idempotent CAS boundary. Direct table writes are unavailable to app credentials.
-create function public.engram_apply(operation_id uuid, entity_kind text, entity_id text, target_deck text, base_version bigint, content jsonb, is_deleted boolean default false) returns jsonb language plpgsql security definer set search_path='' as $$
-declare actor uuid := auth.uid(); current_row public.engram_entities; prior engram_private.operations; result jsonb; request jsonb;
+create or replace function public.engram_apply(operation_id uuid, entity_kind text, entity_id text, target_deck text, base_version bigint, content jsonb, is_deleted boolean default false) returns jsonb language plpgsql security definer set search_path='' as $$
+declare actor uuid := auth.uid(); current_row public.engram_entities; prior engram_private.operations; result jsonb; request jsonb; next_version bigint;
 begin
  if actor is null then raise exception 'Authentication required'; end if;
  if entity_kind not in ('deck','note','private') or entity_id='' or octet_length(content::text)>2000000 then raise exception 'Invalid entity'; end if;
@@ -64,15 +64,25 @@ begin
    return prior.result;
  end if;
  select * into current_row from public.engram_entities where kind=entity_kind and id=entity_id for update;
- if found and (current_row.deck_id is distinct from target_deck or (entity_kind='private' and current_row.learner_id<>actor)) then raise exception 'Entity cannot change scope'; end if;
+ if found and entity_kind='private' and current_row.learner_id<>actor then raise exception 'Private scope mismatch'; end if;
+ if found and current_row.deck_id is distinct from target_deck then
+   if entity_kind<>'note' or not engram_private.can_access(current_row.deck_id,true) then raise exception 'Editor permission required in both decks'; end if;
+ end if;
  if coalesce(current_row.version,0)<>base_version then
    return jsonb_build_object('status','conflict','version',current_row.version,'payload',current_row.payload,'deleted',current_row.deleted);
  end if;
- insert into public.engram_entities(id,kind,deck_id,learner_id,version,payload,deleted) values(entity_id,entity_kind,target_deck,case when entity_kind='private' then actor end,base_version+1,content,is_deleted)
- on conflict(kind,id) do update set version=excluded.version,payload=excluded.payload,deleted=excluded.deleted;
- insert into public.engram_changes(kind,entity_id,deck_id,learner_id,version,payload,deleted) values(entity_kind,entity_id,target_deck,case when entity_kind='private' then actor end,base_version+1,content,is_deleted);
+ next_version := base_version+1;
+ if entity_kind='note' and current_row.id is not null and current_row.deck_id is distinct from target_deck then
+   -- Old members receive only removal from their deck, never the destination's content.
+   insert into public.engram_changes(kind,entity_id,deck_id,version,payload,deleted)
+   values('note',entity_id,current_row.deck_id,next_version,jsonb_set(current_row.payload,'{deleted}','true'::jsonb),true);
+   next_version := next_version+1;
+ end if;
+ insert into public.engram_entities(id,kind,deck_id,learner_id,version,payload,deleted) values(entity_id,entity_kind,target_deck,case when entity_kind='private' then actor end,next_version,content,is_deleted)
+ on conflict(kind,id) do update set deck_id=excluded.deck_id,version=excluded.version,payload=excluded.payload,deleted=excluded.deleted;
+ insert into public.engram_changes(kind,entity_id,deck_id,learner_id,version,payload,deleted) values(entity_kind,entity_id,target_deck,case when entity_kind='private' then actor end,next_version,content,is_deleted);
  if entity_kind='deck' then update public.engram_decks set deleted=is_deleted where id=target_deck; end if;
- result := jsonb_build_object('status','saved','version',base_version+1);
+ result := jsonb_build_object('status','saved','version',next_version);
  insert into engram_private.operations(user_id,operation_id,request,result) values(actor,engram_apply.operation_id,request,result);
  return result;
 end $$;
@@ -111,3 +121,13 @@ create policy pdf_owner_read on storage.objects for select to authenticated usin
 create policy pdf_owner_insert on storage.objects for insert to authenticated with check(bucket_id='engram-private-pdfs' and (storage.foldername(name))[1]=(select auth.uid())::text);
 create policy pdf_owner_update on storage.objects for update to authenticated using(bucket_id='engram-private-pdfs' and (storage.foldername(name))[1]=(select auth.uid())::text) with check(bucket_id='engram-private-pdfs' and (storage.foldername(name))[1]=(select auth.uid())::text);
 create policy pdf_owner_delete on storage.objects for delete to authenticated using(bucket_id='engram-private-pdfs' and (storage.foldername(name))[1]=(select auth.uid())::text);
+
+-- Realtime only prompts an incremental download; RLS still authorizes each notification.
+do $$ begin
+ if not exists(select 1 from pg_publication where pubname='supabase_realtime') then
+   create publication supabase_realtime;
+ end if;
+ if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='engram_changes') then
+   alter publication supabase_realtime add table public.engram_changes;
+ end if;
+end $$;
