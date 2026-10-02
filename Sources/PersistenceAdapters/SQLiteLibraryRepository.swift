@@ -56,6 +56,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
                     guard snapshot.notes.filter({ $0.deckID == id }) == prior.notes.filter({ $0.deckID == id }) else { throw EngramError.invalid("This shared deck is read-only.") }
                     var before = prior.decks.first { $0.id == id }, after = snapshot.decks.first { $0.id == id }
                     before?.desiredRetention = nil; after?.desiredRetention = nil
+                    before?.coverMediaName = nil; after?.coverMediaName = nil
                     before?.modifiedAt = nil; after?.modifiedAt = nil
                     guard before == after else { throw EngramError.invalid("This shared deck is read-only.") }
                 } else if role == "editor", let after = snapshot.decks.first(where: { $0.id == id }), after.deleted, prior.decks.first(where: { $0.id == id })?.deleted == false {
@@ -66,8 +67,10 @@ public actor SQLiteLibraryRepository: LibraryRepository {
             let payload = try Self.encode(next)
             try db.execute("UPDATE libraries SET revision=?,payload=? WHERE account=?", [String(next.revision),payload,partition])
             if row?["upload_enabled"] == "1" {
-                var portable = next; portable.session = nil
-                try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,partition,String(next.revision),try Self.encode(portable)])
+                // The snapshot and this durable dirty-revision marker commit together.
+                // Sync folds pending revisions into that saved snapshot, without copying
+                // entire PDF extracts into every conversation/review queue entry.
+                try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,partition,String(next.revision),"{}"])
             }
             try db.execute("COMMIT")
         } catch { try? db.execute("ROLLBACK"); throw error }
@@ -85,7 +88,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
                 let local = try db.rows("SELECT payload FROM libraries WHERE account='local'").first?["payload"] ?? ""
                 var snapshot = uploadLocal ? try JSONDecoder().decode(LibrarySnapshot.self,from:Data(local.utf8)) : LibrarySnapshot(); snapshot.session = nil
                 try db.execute("INSERT INTO libraries(account,revision,payload,upload_enabled) VALUES(?,?,?,?)", [next,String(snapshot.revision),try Self.encode(snapshot),userID == nil ? "0" : "1"])
-                if uploadLocal, userID != nil { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),try Self.encode(snapshot)]) }
+                if uploadLocal, userID != nil { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),"{}"]) }
             }
             try db.execute("COMMIT"); if partition != next { lease = UUID().uuidString }; partition = next
         } catch { try? db.execute("ROLLBACK"); throw error }

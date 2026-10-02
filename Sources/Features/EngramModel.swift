@@ -34,6 +34,8 @@ public struct DeckForm: Identifiable {
     public var portabilityRequested = false
     var actionReviewPresented = false
     var cloudAccountPresented = false
+    var sharingDeckID: String?
+    var memoryPresented = false
     var pdfLearningPresented = false
     public var answerFeedback: String?
     public var markingAnswer = false

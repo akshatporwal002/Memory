@@ -29,10 +29,31 @@ final class CloudSyncTests: XCTestCase {
         let viewerApp = StudyService(repository:b,scheduler:FSRSScheduler())
         try await viewerApp.saveLearningMemory(LearningMemory(noteID:note.id,text:"Viewer-private misconception"))
         _ = try await eb.synchronize()
+        let session = try await viewerApp.startSession(deckID:deck.id,now:Date())
+        XCTAssertNotNil(session.current)
         await server.revoke(deck.id,from:viewer)
         let report = try await eb.synchronize(); XCTAssertEqual(report.removedDecks,[deck.id])
         _ = try await eb.synchronize()
-        let revoked = try await b.read(); XCTAssertTrue(revoked.notes.isEmpty); XCTAssertTrue(revoked.cards.isEmpty); XCTAssertTrue(revoked.assistantState?.memory.isEmpty ?? true)
+        let revoked = try await b.read(); XCTAssertTrue(revoked.notes.isEmpty); XCTAssertTrue(revoked.cards.isEmpty); XCTAssertTrue(revoked.assistantState?.memory.isEmpty ?? true); XCTAssertNil(revoked.session)
+    }
+    func testOrdinaryChangesWaitUntilQuestionBoundary() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        let user = UUID(),server = FakeCloud(user:user)
+        let a = try SQLiteLibraryRepository(url:directory.appendingPathComponent("a.sqlite")),b = try SQLiteLibraryRepository(url:directory.appendingPathComponent("b.sqlite"))
+        try await a.selectAccount(user.uuidString.lowercased()); try await b.selectAccount(user.uuidString.lowercased())
+        let app = StudyService(repository:a,scheduler:FSRSScheduler()),appB = StudyService(repository:b,scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Science")
+        let note = try await app.saveNote(NoteDraft(deckID:deck.id,front:"Energy?",back:"ATP"),now:Date())
+        let ea = CloudSyncEngine(repository:a,client:server,scheduler:FSRSScheduler()),eb = CloudSyncEngine(repository:b,client:server,scheduler:FSRSScheduler())
+        _ = try await ea.synchronize(); _ = try await eb.synchronize()
+        let session = try await appB.startSession(deckID:deck.id,now:Date())
+        var draft = NoteDraft(note:note); draft.back = "Adenosine triphosphate"
+        _ = try await app.saveNote(draft,now:Date()); _ = try await ea.synchronize()
+        _ = try await eb.synchronize()
+        let held = try await b.read(); XCTAssertEqual(held.liveNotes.first?.back,"ATP"); XCTAssertEqual(held.session?.current?.presentationID,session.current?.presentationID)
+        _ = try await eb.synchronize(allowStudyBoundary:true)
+        let updated = try await b.read(); XCTAssertEqual(updated.liveNotes.first?.back,"Adenosine triphosphate"); XCTAssertNotEqual(updated.session?.current?.presentationID,session.current?.presentationID)
     }
     func testTwoDevicesSynchronizeContentAndKeepStudyLocal() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

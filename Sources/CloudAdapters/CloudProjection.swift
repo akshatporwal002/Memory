@@ -38,8 +38,16 @@ public enum CloudProjection {
         for attempt in library.answerAttempts ?? [] { try personal("attempt",attempt.id,attempt,deckID:library.notes.first(where: { $0.id == attempt.noteID })?.deckID) }
         if let state = library.assistantState {
             try personal("preferences","app",state.preferences ?? [:])
-            for conversation in state.conversations { try personal("conversation",conversation.id,conversation,deckID:library.decks.first(where: { conversation.id.contains($0.id) })?.id) }
-            for run in state.runs { try personal("run",run.id,run,deckID:run.actions.flatMap(\.changes).compactMap(\.deckID).first) }
+            func contextDeck(_ context: String) -> String? {
+                if let deck = library.decks.first(where: { context.contains($0.id) }) { return deck.id }
+                if let note = library.notes.first(where: { context.contains($0.id) }) { return note.deckID }
+                if let attempt = library.answerAttempts?.first(where: { context == "grading:" + $0.id }) {
+                    return library.notes.first(where: { $0.id == attempt.noteID })?.deckID
+                }
+                return nil
+            }
+            for conversation in state.conversations { try personal("conversation",conversation.id,conversation,deckID:contextDeck(conversation.id)) }
+            for run in state.runs { try personal("run",run.id,run,deckID:run.actions.flatMap(\.changes).compactMap(\.deckID).first ?? contextDeck(run.conversationID)) }
             for memory in state.memory { try personal("memory",memory.id,memory,deckID:library.notes.first(where: { $0.id == memory.noteID })?.deckID) }
         }
         return result
@@ -64,6 +72,7 @@ public enum CloudProjection {
                 let ordinals = note.deleted ? [] : try CardRenderer.ordinals(for:NoteDraft(note:note))
                 for index in library.cards.indices where library.cards[index].noteID == note.id {
                     library.cards[index].version += 1
+                    library.cards[index].deckID = note.deckID
                     library.cards[index].retired = !ordinals.contains(library.cards[index].ordinal)
                 }
             }

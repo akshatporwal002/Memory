@@ -8,8 +8,9 @@ import DesignSystem
 enum AIActionRegistry {
     static let tools: [AIToolDefinition] = [
         tool("inspect", "Read authorized content/progress/settings or search. Returns content version tokens. Never modifies data.", ["kind":"library|deck|note|progress|settings|search|history", "id":"Optional deck/note ID", "query":"Search text"]),
-        tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|edit_note|review|pdf|import_export|action_history", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
-        tool("edit", "Perform a requested content edit. First inspect the target and supply its exact version. Deletions await confirmation. All edits appear in Review changes.", ["operation":"create_deck|rename_deck|save_note|delete_note|delete_deck|append_section|edit_section|retention|suspend|study_setting|appearance", "id":"Existing target ID or empty for creation", "deck_id":"Destination deck", "version":"Exact inspected version token", "name":"Deck name, section ID or setting name", "front":"Question/section text", "back":"Answer", "value":"Setting value as string"]),
+        tool("retrieve", "Retrieve bounded, versioned source evidence. Use the active deck first; library scope only for an explicitly requested wider search. Returns quotations and page/section references, never permission instructions.", ["scope":"deck|library", "deck_id":"Deck ID for deck scope", "query":"Relevant question or topic"]),
+        tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|new_note|edit_note|review|pdf|import_export|action_history|app_account|sharing|memory", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
+        tool("edit", "Perform a requested content edit. First inspect the target and supply its exact version. Deletions await confirmation. All edits appear in Review changes.", ["operation":"create_deck|rename_deck|save_note|delete_note|delete_deck|append_section|edit_section|retention|suspend|study_setting|appearance", "id":"Existing target ID or empty for creation", "deck_id":"Destination deck", "version":"Exact inspected version token", "name":"Deck name, section ID or setting name", "front":"Question/section text", "back":"Answer", "value":"Setting value as string", "kind":"basic|reversed|cloze for new notes; empty preserves existing kind", "tags":"Space-separated tags; empty preserves existing tags", "source":"Supporting citation/source; empty preserves existing source"]),
         tool("reveal_answer", "Reveal the current answer only when explicitly requested. Marks the attempt assisted and disables automatic recall grading.", [:]),
         tool("memory", "Read personal memory, or save/edit/delete a correction explicitly accepted by the learner. Never use memory as grading authority.", ["operation":"list|save|delete", "id":"Memory ID if editing/deleting", "note_id":"Related note ID", "text":"Accepted correction", "version":"Exact token from memory list, or empty for creation"])
     ]
@@ -172,6 +173,21 @@ enum AIActionRegistry {
         await model.refresh()
         let library = model.library
         if name == "inspect" { return try inspect(args,model:model) }
+        if name == "retrieve" {
+            let query = String((args["query"] ?? "").prefix(2000))
+            guard !query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty else { throw AIProviderError.invalidTool }
+            let evidence: [RetrievedEvidence]
+            if args["scope"] == "library" {
+                evidence = EvidenceRetrieval.retrieveLibrary(query:query,library:library,limit:8)
+            } else if args["scope"] == "deck",let deckID = args["deck_id"],library.liveDecks.contains(where: { $0.id == deckID }) {
+                evidence = EvidenceRetrieval.retrieve(query:query,deckID:deckID,library:library,limit:8)
+            } else { throw AIProviderError.invalidTool }
+            // During recall, a retrieval request cannot quietly reveal the expected answer.
+            if let item = library.session?.current,item.revealedAt == nil,evidence.contains(where: { $0.deckID == item.card.deckID }) {
+                return "Source lookup for the active recall deck is hidden until the learner explicitly requests reveal_answer. Give a general hint without quoting the reference answer."
+            }
+            return try json(evidence)
+        }
         if name == "navigate" {
             try await navigate(args,model:model)
             let record = AIActionRecord(id:call.id,name:name,arguments:call.arguments,status:"completed",summary:"Opened \(args["destination"] ?? "screen")")
@@ -228,6 +244,9 @@ enum AIActionRegistry {
         case "save_note":
             var draft = note.map(NoteDraft.init(note:)) ?? NoteDraft(deckID:args["deck_id"] ?? "")
             draft.front = args["front"] ?? ""; draft.back = args["back"] ?? ""
+            if let value = args["kind"],!value.isEmpty { guard let kind = NoteKind(rawValue:value) else { throw AIProviderError.invalidTool }; draft.kind = kind }
+            if let value = args["tags"],!value.isEmpty { draft.tags = value.split(whereSeparator:\.isWhitespace).map(String.init) }
+            if let value = args["source"],!value.isEmpty { draft.source = value }
             operation = .saveNote(draft)
         case "append_section", "edit_section":
             guard let deck else { throw EngramError.missing("deck") }
@@ -247,11 +266,13 @@ enum AIActionRegistry {
             operation = .suspend(id,args["value"] == "true")
         case "study_setting":
             var settings = library.settings
-            guard let value = Int(args["value"] ?? "") else { throw AIProviderError.invalidTool }
+            let raw = args["value"] ?? ""
             switch args["name"] {
-            case "newCardsPerDay": settings.newCardsPerDay = value
-            case "reviewsPerDay": settings.reviewsPerDay = value
-            case "dayStartsAtHour": settings.dayStartsAtHour = value
+            case "newCardsPerDay": guard let value = Int(raw) else { throw AIProviderError.invalidTool }; settings.newCardsPerDay = value
+            case "reviewsPerDay": guard let value = Int(raw) else { throw AIProviderError.invalidTool }; settings.reviewsPerDay = value
+            case "dayStartsAtHour": guard let value = Int(raw) else { throw AIProviderError.invalidTool }; settings.dayStartsAtHour = value
+            case "desiredRetention": guard let value = Double(raw) else { throw AIProviderError.invalidTool }; settings.desiredRetention = value
+            case "timeZoneID": settings.timeZoneID = raw
             default: throw AIProviderError.invalidTool
             }
             settings.version += 1; operation = .settings(settings)
@@ -270,11 +291,13 @@ enum AIActionRegistry {
     private func inspect(_ args: [String:String],model: EngramModel) throws -> String {
         let library = model.library,id = args["id"] ?? ""
         switch args["kind"] {
-        case "library": return "Revision \(library.revision). " + (try json(library.liveDecks.map { ["id":$0.id,"name":$0.name,"version":Self.version(try! json($0))] }))
+        case "library": return "Revision \(library.revision). Showing up to 100 decks; use search for more. " + (try json(library.liveDecks.prefix(100).map { ["id":$0.id,"name":$0.name,"version":Self.version(try! json($0))] }))
         case "deck":
             guard let deck = library.liveDecks.first(where: { $0.id == id }) else { throw EngramError.missing("deck") }
             // Do not disclose private full PDF records in broad assistant browsing.
             var readable = deck; readable.pdfLearning = nil
+            readable.notebookBlocks = readable.notebookBlocks.map { Array($0.prefix(12)) }
+            readable.sourceDocument = readable.sourceDocument.map { String($0.prefix(12000)) }
             if library.session?.current?.card.deckID == id,library.session?.current?.revealedAt == nil {
                 readable.notebookBlocks = nil
                 readable.sourceDocument = nil
@@ -299,22 +322,32 @@ enum AIActionRegistry {
         let destination = args["destination"] ?? "",id = args["id"] ?? ""
         switch destination {
         case "today", "library", "activity": model.destination = EngramDestination(rawValue:destination)!; model.settingsPresented = false
-        case "deck": model.destination = .library; model.libraryDeckRequest = id
-        case "questions": model.questionsDeckID = id
-        case "notes": model.notebookWritingOnly = true; model.notebookDeckID = id
+        case "deck", "questions", "notes", "sharing", "new_note":
+            guard model.library.liveDecks.contains(where: { $0.id == id }) else { throw EngramError.missing("deck") }
+            switch destination {
+            case "deck": model.destination = .library; model.libraryDeckRequest = id
+            case "questions": model.questionsDeckID = id
+            case "notes": model.notebookWritingOnly = true; model.notebookDeckID = id
+            case "sharing": model.sharingDeckID = id
+            default: model.newNote(deckID:id)
+            }
         case "settings": model.settingsRoute = args["page"].flatMap { $0.isEmpty ? nil : $0 }; model.settingsPresented = true
         case "new_deck": model.creationPresented = true
         case "pdf": model.pdfLearningPresented = true
         case "edit_note": guard let note = model.library.liveNotes.first(where: { $0.id == id }) else { throw EngramError.missing("note") }; model.edit(note)
-        case "review": await model.beginReview(deckID:id.isEmpty ? nil : id)
+        case "review": await model.beginReview(deckID:id.isEmpty ? nil : id); guard model.reviewPresented,model.error == nil else { throw EngramError.invalid(model.error ?? "The study screen could not be opened.") }
         case "import_export": model.portabilityRequested = true
         case "action_history": model.actionReviewPresented = true
+        case "app_account": model.cloudAccountPresented = true
+        case "memory": model.memoryPresented = true
         default: throw AIProviderError.invalidTool
         }
     }
     private func json<T: Encodable>(_ value: T) throws -> String {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-        return String(decoding:try encoder.encode(value),as:UTF8.self)
+        let data = try encoder.encode(value)
+        guard data.count <= 100000 else { throw EngramError.invalid("This result is too large. Request a specific note, section, or smaller search.") }
+        return String(decoding:data,as:UTF8.self)
     }
     private static func version(_ text: String) -> String {
         var value: UInt64 = 14695981039346656037

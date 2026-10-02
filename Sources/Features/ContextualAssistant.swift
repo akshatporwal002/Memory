@@ -17,8 +17,6 @@ private struct AssistantMessage: Identifiable {
     let isUser: Bool
     let text: String
     let sources: [AssistantPassage]
-    var draftQuestion: String? = nil
-    var draftAnswer: String? = nil
 }
 
 private enum AssistantRetrieval {
@@ -232,11 +230,6 @@ struct ContextualAssistant: View {
                                                 Label(source.title, systemImage: "book.pages").lineLimit(2)
                                             }.font(.caption).frame(minHeight: 32, alignment: .leading)
                                         }
-                                        if let question = message.draftQuestion, let answer = message.draftAnswer,
-                                           model.editorPresented || model.creationPresented {
-                                            Button("Apply suggested question") { apply(question: question, answer: answer) }
-                                                .font(.caption.weight(.semibold)).frame(minHeight: 44)
-                                        }
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -267,7 +260,8 @@ struct ContextualAssistant: View {
                     Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
                 } label: {
                     Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).font(.caption).lineLimit(1)
-                }.frame(minHeight:44).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
+                        .frame(minWidth:44,minHeight:44).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Spacer()
                 if busy { Button("Stop") { model.assistant.cancel() } }
                 Button("Review changes") { model.actionReviewPresented = true }
@@ -302,6 +296,16 @@ struct ContextualAssistant: View {
     }
 
     private func send() {
+        if model.cloud.userID != nil {
+            let account = model.cloud.userID
+            Task {
+                await model.cloud.sync(model:model)
+                guard account == model.cloud.userID else { error = "The Engram account changed. Please send your question again."; return }
+                preparedSend()
+            }
+        } else { preparedSend() }
+    }
+    private func preparedSend() {
         let question = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty, !busy else { return }
         #if DEBUG
@@ -335,26 +339,6 @@ struct ContextualAssistant: View {
         model.assistant.start(question: question, contextID: key, context: studyContext + "\nWorkflow: " + key,
                               evidence: evidence, sourceOnly: sourceOnly, model: model)
     }
-    private func parseDraft(_ response: String) -> (String, String)? {
-        let lines = response.components(separatedBy: .newlines)
-        guard let question = lines.first(where: { $0.lowercased().hasPrefix("question:") }).map({ String($0.dropFirst(9)).trimmingCharacters(in: .whitespacesAndNewlines) }),
-              let answer = lines.first(where: { $0.lowercased().hasPrefix("answer:") }).map({ String($0.dropFirst(7)).trimmingCharacters(in: .whitespacesAndNewlines) }),
-              !question.isEmpty, !answer.isEmpty else { return nil }
-        return (question, answer)
-    }
-
-    private func apply(question: String, answer: String) {
-        if model.editorPresented, var draft = model.draft {
-            draft.front = question
-            draft.back = answer
-            model.draft = draft
-        } else if model.creationPresented {
-            let separator = model.deckCreationDraft.document.isEmpty ? "" : "\n\n"
-            model.deckCreationDraft.document += separator + question + ": " + answer
-        }
-        close()
-    }
-
     private func openSource(_ source: AssistantPassage) {
         if source.id.hasPrefix("pdf-") {
             pdfSource = model.pdfLearningPresented ? model.pdfLearning.draft.source : model.library.liveDecks.first(where: { $0.id == source.deckID })?.pdfLearning?.source

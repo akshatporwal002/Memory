@@ -31,7 +31,6 @@ public actor CloudSyncEngine {
         let user = try await client.currentUserID()
         guard await repository.activeAccountID() == user.uuidString.lowercased() else { throw EngramError.conflict }
         let original = try await repository.read()
-        guard original.session?.current == nil || allowStudyBoundary else { return CloudSyncReport(pending:try await repository.pendingOperations().count,conflicts:[],removedDecks:[],adjustedDueDates:0) }
         var library = original
         var state = try await loadState()
         let decks = try await client.decks(), memberships = try await client.memberships()
@@ -55,6 +54,17 @@ public actor CloudSyncEngine {
             library.assistantState?.runs.removeAll { $0.actions.flatMap(\.changes).contains { $0.deckID == id } }
             state.baselines = state.baselines.filter { CloudProjection.associatedDeck($0.value.entity) != id }
             state.conflicts.removeAll { CloudProjection.associatedDeck($0.entity) == id }
+        }
+        // Access removal is checked even while a question is open. Ordinary incoming
+        // content waits for the next question boundary; revoked caches cannot wait.
+        if original.session?.current != nil,!allowStudyBoundary {
+            if !removed.isEmpty || state.permissions != permissions {
+                if !removed.isEmpty { library.session = nil }
+                state.permissions = permissions
+                guard try await client.currentUserID() == user,await repository.activeAccountID() == user.uuidString.lowercased() else { throw EngramError.conflict }
+                try await repository.adoptCloudSnapshot(library,expectedRevision:original.revision,state:JSONEncoder().encode(state),acknowledging:[],permissions:permissions)
+            }
+            return CloudSyncReport(pending:try await repository.pendingOperations().count,conflicts:state.conflicts,removedDecks:removed,adjustedDueDates:0)
         }
         if permissions.keys.contains(where: { state.permissions[$0] == nil }) { state.cursor = 0 }
         let owned = Set(permissions.filter { $0.value == "owner" }.keys).union(library.decks.filter { state.permissions[$0.id] == nil && permissions[$0.id] == nil }.map(\.id))

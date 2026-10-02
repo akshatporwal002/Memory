@@ -6,6 +6,14 @@ import SchedulingAdapters
 
 final class UnifiedAITests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_788_393_600)
+    func testLibraryRetrievalRanksRelevantDeckAndPreservesEvidenceVersions() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let biology = try await app.createDeck(name:"Biology",now:now),aws = try await app.createDeck(name:"AWS",now:now)
+        _ = try await app.saveNote(NoteDraft(deckID:biology.id,front:"Energy?",back:"ATP"),now:now)
+        _ = try await app.saveNote(NoteDraft(deckID:aws.id,front:"CloudFront delivery?",back:"CloudFront caches content at edge locations"),now:now)
+        let evidence = EvidenceRetrieval.retrieveLibrary(query:"CloudFront edge delivery",library:try await app.snapshot(),limit:1)
+        XCTAssertEqual(evidence.count,1); XCTAssertEqual(evidence.first?.deckID,aws.id); XCTAssertTrue(evidence.first?.text.localizedCaseInsensitiveContains("CloudFront") == true,"Returned: \(evidence)"); XCTAssertEqual(evidence.first?.version,String(now.timeIntervalSince1970))
+    }
     func testUndoConflictRequiresChoiceAndPreservesLaterEditsUntilResolved() async throws {
         let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
         let deck = try await app.createDeck(name:"Original",now:now)

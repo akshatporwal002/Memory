@@ -109,6 +109,10 @@ public struct EngramRootView: View {
         }
         .sheet(isPresented: $model.actionReviewPresented) { AIActionReviewView(model: model) }
         .sheet(isPresented: $model.cloudAccountPresented) { NavigationStack { CloudAccountView(model:model) } }
+        .sheet(isPresented:$model.memoryPresented) { NavigationStack { LearningMemoryView(model:model) } }
+        .sheet(isPresented:Binding(get:{model.sharingDeckID != nil},set:{if !$0 { model.sharingDeckID = nil }})) {
+            if let id = model.sharingDeckID { NavigationStack { DeckSharingView(model:model,deckID:id) } }
+        }
         .onOpenURL { url in
             guard url.scheme == "engram",url.host == "join",let token = URLComponents(url:url,resolvingAgainstBaseURL:false)?.queryItems?.first(where: { $0.name == "token" })?.value,
                   token.count == 64,token.allSatisfy({ $0.isHexDigit }) else { return }
