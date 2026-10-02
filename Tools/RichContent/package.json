@@ -1,0 +1,13 @@
+{
+  "name": "engram-rich-content-assets",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "bundle": "node bundle.cjs"
+  },
+  "dependencies": {
+    "esbuild": "0.25.10",
+    "katex": "0.19.0",
+    "mermaid": "11.17.2"
+  }
+}

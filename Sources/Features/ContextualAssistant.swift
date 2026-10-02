@@ -171,7 +171,7 @@ struct ContextualAssistant: View {
                 })
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.horizontal, 16).padding(.bottom, 8)
+            .padding(.horizontal, 16)
         }
         .animation(motion, value: open)
         .animation(motion, value: expanded)
@@ -218,8 +218,8 @@ struct ContextualAssistant: View {
                 withAnimation(motion) { open = true }
                 composerFocused = true
             } label: {
-                assistantSurface(Image(systemName: "sparkle").font(.system(size: 18, weight: .medium))
-                    .frame(width: 50, height: 50).foregroundStyle(palette.primaryText), open: false)
+                assistantSurface(Image(systemName: "sparkle").font(.system(size: 17, weight: .medium))
+                    .frame(width: 48, height: 48).foregroundStyle(palette.primaryText), open: false)
                     .contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityLabel("Ask the study assistant").accessibilityIdentifier("assistant-entry")
         }
@@ -242,13 +242,13 @@ struct ContextualAssistant: View {
                     VStack(spacing: 3) {
                         Image(systemName: destination.symbol).font(.system(size: 18))
                         Text(destination.title).font(.caption2.weight(.medium))
-                    }.frame(maxWidth: .infinity, minHeight: 50).contentShape(Capsule())
+                    }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Capsule())
                         .foregroundStyle(model.destination == destination ? (scheme == .dark ? palette.easyInk : palette.anchor) : palette.secondaryText)
                         .background(model.destination == destination ? palette.selection : .clear, in: Capsule())
                 }.buttonStyle(.plain).accessibilityIdentifier("tab-" + destination.rawValue)
                     .accessibilityAddTraits(model.destination == destination ? [.isSelected] : [])
             }
-        }.padding(5)
+        }.padding(3)
     }
     private func close() { composerFocused = false; withAnimation(motion) { open = false } }
 
@@ -286,7 +286,7 @@ struct ContextualAssistant: View {
                             ForEach(thread) { message in
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(message.isUser ? "You" : "Assistant").font(.caption.weight(.semibold)).foregroundStyle(palette.secondaryText)
-                                    Text(message.text).font(.subheadline).textSelection(.enabled)
+                                    RichContentView(source: message.text).font(.subheadline)
                                     if !message.isUser {
                                         ForEach(message.sources) { source in
                                             Button { openSource(source) } label: {

@@ -253,15 +253,7 @@ struct NotebookView: View {
             if block.kind == .question {
                 QuestionReadingView(front: block.text, back: block.answer)
             } else {
-                let lines = block.text.components(separatedBy: "\n")
-                if let first = lines.first, first.hasPrefix("#") {
-                    Text(first.trimmingCharacters(in: CharacterSet(charactersIn: "# ")))
-                        .font(.system(.title2, design: .serif)).accessibilityAddTraits(.isHeader)
-                    Text(lines.dropFirst().joined(separator: "\n"))
-                        .font(theme.font(.body)).lineSpacing(5).textSelection(.enabled)
-                } else {
-                    Text(block.text).font(theme.font(.body)).lineSpacing(5).textSelection(.enabled)
-                }
+                RichContentView(source: block.text).font(theme.font(.body))
             }
             Divider()
         }

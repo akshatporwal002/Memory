@@ -24,7 +24,7 @@ var products: [Product] = [
     .library(name: "PersistenceAdapters", targets: ["PersistenceAdapters"]),
     .library(name: "SchedulingAdapters", targets: ["SchedulingAdapters"])
 ]
-targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem", "ChatGPTAuth", .product(name: "FluidAudio", package: "FluidAudio")], resources: [.process("Resources")])]
+targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencies: ["LearningCore", "StudyApplication", "DesignSystem", "ChatGPTAuth", .product(name: "Markdown", package: "swift-markdown"), .product(name: "FluidAudio", package: "FluidAudio")], resources: [.process("Resources/AWS-Cloud-Practitioner-Sample.txt"), .copy("Resources/RichContent")])]
 products += [.library(name: "DesignSystem", targets: ["DesignSystem"]), .library(name: "Features", targets: ["Features"])]
 let package = Package(name: "Engram", platforms: [.iOS(.v17), .macOS(.v14)], products: products,
-    dependencies: [.package(path: "Vendor/FSRS"), .package(url: "https://github.com/FluidInference/FluidAudio.git", revision: "8145085136df11758cc1303ab54d8e032c12bd41")], targets: targets)
+    dependencies: [.package(path: "Vendor/FSRS"), .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.9.0"), .package(url: "https://github.com/FluidInference/FluidAudio.git", revision: "8145085136df11758cc1303ab54d8e032c12bd41")], targets: targets)

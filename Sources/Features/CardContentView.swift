@@ -17,7 +17,9 @@ public struct CardContentView: View {
     public var body: some View {
         let document = SafeCardMarkup.inspect(text)
         VStack(alignment: .leading, spacing: EngramSpacing.regular) {
-            if document.isSupported {
+            if !text.contains("<"), !text.contains("[sound:"), !text.contains("![") {
+                RichContentView(source: text)
+            } else if document.isSupported {
                 ForEach(Array(document.blocks.enumerated()), id: \.offset) { _, block in
                     switch block {
                     case .text(let runs):

@@ -4,18 +4,12 @@ import Charts
 import LearningCore
 import StudyApplication
 
-private enum ActivityChartStyle: String, CaseIterable, Identifiable {
-    case bars = "Bars", line = "Line"
-    var id: String { rawValue }
-}
-
 struct ActivityView: View {
     let model: EngramModel
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
-    @AppStorage("engram.activity.chartStyle.v1") private var chartStyle: ActivityChartStyle = .bars
     private var palette: EngramPalette { theme.palette(for: scheme) }
     @State private var period: ActivityPeriod = .week
     @State private var offset = 0
@@ -31,10 +25,6 @@ struct ActivityView: View {
     var body: some View {
         List {
             EngramListSection {
-                Group {
-                    if typeSize.isAccessibilitySize { periodPicker.pickerStyle(.menu) }
-                    else { periodPicker.pickerStyle(.segmented) }
-                }.listRowSeparator(.hidden)
                 HStack {
                     Button { offset -= 1; selectedDate = nil } label: { Image(systemName: "chevron.left").frame(minWidth: EngramShape.touchTarget, minHeight: EngramShape.touchTarget) }.accessibilityLabel("Previous period").disabled(period == .all)
                     Spacer()
@@ -51,26 +41,13 @@ struct ActivityView: View {
                             Text("\(abs(delta)) \(delta >= 0 ? "more" : "fewer") than the previous period").font(.caption).engramSecondaryText()
                         }
                     }.padding(.vertical, 4).listRowSeparator(.hidden)
-                    Group {
-                        if typeSize.isAccessibilitySize { chartStylePicker.pickerStyle(.menu) }
-                        else { chartStylePicker.pickerStyle(.segmented) }
-                    }.listRowSeparator(.hidden)
                     Chart(report.points) { point in
-                        if chartStyle == .bars {
                           RectangleMark(xStart: .value("Start", point.interval.start.addingTimeInterval(point.interval.duration * 0.12)),
                                 xEnd: .value("End", point.interval.end.addingTimeInterval(-point.interval.duration * 0.12)),
                                 yStart: .value("Baseline", 0), yEnd: .value("Review attempts", point.attempts)).cornerRadius(3)
                             .foregroundStyle(selected == nil || selected?.start == point.interval.start ? palette.accentInk : palette.secondaryText)
                             .accessibilityLabel(point.interval.start.formatted(date: .abbreviated, time: period == .today ? .shortened : .omitted))
                             .accessibilityValue("\(point.attempts) attempts, \(point.cards) cards")
-                        } else {
-                            LineMark(x: .value("Date", point.interval.start.addingTimeInterval(point.interval.duration / 2)), y: .value("Review attempts", point.attempts))
-                                .interpolationMethod(.linear).lineStyle(StrokeStyle(lineWidth: 2.5)).foregroundStyle(palette.accentInk)
-                            PointMark(x: .value("Date", point.interval.start.addingTimeInterval(point.interval.duration / 2)), y: .value("Review attempts", point.attempts))
-                                .symbolSize(selected?.start == point.interval.start ? 70 : 25).foregroundStyle(palette.accentInk)
-                                .accessibilityLabel(point.interval.start.formatted(date: .abbreviated, time: period == .today ? .shortened : .omitted))
-                                .accessibilityValue("\(point.attempts) attempts, \(point.cards) cards")
-                        }
                         if selected?.start == point.interval.start {
                             RuleMark(x: .value("Selection", point.interval.start.addingTimeInterval(point.interval.duration / 2)))
                                 .foregroundStyle(palette.secondaryText).lineStyle(StrokeStyle(dash: [3]))
@@ -100,6 +77,10 @@ struct ActivityView: View {
                     LabeledContent("Cards reviewed", value: summary.reviewedCount.formatted())
                     if summary.attemptCount == 0 { Text("No reviews in this period. Study a deck to see your activity here.").engramSecondaryText() }
                 } else { ProgressView("Loading activity…") }
+                Group {
+                    if typeSize.isAccessibilitySize { periodPicker.pickerStyle(.menu) }
+                    else { periodPicker.pickerStyle(.segmented) }
+                }.listRowSeparator(.hidden)
             } footer: { Text("Tap the chart to inspect a time. Review totals exclude undone and imported records.") }
 
             if let summary, let report {
@@ -156,11 +137,6 @@ struct ActivityView: View {
         Picker("Period", selection: $period) {
             Text("Day").tag(ActivityPeriod.today); Text("Week").tag(ActivityPeriod.week)
             Text("Month").tag(ActivityPeriod.month); Text("All").tag(ActivityPeriod.all)
-        }
-    }
-    private var chartStylePicker: some View {
-        Picker("Chart style", selection: $chartStyle) {
-            ForEach(ActivityChartStyle.allCases) { Text($0.rawValue).tag($0) }
         }
     }
     private func rangeLabel(_ range: DateInterval) -> String {

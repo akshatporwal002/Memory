@@ -15,7 +15,6 @@ struct LibraryLandingView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.engramScreenshotCapture) private var capturing
-    @AppStorage("engram.library.gallery.v1") private var gallery = true
     @AppStorage("engram.library.sort.v1") private var sortRaw = LibrarySort.nextReview.rawValue
     @AppStorage("engram.library.folders.v1") private var showFolders = false
     @State private var query = ""
@@ -40,7 +39,6 @@ struct LibraryLandingView: View {
                         searchField
                         displayControls
                         if results.isEmpty { noResults }
-                        else if gallery { galleryContent }
                         else { listContent }
                     }
                 } else { ProgressView("Opening your decks…").frame(maxWidth: .infinity).padding(.vertical, 60) }
@@ -107,19 +105,12 @@ struct LibraryLandingView: View {
     private var displayControls: some View {
         VStack(alignment: .leading, spacing: 12) {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { viewPicker; Spacer(minLength: 0); sortMenu }
-                VStack(alignment: .leading, spacing: 12) { viewPicker; sortMenu }
+                HStack(spacing: 12) { Spacer(minLength: 0); sortMenu }
+                VStack(alignment: .leading, spacing: 12) { sortMenu }
             }
             Toggle("Show folders", isOn: $showFolders).font(.subheadline)
                 .tint(palette.accentInk).accessibilityIdentifier("library-folders")
         }
-    }
-    private var viewPicker: some View {
-        Picker("Library view", selection: $gallery) {
-            Label("Gallery", systemImage: "square.grid.2x2").tag(true)
-            Label("List", systemImage: "list.bullet").tag(false)
-        }.pickerStyle(.segmented).frame(width: textSize.isAccessibilitySize ? nil : 170)
-            .accessibilityIdentifier("library-layout")
     }
     private var sortMenu: some View {
         Menu {
@@ -162,48 +153,6 @@ struct LibraryLandingView: View {
             Button("Clear search") { query = "" }.frame(minHeight: 44)
         }.multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 40)
     }
-    @ViewBuilder private var galleryContent: some View {
-        if showFolders {
-            // Preserve the active sort: groups appear at their first sorted descendant.
-            let folders = results.reduce(into: [String]()) { if !$0.contains($1.folder) { $0.append($1.folder) } }
-            ForEach(folders, id: \.self) { folder in
-                VStack(alignment: .leading, spacing: 14) {
-                    Label(folder.isEmpty ? "Unfiled decks" : folder.replacingOccurrences(of: "::", with: " / "), systemImage: "folder")
-                        .font(.headline).accessibilityAddTraits(.isHeader)
-                    deckGrid(results.filter { $0.folder == folder })
-                }
-            }
-        } else { deckGrid(results) }
-    }
-    private func deckGrid(_ decks: [LibraryDeckSummary]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: textSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 12) {
-            ForEach(decks) { entry in
-                ZStack(alignment: .topTrailing) {
-                    Button { open(entry.id) } label: {
-                        VStack(alignment: .leading, spacing: 0) {
-                            DeckCoverView(deck: entry.deck, data: coverData(entry.deck))
-                                .frame(height: 64)
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(entry.title).font(.headline).lineLimit(textSize.isAccessibilitySize ? nil : 2)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                if !showFolders && !entry.folder.isEmpty {
-                                    Text(entry.folder.replacingOccurrences(of: "::", with: " / "))
-                                        .font(.caption2).foregroundStyle(palette.secondaryText).lineLimit(1)
-                                }
-                                Text(cardCount(entry.cardCount)).font(.caption).foregroundStyle(palette.secondaryText)
-                                reviewStatus(entry)
-                            }.padding(12).frame(maxWidth: .infinity, minHeight: 94, alignment: .topLeading)
-                                .background(palette.surface)
-                        }.background(palette.surface).contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityIdentifier("library-deck-\(entry.id)")
-                    deckMenu(entry).foregroundStyle(palette.primaryText)
-                        .background(palette.surface, in: Circle()).padding(5)
-                }.clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay { RoundedRectangle(cornerRadius: 16).stroke(palette.hairline, lineWidth: 0.5).allowsHitTesting(false) }
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-        }
-    }
     @ViewBuilder private var listContent: some View {
         LazyVStack(spacing: 0) {
             if showFolders {
@@ -223,11 +172,14 @@ struct LibraryLandingView: View {
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }.buttonStyle(.plain).accessibilityIdentifier("library-deck-\(entry.id)")
             deckMenu(entry).frame(width: 44, height: 44)
-        }.padding(.vertical, 3).overlay(alignment: .bottom) { Divider() }
+        }.padding(.vertical, 12).overlay(alignment: .bottom) { Divider() }
+            .overlay(alignment: .bottomLeading) {
+                LibraryRetentionIndicator(model: model, deck: entry.deck).padding(.bottom, 5)
+            }
     }
     private func directoryName(_ entry: LibraryDeckSummary) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(entry.title).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+            Text(entry.title).font(theme.font(.control)).fixedSize(horizontal: false, vertical: true)
             if !showFolders && !entry.folder.isEmpty {
                 Text(entry.folder.replacingOccurrences(of: "::", with: " / ")).font(.caption2).foregroundStyle(palette.secondaryText)
             }
@@ -293,6 +245,27 @@ struct LibraryLandingView: View {
             _ = await model.perform { try await $0.setDeckCover(id: id, jpeg: jpeg) }
         } catch is CancellationError { }
         catch { model.error = "The cover could not be saved. \(error.localizedDescription)" }
+    }
+}
+
+private struct LibraryRetentionIndicator: View {
+    let model: EngramModel
+    let deck: Deck
+    @State private var average: Double?
+    @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        Group {
+            if let average {
+                HStack(spacing: 5) {
+                    Capsule().fill(theme.palette(for: scheme).accentInk.opacity(0.2)).frame(width: 36,height: 2)
+                        .overlay(alignment: .leading) { Capsule().fill(theme.palette(for: scheme).accentInk).frame(width: 36 * average,height: 2) }
+                    Text(average, format: .percent.precision(.fractionLength(0))).font(.caption2).foregroundStyle(theme.palette(for: scheme).secondaryText)
+                }.accessibilityElement(children: .ignore).accessibilityLabel("Estimated retention \(Int(average * 100)) percent")
+            }
+        }.task(id: model.library.revision) {
+            average = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now).average.first
+        }
     }
 }
 
