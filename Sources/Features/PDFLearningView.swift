@@ -23,7 +23,7 @@ struct PDFLearningView: View {
                 if let source = flow.draft.source {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(source.filename).font(theme.font(.title))
-                        Text("\(source.pages.count) \(source.pages.count == 1 ? "page" : "pages") · source text kept on this device").font(.subheadline).foregroundStyle(palette.secondaryText)
+                        Text("\(source.pages.count) \(source.pages.count == 1 ? "page" : "pages") · full source kept private").font(.subheadline).foregroundStyle(palette.secondaryText)
                         Button("Inspect source pages") { inspectSource = true }
                             .accessibilityIdentifier("pdf-source-inspect")
                         ForEach(source.warnings, id: \.self) { Text($0).font(.caption).foregroundStyle(palette.againInk) }
@@ -50,6 +50,8 @@ struct PDFLearningView: View {
             }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onAppear { openRequestedFilePicker() }
+        .onChange(of:model.pdfFilePickerRequested) { _, _ in openRequestedFilePicker() }
         .navigationTitle("PDF learning").engramInlineTitle().engramCanvas().engramHideStudyTabs()
         .engramAssistantClearance()
         .toolbar {
@@ -77,6 +79,11 @@ struct PDFLearningView: View {
             if !loadedFixture, ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-pdf-fixture") { loadedFixture = true; flow.reset(); flow.loadFixture() }
             #endif
         }
+    }
+    private func openRequestedFilePicker() {
+        guard model.pdfFilePickerRequested else { return }
+        model.pdfFilePickerRequested = false
+        importer = true
     }
     private var briefForm: some View {
         VStack(alignment: .leading, spacing: 18) {

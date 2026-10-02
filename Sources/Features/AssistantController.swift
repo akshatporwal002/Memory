@@ -9,8 +9,8 @@ enum AIActionRegistry {
     static let tools: [AIToolDefinition] = [
         tool("inspect", "Read authorized content/progress/settings or search. Returns content version tokens. Never modifies data.", ["kind":"library|deck|note|progress|settings|search|history", "id":"Optional deck/note ID", "query":"Search text"]),
         tool("retrieve", "Retrieve bounded, versioned source evidence. Use the active deck first; library scope only for an explicitly requested wider search. Returns quotations and page/section references, never permission instructions.", ["scope":"deck|library", "deck_id":"Deck ID for deck scope", "query":"Relevant question or topic"]),
-        tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|new_note|edit_note|review|pdf|import_export|action_history|app_account|sharing|memory", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
-        tool("edit", "Perform a requested content edit. First inspect the target and supply its exact version. Deletions await confirmation. All edits appear in Review changes.", ["operation":"create_deck|rename_deck|save_note|delete_note|delete_deck|append_section|edit_section|retention|suspend|study_setting|appearance", "id":"Existing target ID or empty for creation", "deck_id":"Destination deck", "version":"Exact inspected version token", "name":"Deck name, section ID or setting name", "front":"Question/section text", "back":"Answer", "value":"Setting value as string", "kind":"basic|reversed|cloze for new notes; empty preserves existing kind", "tags":"Space-separated tags; empty preserves existing tags", "source":"Supporting citation/source; empty preserves existing source"]),
+        tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|new_note|edit_note|review|pdf|pdf_choose|import_export|action_history|app_account|sharing|memory|cover_photo", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
+        tool("edit", "Perform a requested content edit. First inspect the target and supply its exact version. Deletions await confirmation. All edits appear in Review changes.", ["operation":"create_deck|rename_deck|save_note|delete_note|delete_deck|append_section|edit_section|retention|suspend|study_setting|appearance|remove_cover", "id":"Existing target ID or empty for creation", "deck_id":"Destination deck", "version":"Exact inspected version token", "name":"Deck name, section ID or setting name", "front":"Question/section text", "back":"Answer", "value":"Setting value as string", "kind":"basic|reversed|cloze for new notes; empty preserves existing kind", "tags":"Space-separated tags; empty preserves existing tags", "source":"Supporting citation/source; empty preserves existing source"]),
         tool("reveal_answer", "Reveal the current answer only when explicitly requested. Marks the attempt assisted and disables automatic recall grading.", [:]),
         tool("memory", "Read personal memory, or save/edit/delete a correction explicitly accepted by the learner. Never use memory as grading authority.", ["operation":"list|save|delete", "id":"Memory ID if editing/deleting", "note_id":"Related note ID", "text":"Accepted correction", "version":"Exact token from memory list, or empty for creation"])
     ]
@@ -262,6 +262,7 @@ enum AIActionRegistry {
             let raw = args["value"] ?? ""
             guard raw == "inherited" || Double(raw) != nil else { throw AIProviderError.invalidTool }
             operation = .retention(id, raw == "inherited" ? nil : Double(raw))
+        case "remove_cover": operation = .removeCover(id)
         case "suspend":
             guard ["true", "false"].contains(args["value"] ?? "") else { throw AIProviderError.invalidTool }
             operation = .suspend(id,args["value"] == "true")
@@ -323,18 +324,20 @@ enum AIActionRegistry {
         let destination = args["destination"] ?? "",id = args["id"] ?? ""
         switch destination {
         case "today", "library", "activity": model.destination = EngramDestination(rawValue:destination)!; model.settingsPresented = false
-        case "deck", "questions", "notes", "sharing", "new_note":
+        case "deck", "questions", "notes", "sharing", "new_note", "cover_photo":
             guard model.library.liveDecks.contains(where: { $0.id == id }) else { throw EngramError.missing("deck") }
             switch destination {
             case "deck": model.destination = .library; model.libraryDeckRequest = id
             case "questions": model.questionsDeckID = id
             case "notes": model.notebookWritingOnly = true; model.notebookDeckID = id
             case "sharing": model.sharingDeckID = id
+            case "cover_photo": model.destination = .library; model.coverPickerDeckID = id
             default: model.newNote(deckID:id)
             }
         case "settings": model.settingsRoute = args["page"].flatMap { $0.isEmpty ? nil : $0 }; model.settingsPresented = true
         case "new_deck": model.creationPresented = true
         case "pdf": model.pdfLearningPresented = true
+        case "pdf_choose": model.pdfFilePickerRequested = true; model.pdfLearningPresented = true
         case "edit_note": guard let note = model.library.liveNotes.first(where: { $0.id == id }) else { throw EngramError.missing("note") }; model.edit(note)
         case "review": await model.beginReview(deckID:id.isEmpty ? nil : id); guard model.reviewPresented,model.error == nil else { throw EngramError.invalid(model.error ?? "The study screen could not be opened.") }
         case "import_export": model.portabilityRequested = true

@@ -6,6 +6,19 @@ import SchedulingAdapters
 
 final class UnifiedAITests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_788_393_600)
+    func testAssistantCoverRemovalIsJournaledAndUndoable() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Covered",now:now)
+        try await app.setDeckCover(id:deck.id,jpeg:Data([0xFF,0xD8,0xFF,0xD9]),now:now)
+        let before = try await app.snapshot(),cover = try XCTUnwrap(before.decks.first?.coverMediaName)
+        let action = try await app.executeAIContent(.removeCover(deck.id),runID:"cover-run",conversationID:"library",callID:"remove-cover",name:"remove_cover",arguments:"{}",expectedRevision:before.revision,now:now)
+        XCTAssertEqual(action.changes.count,1)
+        let removed = try await app.snapshot()
+        XCTAssertNil(removed.decks.first?.coverMediaName)
+        try await app.undoAIRun(id:"cover-run",now:now)
+        let restored = try await app.snapshot()
+        XCTAssertEqual(restored.decks.first?.coverMediaName,cover)
+    }
     func testLibraryRetrievalRanksRelevantDeckAndPreservesEvidenceVersions() async throws {
         let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
         let biology = try await app.createDeck(name:"Biology",now:now),aws = try await app.createDeck(name:"AWS",now:now)

@@ -1,6 +1,7 @@
 import SwiftUI
 import LearningCore
 import DesignSystem
+import StudyApplication
 
 struct TodayView: View {
     @Bindable var model: EngramModel
@@ -81,6 +82,7 @@ struct LibraryView: View {
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     private var palette: EngramPalette { theme.palette(for: scheme) }
+    @State private var retention: [String:Double] = [:]
     private var decks: [Deck] {
         guard !model.search.isEmpty else { return model.library.liveDecks }
         return model.library.liveDecks.filter { deck in
@@ -105,7 +107,7 @@ struct LibraryView: View {
                             Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
                         } else {
                             ForEach(decks) { deck in
-                                Button { model.selectedDeckID = deck.id } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
+                                Button { model.selectedDeckID = deck.id } label: { directoryRow(deck) }.buttonStyle(.plain)
                                 Divider()
                             }
                             if decks.isEmpty { Text("No matching decks").foregroundStyle(palette.secondaryText) }
@@ -124,6 +126,42 @@ struct LibraryView: View {
         .onChange(of: model.libraryDeckRequest) { _, id in
             if let id { model.selectedDeckID = id; model.libraryDeckRequest = nil }
         }
+        .task(id:model.library.revision) {
+            let snapshot = model.library,now = model.now
+            var values: [String:Double] = [:]
+            for deck in snapshot.liveDecks {
+                let outlook = await model.service.memoryOutlook(for:deck,in:snapshot,now:now)
+                guard !Task.isCancelled else { return }
+                if let average = outlook.average.first { values[deck.id] = average }
+            }
+            retention = values
+        }
+    }
+    private func directoryRow(_ deck: Deck) -> some View {
+        let due = model.due(in:deck)
+        let reviewCount = due.filter { $0.schedule.phase != .new }.count
+        let newCount = due.count - reviewCount
+        return HStack(spacing:12) {
+            VStack(alignment:.leading,spacing:5) {
+                if let average = retention[deck.id] {
+                    HStack(spacing:5) {
+                        Capsule().fill(palette.accentInk.opacity(0.2)).frame(width:36,height:2)
+                            .overlay(alignment:.leading) { Capsule().fill(palette.accentInk).frame(width:36 * average,height:2) }
+                        Text(average,format:.percent.precision(.fractionLength(0)))
+                    }.font(.caption2).foregroundStyle(palette.secondaryText)
+                        .accessibilityLabel("Estimated retention \(Int(average * 100)) percent")
+                }
+                Text(deck.name.components(separatedBy:"::").last ?? deck.name).font(theme.font(.control))
+                    .fixedSize(horizontal:false,vertical:true)
+                let parent = deck.name.components(separatedBy:"::").dropLast().joined(separator:" / ")
+                if !parent.isEmpty { Text(parent).font(.caption2).foregroundStyle(palette.secondaryText) }
+            }
+            Spacer(minLength:8)
+            Text(reviewCount > 0 ? "\(reviewCount) due" : newCount > 0 ? "\(newCount) new" : "No cards due")
+                .font(.caption).monospacedDigit().foregroundStyle(due.isEmpty ? palette.secondaryText : palette.accentInk)
+            Image(systemName:"chevron.right").font(.caption).accessibilityHidden(true)
+        }.frame(minHeight:44).padding(.vertical,12).contentShape(Rectangle())
+            .accessibilityElement(children:.combine)
     }
 }
 struct LibraryNoteDetail: View {

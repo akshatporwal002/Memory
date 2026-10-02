@@ -67,7 +67,9 @@ struct LibraryLandingView: View {
         .onAppear {
             reload()
             if let id = model.libraryDeckRequest { open(id); model.libraryDeckRequest = nil }
+            openRequestedCoverPicker()
         }
+        .onChange(of:model.coverPickerDeckID) { _, _ in openRequestedCoverPicker() }
         .onChange(of: model.library.revision) { _, _ in if openedDeck == nil && !savingCover { reload() } }
         .onChange(of: model.loaded) { _, _ in reload() }
         .onChange(of: openedDeck) { _, id in if id == nil { reload() } }
@@ -236,6 +238,10 @@ struct LibraryLandingView: View {
             .disabled(model.busy || savingCover).accessibilityLabel("Options for \(entry.title)")
     }
     private func coverData(_ deck: Deck) -> Data? { model.library.media.first { $0.name == deck.coverMediaName }?.data }
+    private func openRequestedCoverPicker() {
+        guard let id = model.coverPickerDeckID,model.library.liveDecks.contains(where: { $0.id == id }) else { return }
+        coverDeckID = id; photo = nil; model.coverPickerDeckID = nil; choosingCover = true
+    }
     private func reload() { entries = LibraryDeckSummary.make(in: model.library, now: Date()) }
     private func open(_ id: String) {
         model.selectedDeckID = id; model.search = ""; openedDeck = id

@@ -37,6 +37,7 @@ public struct DeckForm: Identifiable {
     var sharingDeckID: String?
     var memoryPresented = false
     var pdfLearningPresented = false
+    var pdfFilePickerRequested = false
     public var answerFeedback: String?
     public var markingAnswer = false
     public let chatGPT = ChatGPTConnection.live()
@@ -48,6 +49,7 @@ public struct DeckForm: Identifiable {
     public var destination: EngramDestination = .today
     public var selectedDeckID: String?
     public var libraryDeckRequest: String?
+    public var coverPickerDeckID: String?
     public var deckCreationDraft: DeckCreationDraft {
         didSet {
             if let data = try? JSONEncoder().encode(deckCreationDraft) {

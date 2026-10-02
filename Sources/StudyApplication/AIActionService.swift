@@ -6,6 +6,7 @@ public enum AIContentOperation: Sendable {
     case saveNotebook(String,[NotebookBlock]), retention(String,Double?), suspend(String,Bool), settings(StudySettings)
     case memory(LearningMemory), deleteMemory(String)
     case preferences([String:String],baseline:[String:String])
+    case removeCover(String)
 }
 extension StudyService {
     public func saveConversation(_ conversation: LearningConversation) async throws {
@@ -53,6 +54,7 @@ extension StudyService {
         case .preferences(let values,_):
             var next = try await journal.read(); var state = next.assistantState ?? LearningAssistantState()
             state.preferences = values; next.assistantState = state; try await journal.commit(next,expectedRevision:expectedRevision)
+        case .removeCover(let id): try await service.setDeckCover(id:id,jpeg:nil)
         }
         guard let record = try await repository.read().assistantState?.runs.flatMap(\.actions).first(where: { $0.id == callID }) else { throw EngramError.storage("Action journal missing") }
         return record
