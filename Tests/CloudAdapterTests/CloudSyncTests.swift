@@ -41,6 +41,7 @@ final class CloudSyncTests: XCTestCase {
         deck.documents = [LibraryDocument(name:"energy.md",kind:.markdown,pages:[PDFPageText(number:1,text:String(decoding:markdown,as:UTF8.self))],originalData:markdown)]
         library.decks = [deck]
         library.folders = ["Learning", "Learning::Sources"]
+        library.folderDocuments = [LibraryFolderDocument(folderPath:"Learning::Sources",document:LibraryDocument(name:"private.md",kind:.markdown,pages:[PDFPageText(number:1,text:"Private source text")],originalData:Data("Private source text".utf8)))]
         let projection = try CloudProjection.entities(library,userID:user,ownedDecks:[deck.id])
         XCTAssertNil(try projection.first(where: { $0.kind == "deck" })?.payload.decode(Deck.self).documents)
         try await a.commit(library,expectedRevision:library.revision)
@@ -49,11 +50,13 @@ final class CloudSyncTests: XCTestCase {
         let received = try await b.read(); XCTAssertEqual(received.liveDecks.first?.pdfLearning?.source.originalPDFData,original)
         XCTAssertEqual(received.liveDecks.first?.documents?.first?.originalData,markdown)
         XCTAssertEqual(received.folders,library.folders)
+        XCTAssertEqual(received.folderDocuments,library.folderDocuments)
         let data = try PrivateCloudDocument.encode(try XCTUnwrap(deck.pdfLearning)),path = PrivateCloudDocument.path(data:data,userID:user)
         XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:Data("corrupt".utf8),userID:user))
         XCTAssertThrowsError(try PrivateCloudDocument.validate(path:path,data:data,userID:UUID()))
         let projected = try CloudProjection.entities(library,userID:user,ownedDecks:[deck.id])
         XCTAssertFalse(String(decoding:try JSONEncoder().encode(projected),as:UTF8.self).contains("originalPDFData"))
+        XCTAssertFalse(String(decoding:try JSONEncoder().encode(projected),as:UTF8.self).contains("Private source text"))
     }
     func testPrivateRPCIncludesNullDeckArgument() throws {
         let operation = CloudApply(operationID:UUID(),kind:"private",id:"learner:memory:id",deckID:nil,version:0,content:.null)

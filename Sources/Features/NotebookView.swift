@@ -22,9 +22,17 @@ struct NotebookView: View {
     @State private var saved = false
     @State private var editing = false
     @State private var activeBlockID: String?
+    @State private var railVisible = false
+    @State private var railHideTask: Task<Void,Never>?
+    @State private var previousPositions: [String:CGFloat] = [:]
+    @State private var hasNewerSavedContent = false
     @FocusState private var focusedBlock: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var storedBlocks: [NotebookBlock] {
+        guard let deck = model.library.liveDecks.first(where: { $0.id == deckID }) else { return [] }
+        return NotebookDocument.blocks(for:deck,in:model.library)
+    }
     private var progressKey: String { "engram.notebook.readingSection." + deckID + (writingOnly ? ".notes" : "") }
     private var removedCount: Int {
         guard let draft else { return 0 }
@@ -43,6 +51,11 @@ struct NotebookView: View {
                             .font(theme.font(.title)).accessibilityAddTraits(.isHeader)
                         Text(writingOnly ? "Read, connect, remember." : "Your notes and questions, together. Changes to questions update their cards.")
                             .font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
+                        if let status { Text(status).font(theme.font(.metadata)).foregroundStyle(palette.secondaryText) }
+                    }
+                    if hasNewerSavedContent {
+                        Button("New saved notes are available · Reload") { confirmReload = true }
+                            .font(.subheadline.weight(.medium)).frame(minHeight:44)
                     }
                     if let error = model.error { EngramInlineError(message: error) }
                     if otherCount > 0 && !writingOnly {
@@ -60,18 +73,24 @@ struct NotebookView: View {
                     }
                     notebookActions.id("notebook-end")
                 }
-                .padding(EngramSpacing.section).padding(.trailing, writingOnly && visibleBlocks.count > 1 ? 88 : 34)
+                .padding(EngramSpacing.section)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .disabled(model.busy)
             }
             .coordinateSpace(name: "notebook-scroll")
             .onPreferenceChange(NotebookBlockPositions.self) { positions in
+                if !previousPositions.isEmpty,
+                   positions.contains(where: { entry in abs(entry.value - (previousPositions[entry.key] ?? entry.value)) > 6 }) {
+                    revealRail()
+                }
+                previousPositions = positions
                 if focusedBlock == nil,
                    let nearest = positions.min(by: { abs($0.value - 130) < abs($1.value - 130) }) {
                     setActive(nearest.key)
                 }
             }
             .overlay(alignment: .topTrailing) { sectionRail(proxy: proxy) }
+            .simultaneousGesture(DragGesture(minimumDistance:8).onChanged { _ in revealRail() })
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: focusedBlock) { _, id in
                 if let id { setActive(id); proxy.scrollTo(id, anchor: .center) }
@@ -81,13 +100,6 @@ struct NotebookView: View {
             }
         }
         .navigationTitle(writingOnly ? "Notes" : "Notebook").engramInlineTitle().engramCanvas().engramHideStudyTabs()
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack {
-                Text(status).font(theme.font(.metadata)).foregroundStyle(palette.secondaryText)
-                Spacer(minLength: 8)
-                if model.busy { ProgressView() }
-            }.padding(EngramSpacing.regular).background(palette.canvas)
-        }
         .engramAssistantClearance()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -144,24 +156,31 @@ struct NotebookView: View {
                 model.notebookFocusNoteID = nil
             }
         }
+        .onChange(of: storedBlocks) { _, updated in
+            guard let draft,updated != draft.original else { return }
+            if draft.changed { hasNewerSavedContent = true }
+            else { load(useDraft:false) }
+        }
         .onDisappear {
+            railHideTask?.cancel()
             persist()
             if model.activeContentDeckID == deckID { model.activeContentDeckID = nil; model.activeContentKind = nil }
+            model.visibleNotebookBlockID = nil
         }
         .task(id: draft) {
             do { try await Task.sleep(for: .milliseconds(350)); persist() } catch { }
         }
     }
 
-    private var status: String {
+    private var status: String? {
         if writingOnly {
             if model.busy { return "Saving notes…" }
-            return draft?.changed == true ? "Draft kept on this device" : saved ? "Saved" : "Up to date"
+            return draft?.changed == true ? "Draft kept on this device" : nil
         }
         let count = draft?.blocks.filter { $0.kind == .question }.count ?? 0
         if model.busy { return "Saving notebook and cards…" }
         if draft?.changed == true { return "\(count) questions · Draft kept on this device" }
-        return "\(count) questions · \(saved ? "Saved" : "Up to date")"
+        return nil
     }
     @ViewBuilder private func notebookBlock(_ block: NotebookBlock) -> some View {
         if editing { blockEditor(block) }
@@ -179,6 +198,7 @@ struct NotebookView: View {
         }
     }
     private func setActive(_ id: String) {
+        model.visibleNotebookBlockID = id
         guard activeBlockID != id else { return }
         activeBlockID = id
         UserDefaults.standard.set(id, forKey: progressKey)
@@ -195,10 +215,10 @@ struct NotebookView: View {
     }
     private var railBlocks: [NotebookBlock] {
         let blocks = visibleBlocks
-        guard blocks.count > 7 else { return blocks }
+        guard blocks.count > 5 else { return blocks }
         let center = blocks.firstIndex { $0.id == activeBlockID } ?? 0
-        let start = min(max(0, center - 3), blocks.count - 7)
-        return Array(blocks[start..<(start + 7)])
+        let start = min(max(0, center - 2), blocks.count - 5)
+        return Array(blocks[start..<(start + 5)])
     }
 
     private func sectionRail(proxy: ScrollViewProxy) -> some View {
@@ -213,7 +233,7 @@ struct NotebookView: View {
                         } else {
                             Capsule().fill(palette.hairline).frame(width: 10, height: 2)
                         }
-                    }.frame(width: 110, height: 18, alignment: .trailing)
+                    }.frame(width: 110, height: 14, alignment: .trailing)
                 }
             }
         }
@@ -222,7 +242,7 @@ struct NotebookView: View {
         .gesture(DragGesture(minimumDistance: 0).onEnded { value in
             let blocks = railBlocks
             guard visibleBlocks.count > 1, !blocks.isEmpty else { return }
-            let index = min(blocks.count - 1, max(0, Int(value.location.y / 18)))
+            let index = min(blocks.count - 1, max(0, Int(value.location.y / 14)))
             jump(to: blocks[index].id, proxy: proxy)
         })
         .dynamicTypeSize(...DynamicTypeSize.large)
@@ -241,7 +261,21 @@ struct NotebookView: View {
             }
         }
         .padding(.trailing, 8).padding(.top, 8)
+        .opacity(railVisible ? 1 : 0)
+        .allowsHitTesting(railVisible)
+        .animation(reduceMotion ? nil : .easeOut(duration:0.2),value:railVisible)
         .accessibilityIdentifier("notes-contents-rail")
+    }
+
+    private func revealRail() {
+        guard visibleBlocks.count > 1 else { return }
+        railVisible = true
+        railHideTask?.cancel()
+        railHideTask = Task {
+            try? await Task.sleep(for:.seconds(1.5))
+            guard !Task.isCancelled else { return }
+            railVisible = false
+        }
     }
 
     private func jump(to id: String, proxy: ScrollViewProxy) {
@@ -338,12 +372,13 @@ struct NotebookView: View {
         draft?.blocks.swapAt(i, i + offset); saved = false
     }
     private func load(useDraft: Bool) {
-        guard let deck = model.library.liveDecks.first(where: { $0.id == deckID }) else { return }
-        let blocks = NotebookDocument.blocks(for: deck, in: model.library)
+        guard model.library.liveDecks.contains(where: { $0.id == deckID }) else { return }
+        let blocks = storedBlocks
         let cached = useDraft ? model.notebookDraft(deckID) : nil
         draft = cached ?? NotebookEditingDraft(blocks: blocks, original: blocks, revision: model.library.revision)
         activeBlockID = visibleBlocks.first?.id
-        saved = false; model.error = nil; persist()
+        model.visibleNotebookBlockID = activeBlockID
+        saved = false; hasNewerSavedContent = false; model.error = nil; persist()
     }
     private func persist() { model.keepNotebookDraft(draft?.changed == true ? draft : nil, deckID: deckID) }
     private func save() {

@@ -195,8 +195,16 @@ struct DeckQuestionsView: View {
                             }.foregroundStyle(palette.secondaryText).disabled(model.busy)
                             Divider()
                         }.id(note.id).accessibilityIdentifier("question-\(note.id)")
+                            .background(GeometryReader { geometry in
+                                Color.clear.preference(key: VisibleQuestionPositions.self,
+                                    value:[note.id:geometry.frame(in:.named("questions-scroll")).minY])
+                            })
                     }
                 }.padding(EngramSpacing.section).frame(maxWidth: 720).frame(maxWidth: .infinity)
+            }
+            .coordinateSpace(name:"questions-scroll")
+            .onPreferenceChange(VisibleQuestionPositions.self) { positions in
+                model.visibleQuestionID = positions.min(by: { abs($0.value - 130) < abs($1.value - 130) })?.key
             }
             .engramAssistantClearance()
             .onAppear {
@@ -208,13 +216,20 @@ struct DeckQuestionsView: View {
         }
         .navigationTitle("Questions").engramInlineTitle().engramCanvas().engramHideStudyTabs()
         .onAppear { model.activeContentDeckID = deckID; model.activeContentKind = "questions" }
-        .onDisappear { if model.activeContentDeckID == deckID { model.activeContentDeckID = nil; model.activeContentKind = nil } }
+        .onDisappear { if model.activeContentDeckID == deckID { model.activeContentDeckID = nil; model.activeContentKind = nil }; model.visibleQuestionID = nil }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { model.newNote(deckID: deckID) } label: { Label("Add question", systemImage: "plus") }
                     .disabled(model.busy)
             }
         }
+    }
+}
+
+private struct VisibleQuestionPositions: PreferenceKey {
+    static var defaultValue: [String:CGFloat] = [:]
+    static func reduce(value: inout [String:CGFloat], nextValue: () -> [String:CGFloat]) {
+        value.merge(nextValue(),uniquingKeysWith: { _,latest in latest })
     }
 }
 

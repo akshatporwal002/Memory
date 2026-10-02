@@ -18,7 +18,8 @@ struct LibraryExplorerView: View {
     @State private var openedDocument: LibraryDocument?
     @State private var importing = false
     @State private var importDeckID: String?
-    @State private var deleteDocument: (deckID: String, document: LibraryDocument)?
+    @State private var importFolderPath: String?
+    @State private var deleteDocument: (deckID: String?, document: LibraryDocument)?
     @State private var folderName = ""
     @State private var folderParent = ""
     @State private var showingFolderPrompt = false
@@ -26,13 +27,24 @@ struct LibraryExplorerView: View {
     @State private var choosingPhoto = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoDeckID: String?
+    @State private var photoFolderPath: String?
+    @State private var rootDropTargeted = false
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var summaries: [LibraryDeckSummary] {
         LibraryDeckSummary.sorted(LibraryDeckSummary.make(in:model.library,now:model.now),by:.alphabetical,query:query)
     }
     private var nodes: [LibraryFolder] {
         let folders = model.library.folders ?? []
-        return LibraryFolder.tree(summaries,explicitFolders:query.isEmpty ? folders : folders.filter { $0.localizedCaseInsensitiveContains(query) })
+        let matchedFiles = (model.library.folderDocuments ?? []).filter { $0.document.name.localizedCaseInsensitiveContains(query) }
+        let filePaths = matchedFiles.map(\.folderPath)
+        return LibraryFolder.tree(summaries,explicitFolders:query.isEmpty ? folders : folders.filter { folder in
+            folder.localizedCaseInsensitiveContains(query) || filePaths.contains(where: { $0 == folder || $0.hasPrefix(folder + "::") })
+        })
+    }
+    private var rootDocuments: [LibraryFolderDocument] { folderDocuments(for:"") }
+    private func folderDocuments(for path: String) -> [LibraryFolderDocument] {
+        (model.library.folderDocuments ?? []).filter { $0.folderPath == path && (query.isEmpty || $0.document.name.localizedCaseInsensitiveContains(query)) }
+            .sorted { $0.document.name.localizedStandardCompare($1.document.name) == .orderedAscending }
     }
 
     var body: some View {
@@ -44,7 +56,15 @@ struct LibraryExplorerView: View {
                     addMenu
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)
+                    HStack {
+                        Text("FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)
+                        Spacer()
+                        Text("Drop here to move to Library root").font(.caption2).foregroundStyle(palette.secondaryText).opacity(rootDropTargeted ? 1 : 0)
+                    }
+                    .frame(minHeight:32)
+                    .contentShape(Rectangle())
+                    .background(rootDropTargeted ? palette.selection : .clear)
+                    .dropDestination(for:String.self) { items,_ in handleDrop(items.first,to:.folder("")) } isTargeted: { rootDropTargeted = $0 }
                     HStack(spacing: 9) {
                         Image(systemName:"magnifyingglass").foregroundStyle(palette.secondaryText)
                         TextField("Find a notebook or file",text:$query)
@@ -53,7 +73,7 @@ struct LibraryExplorerView: View {
                     }.font(.subheadline).frame(minHeight:44)
                     Divider()
                 }
-                if model.library.liveDecks.isEmpty && nodes.isEmpty {
+                if model.library.liveDecks.isEmpty && nodes.isEmpty && (model.library.folderDocuments ?? []).isEmpty {
                     VStack(alignment:.leading,spacing:10) {
                         Image(systemName:"folder").font(.title2).foregroundStyle(palette.secondaryText)
                         Text("A place for what you learn").font(theme.font(.section))
@@ -62,17 +82,24 @@ struct LibraryExplorerView: View {
                         Button("Create notebook",action:newNotebook).font(.subheadline.weight(.semibold)).frame(minHeight:44)
                         Button("Create folder") { beginFolder(in:"") }.font(.subheadline).frame(minHeight:44)
                     }.padding(.top,30)
-                } else if nodes.isEmpty {
+                } else if nodes.isEmpty && rootDocuments.isEmpty {
                     Text("No matching notebooks or files").foregroundStyle(palette.secondaryText).padding(.top,30)
                 } else {
                     LazyVStack(alignment:.leading,spacing:0) {
+                        ForEach(rootDocuments) { item in
+                            folderFileRow(item,depth:0)
+                        }
                         ForEach(nodes) { node in
                             LibraryExplorerNode(node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
-                                                openDeck:openDeck,openDocument:{ openedDocument = $0 },
+                                                folderDocuments:folderDocuments(for:node.path),
+                                                filesInFolder:folderDocuments,
+                                                openDeck:openDeck,openDocument:openDocument,
                                                 newNotebook:newNotebook,newFolder:beginFolder,
                                                 importFile:beginImport,importPhoto:beginPhoto,
+                                                importFolderFile:beginFolderImport,importFolderPhoto:beginFolderPhoto,
                                                 removeFolder:{ deleteFolderPath = $0 },
-                                                removeFile:{ deckID,document in deleteDocument = (deckID,document) })
+                                                removeFile:{ deckID,document in deleteDocument = (deckID,document) },
+                                                move:handleDrop)
                         }
                     }
                 }
@@ -87,21 +114,26 @@ struct LibraryExplorerView: View {
         .scrollDismissesKeyboard(.interactively)
         .refreshable { await model.refresh() }
         .navigationDestination(item:$openedDeck) { id in LibraryDeckDestination(model:model,deckID:id) }
-        .sheet(item:$openedDocument) { document in LibraryDocumentReader(document:document) }
+        .sheet(item:$openedDocument,onDismiss:{ model.visibleLibraryDocumentID = nil }) { document in LibraryDocumentReader(document:document) }
         .fileImporter(isPresented:$importing,
                       allowedContentTypes:[.pdf, UTType(filenameExtension:"md") ?? .plainText,.image],
                       allowsMultipleSelection:true) { result in Task { await importFiles(result) } }
         .photosPicker(isPresented:$choosingPhoto,selection:$selectedPhoto,matching:.images)
         .onChange(of:selectedPhoto) { _,photo in
-            guard let photo,let deckID = photoDeckID else { return }
+            guard let photo, photoDeckID != nil || photoFolderPath != nil else { return }
             Task {
-                defer { selectedPhoto = nil; photoDeckID = nil }
+                defer { selectedPhoto = nil; photoDeckID = nil; photoFolderPath = nil }
                 do {
                     guard let data = try await photo.loadTransferable(type:Data.self) else { throw EngramError.invalid("The selected photo could not be read.") }
                     let name = "Photo-" + UUID().uuidString.prefix(8) + ".jpg"
                     let document = try await Task.detached(priority:.userInitiated) { try LibraryDocumentImport.image(data:data,name:String(name)) }.value
-                    if await model.perform({ try await $0.addDocument(document,to:deckID) }),
-                       let deck = model.library.liveDecks.first(where:{ $0.id == deckID }) { expanded.insert(deck.name) }
+                    if let deckID = photoDeckID {
+                        if await model.perform({ try await $0.addDocument(document,to:deckID) }),
+                           let deck = model.library.liveDecks.first(where:{ $0.id == deckID }) { expanded.insert(deck.name) }
+                    } else if let path = photoFolderPath {
+                        _ = await model.perform { try await $0.addDocument(document,toFolder:path) }
+                        expanded.insert(path)
+                    }
                 } catch { model.error = "The photo could not be imported. \(error.localizedDescription)" }
             }
         }
@@ -128,7 +160,11 @@ struct LibraryExplorerView: View {
         .confirmationDialog("Remove source file?",isPresented:Binding(get:{ deleteDocument != nil },set:{ if !$0 { deleteDocument = nil } })) {
             if let target = deleteDocument {
                 Button("Remove \(target.document.name)",role:.destructive) {
-                    Task { _ = await model.perform { try await $0.removeDocument(id:target.document.id,from:target.deckID) }; deleteDocument = nil }
+                    Task {
+                        if let deckID = target.deckID { _ = await model.perform { try await $0.removeDocument(id:target.document.id,from:deckID) } }
+                        else { _ = await model.perform { try await $0.removeFolderDocument(id:target.document.id) } }
+                        deleteDocument = nil
+                    }
                 }
             }
             Button("Cancel",role:.cancel) { deleteDocument = nil }
@@ -144,6 +180,8 @@ struct LibraryExplorerView: View {
         Menu {
             Button("New folder",systemImage:"folder.badge.plus") { beginFolder(in:"") }
             Button("New notebook",systemImage:"book.closed.badge.plus",action:newNotebook)
+            Button("Add source file to Library",systemImage:"doc.badge.plus") { beginFolderImport("") }
+            Button("Add image to Library",systemImage:"photo.on.rectangle") { beginFolderPhoto("") }
             if !model.library.liveDecks.isEmpty {
                 Menu("Add source file",systemImage:"doc.badge.plus") {
                     ForEach(model.library.liveDecks) { deck in
@@ -166,18 +204,57 @@ struct LibraryExplorerView: View {
         model.creationPresented = true
     }
     private func openDeck(_ id: String) { model.selectedDeckID = id; openedDeck = id }
-    private func beginImport(_ deckID: String) { importDeckID = deckID; importing = true }
-    private func beginPhoto(_ deckID: String) { photoDeckID = deckID; selectedPhoto = nil; choosingPhoto = true }
+    private func openDocument(_ document: LibraryDocument) { model.visibleLibraryDocumentID = document.id; openedDocument = document }
+    private func beginImport(_ deckID: String) { importFolderPath = nil; importDeckID = deckID; importing = true }
+    private func beginFolderImport(_ path: String) { importDeckID = nil; importFolderPath = path; importing = true }
+    private func beginPhoto(_ deckID: String) { photoFolderPath = nil; photoDeckID = deckID; selectedPhoto = nil; choosingPhoto = true }
+    private func beginFolderPhoto(_ path: String) { photoDeckID = nil; photoFolderPath = path; selectedPhoto = nil; choosingPhoto = true }
     private func importFiles(_ result: Result<[URL],Error>) async {
-        guard let deckID = importDeckID else { return }
+        guard importDeckID != nil || importFolderPath != nil else { return }
         do {
             for url in try result.get() {
                 let document = try await Task.detached(priority:.userInitiated) { try LibraryDocumentImport.read(url) }.value
-                guard await model.perform({ try await $0.addDocument(document,to:deckID) }) else { return }
+                let saved: Bool
+                if let deckID = importDeckID { saved = await model.perform { try await $0.addDocument(document,to:deckID) } }
+                else { saved = await model.perform { try await $0.addDocument(document,toFolder:importFolderPath ?? "") } }
+                guard saved else { return }
             }
-            if let deck = model.library.liveDecks.first(where:{ $0.id == deckID }) { expanded.insert(deck.name) }
+            if let deckID = importDeckID,let deck = model.library.liveDecks.first(where:{ $0.id == deckID }) { expanded.insert(deck.name) }
+            if let path = importFolderPath { expanded.insert(path) }
         } catch { model.error = "The source file could not be imported. \(error.localizedDescription)" }
-        importDeckID = nil
+        importDeckID = nil; importFolderPath = nil
+    }
+    private func handleDrop(_ payload: String?,to destination: StudyService.DocumentDestination) -> Bool {
+        guard let payload else { return false }
+        if payload.hasPrefix("engram-file:") {
+            let id = String(payload.dropFirst("engram-file:".count))
+            Task { _ = await model.perform { try await $0.moveDocument(id:id,to:destination) } }
+            return true
+        }
+        guard case .folder(let path) = destination else { return false }
+        if payload.hasPrefix("engram-deck:") {
+            let id = String(payload.dropFirst("engram-deck:".count))
+            Task { _ = await model.perform { try await $0.moveDeck(id:id,toFolder:path) } }
+            expanded.insert(path)
+            return true
+        }
+        if payload.hasPrefix("engram-folder:") {
+            let source = String(payload.dropFirst("engram-folder:".count))
+            Task { _ = await model.perform { try await $0.moveFolder(path:source,toFolder:path) } }
+            expanded.insert(path)
+            return true
+        }
+        return false
+    }
+    private func folderFileRow(_ item: LibraryFolderDocument,depth: Int) -> some View {
+        Button { openDocument(item.document) } label: {
+            Label(item.document.name,systemImage:item.document.kind == .pdf ? "doc.richtext" : item.document.kind == .image ? "photo" : "doc.text")
+                .font(.subheadline).foregroundStyle(palette.secondaryText).frame(maxWidth:.infinity,minHeight:44,alignment:.leading)
+                .padding(.leading,CGFloat(depth * 16 + 18))
+        }
+        .buttonStyle(.plain).accessibilityIdentifier("library-file-" + item.id)
+        .draggable("engram-file:" + item.id)
+        .contextMenu { Button("Remove file",role:.destructive) { deleteDocument = (nil,item.document) } }
     }
 }
 
@@ -186,19 +263,25 @@ private struct LibraryExplorerNode: View {
     let depth: Int
     @Binding var expanded: Set<String>
     let searching: Bool
+    let folderDocuments: [LibraryFolderDocument]
+    let filesInFolder: (String) -> [LibraryFolderDocument]
     let openDeck: (String) -> Void
     let openDocument: (LibraryDocument) -> Void
     let newNotebook: (String) -> Void
     let newFolder: (String) -> Void
     let importFile: (String) -> Void
     let importPhoto: (String) -> Void
+    let importFolderFile: (String) -> Void
+    let importFolderPhoto: (String) -> Void
     let removeFolder: (String) -> Void
-    let removeFile: (String,LibraryDocument) -> Void
+    let removeFile: (String?,LibraryDocument) -> Void
+    let move: (String?,StudyService.DocumentDestination) -> Bool
+    @State private var dropTargeted = false
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     private var palette: EngramPalette { theme.palette(for:scheme) }
     private var documents: [LibraryDocument] { node.deck?.deck.documents ?? [] }
-    private var branch: Bool { !node.children.isEmpty || !documents.isEmpty }
+    private var branch: Bool { !node.children.isEmpty || !documents.isEmpty || !folderDocuments.isEmpty }
     private var isExpanded: Bool { searching || expanded.contains(node.path) }
     var body: some View {
         VStack(alignment:.leading,spacing:0) {
@@ -222,9 +305,18 @@ private struct LibraryExplorerNode: View {
                 }.buttonStyle(.plain).accessibilityIdentifier(node.deck.map { "library-deck-" + $0.id } ?? "library-folder-" + node.path)
             }
             .padding(.leading,CGFloat(depth * 16))
+            .background(dropTargeted ? palette.selection : .clear)
+            .draggable(node.deck.map { "engram-deck:" + $0.id } ?? "engram-folder:" + node.path)
+            .dropDestination(for:String.self) { items,_ in
+                move(items.first,node.deck.map { .notebook($0.id) } ?? .folder(node.path))
+            } isTargeted: { dropTargeted = $0 }
             .contextMenu {
                 if let deck = node.deck { Button("Open notebook") { openDeck(deck.id) }; Button("Add PDF or Markdown") { importFile(deck.id) } }
                 if let deck = node.deck { Button("Add image from Photos") { importPhoto(deck.id) } }
+                if node.deck == nil {
+                    Button("Add source file") { importFolderFile(node.path) }
+                    Button("Add image from Photos") { importFolderPhoto(node.path) }
+                }
                 Button("New notebook here") { newNotebook(node.path) }
                 Button("New folder here") { newFolder(node.path) }
                 if node.isExplicit && node.deck == nil && node.children.isEmpty {
@@ -232,6 +324,18 @@ private struct LibraryExplorerNode: View {
                 }
             }
             if isExpanded {
+                ForEach(folderDocuments) { item in
+                    Button { openDocument(item.document) } label: {
+                        HStack(spacing:8) {
+                            Image(systemName:item.document.kind == .pdf ? "doc.richtext" : item.document.kind == .image ? "photo" : "doc.text")
+                                .font(.system(size:14)).frame(width:20)
+                            Text(item.document.name).lineLimit(1).frame(maxWidth:.infinity,alignment:.leading)
+                        }.font(.subheadline).foregroundStyle(palette.secondaryText).frame(minHeight:44).contentShape(Rectangle())
+                    }.buttonStyle(.plain).padding(.leading,CGFloat((depth + 1) * 16 + 18))
+                        .accessibilityIdentifier("library-file-" + item.id)
+                        .draggable("engram-file:" + item.id)
+                        .contextMenu { Button("Remove file",role:.destructive) { removeFile(nil,item.document) } }
+                }
                 if let deck = node.deck {
                     ForEach(documents) { document in
                         Button { openDocument(document) } label: {
@@ -244,14 +348,17 @@ private struct LibraryExplorerNode: View {
                                 .frame(minHeight:44).contentShape(Rectangle())
                         }.buttonStyle(.plain).padding(.leading,CGFloat((depth + 1) * 16 + 18))
                             .accessibilityIdentifier("library-file-" + document.id)
+                            .draggable("engram-file:" + document.id)
                             .contextMenu { Button("Remove file",role:.destructive) { removeFile(deck.id,document) } }
                     }
                 }
                 ForEach(node.children) { child in
                     LibraryExplorerNode(node:child,depth:depth + 1,expanded:$expanded,searching:searching,
+                                        folderDocuments:filesInFolder(child.path),filesInFolder:filesInFolder,
                                         openDeck:openDeck,openDocument:openDocument,newNotebook:newNotebook,
                                         newFolder:newFolder,importFile:importFile,importPhoto:importPhoto,
-                                        removeFolder:removeFolder,removeFile:removeFile)
+                                        importFolderFile:importFolderFile,importFolderPhoto:importFolderPhoto,
+                                        removeFolder:removeFolder,removeFile:removeFile,move:move)
                 }
             }
         }

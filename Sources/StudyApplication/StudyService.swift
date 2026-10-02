@@ -3,6 +3,7 @@ import LearningCore
 
 /// Application use cases. Views share this actor; no database or vendor scheduler enters presentation code.
 public actor StudyService {
+    public enum DocumentDestination: Sendable { case notebook(String), folder(String) }
     let repository: any LibraryRepository
     let scheduler: any Scheduler
     public init(repository: any LibraryRepository, scheduler: any Scheduler) { self.repository = repository; self.scheduler = scheduler }
@@ -194,6 +195,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard library.folders?.contains(path) == true else { throw EngramError.missing("folder") }
         guard !library.liveDecks.contains(where: { $0.name == path || $0.name.hasPrefix(path + "::") }),
+              !(library.folderDocuments ?? []).contains(where: { $0.folderPath == path }),
               !(library.folders ?? []).contains(where: { $0.hasPrefix(path + "::") }) else {
             throw EngramError.invalid("Move or remove the contents before deleting this folder.")
         }
@@ -212,6 +214,52 @@ public actor StudyService {
             guard !library.decks.contains(where: { !$0.deleted && !affectedIDs.contains($0.id) && $0.name.caseInsensitiveCompare(replacement) == .orderedSame }) else { throw EngramError.invalid("Renaming would collide with an existing subdeck.") }
         }
         for (index, replacement) in mappings { library.decks[index].name = replacement; library.decks[index].modifiedAt = Date() }
+        try await save(library)
+    }
+    public func moveDeck(id: String, toFolder path: String) async throws {
+        var library = try await repository.read()
+        guard let deck = library.liveDecks.first(where: { $0.id == id }) else { throw EngramError.missing("notebook") }
+        try ensureDestination(path, in:&library)
+        guard path != deck.name && !path.hasPrefix(deck.name + "::") else { throw EngramError.invalid("A notebook cannot contain itself.") }
+        let leaf = deck.name.components(separatedBy:"::").last ?? deck.name
+        let target = path.isEmpty ? leaf : path + "::" + leaf
+        if target == deck.name { return }
+        let clean = try deckName(target,in:library,excluding:id)
+        let affected = library.decks.indices.filter { !library.decks[$0].deleted && (library.decks[$0].id == id || library.decks[$0].name.hasPrefix(deck.name + "::")) }
+        let affectedIDs = Set(affected.map { library.decks[$0].id })
+        for index in affected {
+            let replacement = clean + library.decks[index].name.dropFirst(deck.name.count)
+            guard !library.liveDecks.contains(where: { !affectedIDs.contains($0.id) && $0.name.caseInsensitiveCompare(replacement) == .orderedSame }) else { throw EngramError.conflict }
+            library.decks[index].name = replacement
+            library.decks[index].modifiedAt = Date()
+        }
+        try await save(library)
+    }
+    public func moveFolder(path: String, toFolder destination: String) async throws {
+        var library = try await repository.read()
+        guard (library.folders ?? []).contains(path) else { throw EngramError.missing("folder") }
+        try ensureDestination(destination, in:&library)
+        guard destination != path && !destination.hasPrefix(path + "::") else { throw EngramError.invalid("A folder cannot contain itself.") }
+        let leaf = path.components(separatedBy:"::").last ?? path
+        let target = destination.isEmpty ? leaf : destination + "::" + leaf
+        if target == path { return }
+        let affected = (library.folders ?? []).filter { $0 == path || $0.hasPrefix(path + "::") }
+        let replacements = affected.map { target + $0.dropFirst(path.count) }
+        let unaffected = (library.folders ?? []).filter { !affected.contains($0) }
+        guard replacements.allSatisfy({ candidate in !unaffected.contains(where: { $0.caseInsensitiveCompare(candidate) == .orderedSame }) }),
+              !library.liveDecks.contains(where: { $0.name.caseInsensitiveCompare(target) == .orderedSame }) else {
+            throw EngramError.invalid("That destination already has an item with this name.")
+        }
+        library.folders = unaffected + replacements
+        for index in library.decks.indices where !library.decks[index].deleted && library.decks[index].name.hasPrefix(path + "::") {
+            let newName = target + library.decks[index].name.dropFirst(path.count)
+            guard !library.liveDecks.contains(where: { $0.id != library.decks[index].id && $0.name.caseInsensitiveCompare(newName) == .orderedSame }) else { throw EngramError.conflict }
+            library.decks[index].name = newName
+            library.decks[index].modifiedAt = Date()
+        }
+        for index in (library.folderDocuments ?? []).indices where library.folderDocuments![index].folderPath == path || library.folderDocuments![index].folderPath.hasPrefix(path + "::") {
+            library.folderDocuments![index].folderPath = target + library.folderDocuments![index].folderPath.dropFirst(path.count)
+        }
         try await save(library)
     }
     /// Cover assets participate in the existing media limits and native backup.
@@ -233,6 +281,7 @@ public actor StudyService {
     public func addDocument(_ document: LibraryDocument, to deckID: String, now: Date = Date()) async throws {
         try document.validate()
         var library = try await repository.read()
+        guard !allDocumentIDs(in:library).contains(document.id) else { throw EngramError.conflict }
         guard let index = library.decks.firstIndex(where: { $0.id == deckID && !$0.deleted }) else { throw EngramError.missing("notebook") }
         var documents = library.decks[index].documents ?? []
         guard documents.count < 20,
@@ -244,6 +293,53 @@ public actor StudyService {
         library.decks[index].documents = documents
         library.decks[index].modifiedAt = now
         try await save(library)
+    }
+    public func addDocument(_ document: LibraryDocument, toFolder path: String) async throws {
+        try document.validate()
+        var library = try await repository.read()
+        try ensureDestination(path,in:&library)
+        guard !allDocumentIDs(in:library).contains(document.id) else { throw EngramError.conflict }
+        library.folderDocuments = (library.folderDocuments ?? []) + [LibraryFolderDocument(folderPath:path,document:document)]
+        try await save(library)
+    }
+    public func moveDocument(id: String, to destination: DocumentDestination, now: Date = Date()) async throws {
+        var library = try await repository.read()
+        let document: LibraryDocument
+        if let index = library.decks.firstIndex(where: { !$0.deleted && ($0.documents ?? []).contains(where: { $0.id == id }) }) {
+            guard let source = library.decks[index].documents?.first(where: { $0.id == id }) else { throw EngramError.missing("source file") }
+            document = source
+            library.decks[index].documents?.removeAll { $0.id == id }
+            library.decks[index].modifiedAt = now
+        } else if let item = library.folderDocuments?.first(where: { $0.id == id }) {
+            document = item.document
+            library.folderDocuments?.removeAll { $0.id == id }
+        } else { throw EngramError.missing("source file") }
+        switch destination {
+        case .folder(let path):
+            try ensureDestination(path,in:&library)
+            library.folderDocuments = (library.folderDocuments ?? []) + [LibraryFolderDocument(folderPath:path,document:document)]
+        case .notebook(let deckID):
+            guard let index = library.decks.firstIndex(where: { $0.id == deckID && !$0.deleted }) else { throw EngramError.missing("notebook") }
+            library.decks[index].documents = (library.decks[index].documents ?? []) + [document]
+            library.decks[index].modifiedAt = now
+        }
+        try await save(library)
+    }
+    public func removeFolderDocument(id: String) async throws {
+        var library = try await repository.read()
+        guard (library.folderDocuments ?? []).contains(where: { $0.id == id }) else { throw EngramError.missing("source file") }
+        library.folderDocuments?.removeAll { $0.id == id }
+        try await save(library)
+    }
+    private func ensureDestination(_ path: String,in library: inout LibrarySnapshot) throws {
+        guard !path.isEmpty else { return }
+        try LibraryValidation.validateFolderPath(path)
+        if (library.folders ?? []).contains(path) { return }
+        guard library.liveDecks.contains(where: { $0.name == path || $0.name.hasPrefix(path + "::") }) else { throw EngramError.missing("destination folder") }
+        library.folders = (library.folders ?? []) + [path]
+    }
+    private func allDocumentIDs(in library: LibrarySnapshot) -> Set<String> {
+        Set(library.decks.flatMap { ($0.documents ?? []).map(\.id) } + (library.folderDocuments ?? []).map(\.id))
     }
     public func removeDocument(id: String, from deckID: String, now: Date = Date()) async throws {
         var library = try await repository.read()

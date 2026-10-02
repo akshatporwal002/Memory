@@ -51,3 +51,13 @@ public struct LibraryDocument: Codable, Equatable, Identifiable, Sendable {
         }
     }
 }
+
+/// A private source stored directly in a Library folder (empty path means the Library root).
+public struct LibraryFolderDocument: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { document.id }
+    public var folderPath: String
+    public var document: LibraryDocument
+    public init(folderPath: String, document: LibraryDocument) {
+        self.folderPath = folderPath; self.document = document
+    }
+}

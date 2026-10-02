@@ -85,6 +85,22 @@ final class LibraryCatalogTests: XCTestCase {
         library = try await service.snapshot()
         XCTAssertEqual(LibraryFolder.tree(LibraryDeckSummary.make(in:library,now:now),explicitFolders:library.folders ?? []).first?.children.first?.deckCount,1)
     }
+    func testMovingFolderMovesNestedNotebooksAndFilesAndRejectsCycle() async throws {
+        let service = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let source = try await service.createFolder(name:"Sources")
+        let child = try await service.createFolder(name:"AWS",in:source)
+        let destination = try await service.createFolder(name:"Archive")
+        let deck = try await service.createDeck(name:"Sources::AWS::Cloud")
+        let body = Data("# Notes\nEdge caching".utf8)
+        let file = LibraryDocument(name:"notes.md",kind:.markdown,pages:[PDFPageText(number:1,text:"Edge caching")],originalData:body)
+        try await service.addDocument(file,toFolder:child)
+        try await service.moveFolder(path:source,toFolder:destination)
+        let snapshot = try await service.snapshot()
+        XCTAssertTrue((snapshot.folders ?? []).contains("Archive::Sources::AWS"))
+        XCTAssertEqual(snapshot.liveDecks.first(where: { $0.id == deck.id })?.name,"Archive::Sources::AWS::Cloud")
+        XCTAssertEqual(snapshot.folderDocuments?.first?.folderPath,"Archive::Sources::AWS")
+        do { try await service.moveFolder(path:"Archive",toFolder:"Archive::Sources"); XCTFail("Expected cycle rejection") } catch { }
+    }
 
 
     func testCoverSurvivesNativeBackupWithoutChangingCardsOrReviews() async throws {

@@ -34,6 +34,8 @@ struct ContextualAssistant: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var open = false
     @State private var expanded = false
+    @State private var showingHistory = false
+    @State private var selectedHistoryID: String?
     @State private var prompt = ""
     @State private var messages: [String: [AssistantMessage]] = [:]
     private var busy: Bool { model.assistant.busy }
@@ -57,7 +59,21 @@ struct ContextualAssistant: View {
         let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.activeContentKind ?? (model.activeDeckOverviewID != nil ? "deck" : model.creationPresented ? "creation" : model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue)
         return workflow + ":" + (deckID ?? "none")
     }
-    private var thread: [AssistantMessage] { (messages[context] ?? []) + (model.library.assistantState?.conversations.first(where: { $0.id == context })?.messages.map { AssistantMessage(id: $0.id, isUser: $0.role == "user", text: $0.text, sources: []) } ?? []) }
+    private var activeConversationID: String { selectedHistoryID ?? context }
+    private var recentConversations: [LearningConversation] {
+        (model.library.assistantState?.conversations ?? []).filter { !$0.messages.isEmpty }
+            .sorted { ($0.messages.last?.createdAt ?? .distantPast) > ($1.messages.last?.createdAt ?? .distantPast) }
+    }
+    private var thread: [AssistantMessage] {
+        (messages[activeConversationID] ?? []) + (model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.messages.map {
+            AssistantMessage(id:$0.id,isUser:$0.role == "user",text:$0.text,sources:[])
+        } ?? [])
+    }
+    private var recentSavedAction: AIActionRecord? {
+        model.library.assistantState?.runs.last(where: { $0.conversationID == activeConversationID })?.actions.last(where: {
+            $0.status == "completed" && $0.changes.contains(where: { $0.undoneAt == nil })
+        })
+    }
     private var currentReviewPrompt: String? {
         guard model.reviewPresented, let card = model.library.session?.current?.card,
               let note = model.library.liveNotes.first(where: { $0.id == card.noteID }) else { return nil }
@@ -69,26 +85,50 @@ struct ContextualAssistant: View {
     private var hideReviewAnswer: Bool {
         model.reviewPresented && model.library.session?.current?.revealedAt == nil
     }
+    private var viewingContext: String {
+        if model.reviewPresented { return "Screen: active study review. " + (currentReviewPrompt.map { "Visible question: \($0.prefix(1200))" } ?? "") }
+        if let id = model.activeContentDeckID,model.activeContentKind == "questions" {
+            let note = model.library.liveNotes.first { $0.id == model.visibleQuestionID && $0.deckID == id }
+            return "Screen: Questions in \(model.deckName(id)). " + (note.map { "Visible question ID: \($0.id). Prompt: \($0.front.prefix(1200)). Expected answer: \($0.back.prefix(1200))." } ?? "")
+        }
+        if let id = model.activeContentDeckID,["notes","notebook"].contains(model.activeContentKind ?? ""),
+           let deck = model.library.liveDecks.first(where:{ $0.id == id }) {
+            let block = NotebookDocument.blocks(for:deck,in:model.library).first { $0.id == model.visibleNotebookBlockID }
+            return "Screen: \(model.activeContentKind == "notes" ? "Notes" : "Notebook") in \(deck.name). " +
+                (block.map { "Visible section ID: \($0.id). Content: \($0.text.prefix(1800))." } ?? "")
+        }
+        if let id = model.activeDeckOverviewID { return "Screen: deck overview for \(model.deckName(id))." }
+        if model.creationPresented { return "Screen: create notebook." }
+        if model.destination == .library {
+            if let id = model.visibleLibraryDocumentID,
+               let document = model.library.folderDocuments?.first(where: { $0.id == id })?.document ?? model.library.liveDecks.compactMap({ $0.documents?.first(where: { $0.id == id }) }).first {
+                return "Screen: reading source file \(document.name). File ID: \(id)."
+            }
+            return "Screen: Library file tree."
+        }
+        if model.destination == .activity { return "Screen: Activity." }
+        return "Screen: Today."
+    }
     private var studyContext: String {
         if model.pdfLearningPresented {
             let draft = model.pdfLearning.draft
-            return "PDF learning setup. Goal: \(draft.brief.goal). Topics: \(draft.brief.topics). Exclusions: \(draft.brief.exclusions). Difficulty: \(draft.brief.difficulty). The learner can adjust this brief manually; do not claim to have changed it."
+            return "Screen: PDF learning setup. Goal: \(draft.brief.goal). Topics: \(draft.brief.topics). Exclusions: \(draft.brief.exclusions). Difficulty: \(draft.brief.difficulty). The learner can adjust this brief manually; do not claim to have changed it."
         }
-        if let currentReviewPrompt { return "Current review prompt: " + currentReviewPrompt }
+        if let currentReviewPrompt { return viewingContext + " Current review prompt: " + currentReviewPrompt }
         if model.editorPresented, let draft = model.draft {
-            return "Current unsaved card draft. Question: \(draft.front.prefix(900)). Answer: \(draft.back.prefix(900))."
+            return "Screen: question editor. Current unsaved card draft. Question: \(draft.front.prefix(900)). Answer: \(draft.back.prefix(900))."
         }
         if model.creationPresented && model.activeDeckOverviewID == nil && model.activeContentDeckID == nil {
             let draft = model.deckCreationDraft
-            return "Current unsaved notebook draft. Title: \(draft.title.prefix(120)). Subject: \(draft.subject.prefix(120)). Writing: \(draft.document.prefix(1800))."
+            return viewingContext + " Current unsaved notebook draft. Title: \(draft.title.prefix(120)). Subject: \(draft.subject.prefix(120)). Writing: \(draft.document.prefix(1800))."
         }
         if model.destination == .activity {
-            return "Activity today: \(model.todaysReviews.count) review attempts saved, \(model.due.count) cards ready. Library target: \(Int(model.library.settings.desiredRetention * 100))%."
+            return viewingContext + " Activity today: \(model.todaysReviews.count) review attempts saved, \(model.due.count) cards ready. Library target: \(Int(model.library.settings.desiredRetention * 100))%."
         }
         if model.destination == .library, model.selectedDeckID == nil {
-            return "Library decks: " + model.library.liveDecks.prefix(30).map(\.name).joined(separator: ", ")
+            return viewingContext + " Library decks: " + model.library.liveDecks.prefix(30).map(\.name).joined(separator: ", ")
         }
-        return "Current deck: " + deckName
+        return viewingContext + " Current deck: " + deckName
     }
 
     var body: some View {
@@ -115,7 +155,7 @@ struct ContextualAssistant: View {
         .animation(motion, value: open)
         .animation(motion, value: expanded)
         .animation(motion, value: thread.count)
-        .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; close() }
+        .onChange(of: context) { _, _ in prompt = ""; error = nil; expanded = false; showingHistory = false; selectedHistoryID = nil; close() }
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
         .sheet(isPresented: Binding(get: { pdfSource != nil }, set: { if !$0 { pdfSource = nil } })) {
             if let pdfSource { PDFSourcePagesView(source: pdfSource) }
@@ -205,11 +245,18 @@ struct ContextualAssistant: View {
 
     private func panel(height: CGFloat) -> some View {
         VStack(spacing: 0) {
-          if !thread.isEmpty {
+          Capsule().fill(palette.secondaryText.opacity(0.5)).frame(width:32,height:4)
+            .frame(maxWidth:.infinity,minHeight:18).accessibilityLabel("Swipe up for chat history")
+          if !thread.isEmpty || !recentConversations.isEmpty {
             HStack(spacing: 8) {
                 Image(systemName: "sparkle").foregroundStyle(palette.accentInk)
-                Text(deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
+                Text(showingHistory ? "Previous chats" : deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
+                Button {
+                    composerFocused = false
+                    withAnimation(motion) { expanded = true; showingHistory.toggle() }
+                } label: { Image(systemName:showingHistory ? "chevron.left" : "clock.arrow.circlepath").frame(width:44,height:44).contentShape(Rectangle()) }
+                    .accessibilityLabel(showingHistory ? "Back to chat" : "Chat history")
                 if !thread.isEmpty {
                     Button { composerFocused = false; expanded.toggle() } label: {
                         Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
@@ -230,7 +277,35 @@ struct ContextualAssistant: View {
                     .font(.caption).foregroundStyle(palette.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 28)
             }
-            if !thread.isEmpty {
+            if showingHistory {
+                ScrollView {
+                    LazyVStack(alignment:.leading,spacing:0) {
+                        Button {
+                            selectedHistoryID = nil
+                            showingHistory = false
+                        } label: {
+                            Label("Return to this screen's chat",systemImage:"arrow.uturn.backward")
+                                .font(.subheadline.weight(.medium)).frame(maxWidth:.infinity,minHeight:48,alignment:.leading)
+                        }.buttonStyle(.plain)
+                        Divider()
+                        ForEach(recentConversations) { conversation in
+                            Button {
+                                selectedHistoryID = conversation.id
+                                showingHistory = false
+                            } label: {
+                                VStack(alignment:.leading,spacing:4) {
+                                    Text(conversation.messages.first(where:{ $0.role == "user" })?.text ?? conversation.id)
+                                        .font(.subheadline.weight(.medium)).lineLimit(1)
+                                    Text(conversation.messages.last?.text ?? "")
+                                        .font(.caption).foregroundStyle(palette.secondaryText).lineLimit(2)
+                                }.frame(maxWidth:.infinity,minHeight:58,alignment:.leading)
+                            }.buttonStyle(.plain)
+                            Divider()
+                        }
+                    }
+                }
+                .frame(height:min(max(150,height * 0.53),max(150,height - 170)))
+            } else if !thread.isEmpty {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 14) {
@@ -260,6 +335,12 @@ struct ContextualAssistant: View {
                 }
             }
           }
+            if let action = recentSavedAction,let change = action.changes.last(where: { $0.undoneAt == nil }),!showingHistory {
+                Button { openSavedChange(change) } label: {
+                    Label(change.afterNote != nil ? "Question saved · Open Questions" : "Notes saved · Open notebook",systemImage:"checkmark.circle")
+                        .font(.caption.weight(.medium)).frame(maxWidth:.infinity,minHeight:38,alignment:.leading)
+                }.buttonStyle(.plain)
+            }
             if let error = error ?? model.assistant.error { Text(error).font(.caption).foregroundStyle(palette.againInk).frame(maxWidth: .infinity, alignment: .leading) }
             if model.chatGPT.activeAccount == nil && error != nil {
                 Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
@@ -268,14 +349,14 @@ struct ContextualAssistant: View {
             HStack {
                 Menu {
                     ForEach(model.aiMarker.models, id: \.self) { id in
-                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: context, model: model) } }
+                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: activeConversationID, model: model) } }
                     }
                     if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
                     Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
                 } label: {
-                    Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).font(.caption).lineLimit(1)
+                    Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).font(.caption).lineLimit(1)
                         .frame(minWidth:44,minHeight:44).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
+                }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Spacer()
                 if busy { Button("Stop") { model.assistant.cancel() } }
                 Button("Review changes") { model.actionReviewPresented = true }
@@ -307,6 +388,14 @@ struct ContextualAssistant: View {
         }
         .padding(12)
         .frame(maxWidth: 530)
+        .simultaneousGesture(DragGesture(minimumDistance:24).onEnded { value in
+            if value.translation.height < -35 && !expanded {
+                composerFocused = false
+                withAnimation(motion) { expanded = true; showingHistory = !recentConversations.isEmpty }
+            } else if value.translation.height > 35 && showingHistory {
+                withAnimation(motion) { showingHistory = false; expanded = false }
+            }
+        })
     }
 
     private func send() {
@@ -324,8 +413,8 @@ struct ContextualAssistant: View {
         guard !question.isEmpty, !busy else { return }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-assistant-fixture") {
-            messages[context, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
-            messages[context, default: []].append(AssistantMessage(isUser: false, text: "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
+            messages[activeConversationID, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
+            messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
             prompt = ""; composerFocused = false; return
         }
         #endif
@@ -333,12 +422,13 @@ struct ContextualAssistant: View {
             error = "Connect ChatGPT to ask about your notes."
             return
         }
-        let key = context
+        let key = activeConversationID
 
         let search = question + " " + (currentReviewPrompt ?? "")
         let pdfRecord = deckID.flatMap { id in model.library.liveDecks.first(where: { $0.id == id })?.pdfLearning }
         let documentSource = model.pdfLearningPresented ? model.pdfLearning.draft.source : pdfRecord?.source
-        let sourceOnly = documentSource != nil || deckID.flatMap { id in model.library.liveDecks.first(where: { $0.id == id })?.documents }?.isEmpty == false
+        let visibleFileID = model.visibleLibraryDocumentID
+        let sourceOnly = visibleFileID != nil || documentSource != nil || deckID.flatMap { id in model.library.liveDecks.first(where: { $0.id == id })?.documents }?.isEmpty == false
         let allSources: [AssistantPassage]
         if let documentSource {
             let brief = model.pdfLearningPresented ? model.pdfLearning.draft.brief : (pdfRecord?.brief ?? model.pdfLearning.draft.brief)
@@ -346,6 +436,11 @@ struct ContextualAssistant: View {
                 AssistantPassage(id: "pdf-" + $0.id, deckID: deckID ?? "pdf-draft", title: "\(documentSource.filename) · page \($0.page ?? 0)", text: $0.text, noteID: nil, blockID: nil,documentID:nil)
             }
             allSources = pdf + (deckID.map { AssistantRetrieval.passages(query:search,deckID:$0,library:model.library) } ?? [])
+        } else if let visibleFileID,
+                  let document = model.library.folderDocuments?.first(where: { $0.id == visibleFileID })?.document ?? model.library.liveDecks.compactMap({ $0.documents?.first(where: { $0.id == visibleFileID }) }).first {
+            allSources = EvidenceRetrieval.retrieve(document:document,query:search,limit:6).map {
+                    AssistantPassage(id:$0.id,deckID:$0.deckID,title:$0.title,text:$0.text,noteID:$0.noteID,blockID:$0.blockID,documentID:$0.documentID)
+                }
         } else { allSources = deckID.map { AssistantRetrieval.passages(query: search, deckID: $0, library: model.library) } ?? [] }
         let currentNoteID = model.library.session?.current?.card.noteID
         let sources = hideReviewAnswer ? allSources.filter { $0.noteID != currentNoteID } : allSources
@@ -354,9 +449,23 @@ struct ContextualAssistant: View {
         model.assistant.start(question: question, contextID: key, context: studyContext + "\nWorkflow: " + key,
                               evidence: evidence, sourceOnly: sourceOnly, model: model)
     }
+    private func openSavedChange(_ change: AIContentChange) {
+        guard let id = change.deckID else { model.actionReviewPresented = true; return }
+        if let note = change.afterNote {
+            model.notebookFocusNoteID = note.id
+            model.questionsDeckID = id
+        } else {
+            if let before = change.beforeDeck?.notebookBlocks,let after = change.afterDeck?.notebookBlocks {
+                model.notebookFocusBlockID = after.first(where: { !before.contains($0) })?.id
+            }
+            model.notebookWritingOnly = true
+            model.notebookDeckID = id
+        }
+        close()
+    }
     private func openSource(_ source: AssistantPassage) {
         if let documentID = source.documentID,
-           let document = model.library.liveDecks.first(where: { $0.id == source.deckID })?.documents?.first(where: { $0.id == documentID }) {
+           let document = model.library.liveDecks.first(where: { $0.id == source.deckID })?.documents?.first(where: { $0.id == documentID }) ?? model.library.folderDocuments?.first(where: { $0.id == documentID })?.document {
             openLibraryDocument = document; close(); return
         }
         if source.id.hasPrefix("pdf-") {

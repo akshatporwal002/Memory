@@ -129,6 +129,16 @@ private struct ApplicationRoot: View {
                         NotebookBlock(id: "ui-cost", text: "# Cost and billing\nAWS Budgets helps you compare spending against a planned amount and configure alerts. Cost Explorer helps you investigate spending patterns over time. Pricing Calculator estimates costs before you deploy.\n\nChoose the service that matches the question: an estimate before deployment, an analysis of past spending, or an alert when costs cross a limit. These are different needs and should not be treated as interchangeable.")
                     ]
                 }
+                if ProcessInfo.processInfo.arguments.contains("--ui-history-fixture") {
+                    var conversation = LearningConversation(id:"today:ui-deck")
+                    conversation.messages = [
+                        LearningChatMessage(role:"user",text:"Explain AWS CloudFront"),
+                        LearningChatMessage(role:"assistant",text:"CloudFront caches content near readers at edge locations.")
+                    ]
+                    var state = LearningAssistantState()
+                    state.conversations = [conversation]
+                    snapshot.assistantState = state
+                }
                 #if os(iOS)
                 if ProcessInfo.processInfo.arguments.contains("--ui-image-fixture") {
                     let image = UIGraphicsImageRenderer(size:CGSize(width:600,height:400)).jpegData(withCompressionQuality:0.8) { _ in

@@ -26,7 +26,18 @@ public enum EvidenceRetrieval {
             let lhs = score(a.element),rhs = score(b.element)
             return lhs == rhs ? a.offset < b.offset : lhs > rhs
         }.prefix(6)
-        let candidates = ranked.flatMap { retrieve(query:query,deckID:$0.element.id,library:library,limit:bounded) }
+        var candidates = ranked.flatMap { retrieve(query:query,deckID:$0.element.id,library:library,limit:bounded) }
+        for item in library.folderDocuments ?? [] {
+            let document = item.document
+            let source = PDFLearningSource(id:document.id,filename:document.name,pages:document.pages)
+            var brief = PDFLearningBrief(); brief.lastPage = document.pages.map(\.number).max() ?? 1
+            candidates += retrieve(source:source,brief:brief,query:query,deckID:"library",limit:bounded).map { passage in
+                var result = passage
+                result.id = document.id + ":" + passage.id
+                result.documentID = document.id
+                return result
+            }
+        }
         return Array(candidates.enumerated().sorted { a,b in
             let lhs = terms.intersection(tokens(a.element.text)).count,rhs = terms.intersection(tokens(b.element.text)).count
             return lhs == rhs ? a.offset < b.offset : lhs > rhs
@@ -62,6 +73,16 @@ public enum EvidenceRetrieval {
             return ascore == bscore ? a.offset < b.offset : ascore > bscore
         }.prefix(bounded).map(\.element))
     }
+    public static func retrieve(document: LibraryDocument,query: String,deckID: String = "library",limit: Int = 6) -> [RetrievedEvidence] {
+        let source = PDFLearningSource(id:document.id,filename:document.name,pages:document.pages)
+        var brief = PDFLearningBrief(); brief.lastPage = document.pages.map(\.number).max() ?? 1
+        return retrieve(source:source,brief:brief,query:query,deckID:deckID,limit:limit).map { item in
+            var result = item
+            result.id = document.id + ":" + item.id
+            result.documentID = document.id
+            return result
+        }
+    }
     public static func isCurrent(_ evidence: AttemptEvidence,in library: LibrarySnapshot) -> Bool {
         if let note = library.liveNotes.first(where: { $0.id == evidence.id }) {
             return evidence.version == String(note.modifiedAt.timeIntervalSince1970)
@@ -76,6 +97,9 @@ public enum EvidenceRetrieval {
                     return evidence.version == document.id
                 }
             }
+        }
+        for item in library.folderDocuments ?? [] where evidence.id.hasPrefix(item.id + ":") {
+            if evidence.version == item.id { return true }
         }
         return false
     }

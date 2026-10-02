@@ -11,6 +11,22 @@ public enum LibraryValidation {
             throw EngramError.invalid("The Library has duplicate folders or exceeds 5,000 folders.")
         }
         for folder in folders { try validateFolderPath(folder) }
+        let folderDocuments = library.folderDocuments ?? []
+        guard folderDocuments.count <= 100,
+              Set(folderDocuments.map(\.id)).count == folderDocuments.count,
+              folderDocuments.reduce(0, { $0 + $1.document.originalData.count }) <= 25_000_000,
+              folderDocuments.reduce(0, { $0 + $1.document.pages.reduce(0, { $0 + $1.text.utf8.count }) }) <= 4_000_000 else {
+            throw EngramError.invalid("Library folders can hold up to 100 files, 25 MB of originals and 4 MB of extracted text.")
+        }
+        for item in folderDocuments {
+            if !item.folderPath.isEmpty {
+                try validateFolderPath(item.folderPath)
+                guard folders.contains(item.folderPath) else { throw EngramError.invalid("A source file belongs to a missing folder.") }
+            }
+            try item.document.validate()
+        }
+        let allDocumentIDs = library.decks.flatMap { ($0.documents ?? []).map(\.id) } + folderDocuments.map(\.id)
+        guard Set(allDocumentIDs).count == allDocumentIDs.count else { throw EngramError.invalid("Source files must have unique identities.") }
         try unique(library.notes.map(\.id), "note")
         try unique(library.cards.map(\.id), "card")
         try unique(library.reviews.map(\.id), "review")

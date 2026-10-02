@@ -23,8 +23,15 @@ enum PrivateCloudDocument {
     }
     static func uploads(for entity: CloudProjectionEntity,library: LibrarySnapshot,userID: UUID) throws -> [(String,Data)] {
         guard entity.kind == "private",case .object(let envelope) = entity.payload,
-              envelope["category"] == .string("deckExtras"),case .string(let id) = envelope["id"],
-              case .object(let extras) = envelope["value"],let deck = library.decks.first(where: { $0.id == id }) else { return [] }
+              case .object(let extras) = envelope["value"] else { return [] }
+        if envelope["category"] == .string("folderFiles"),
+           case .string(let path) = extras["libraryDocumentsBlob"],let documents = library.folderDocuments {
+            let data = try encode(documents)
+            try validate(path:path,data:data,userID:userID)
+            return [(path,data)]
+        }
+        guard envelope["category"] == .string("deckExtras"),case .string(let id) = envelope["id"],
+              let deck = library.decks.first(where: { $0.id == id }) else { return [] }
         var result: [(String,Data)] = []
         if case .string(let path) = extras["pdfLearningBlob"],let record = deck.pdfLearning {
             result.append((path,try encode(record)))
@@ -37,7 +44,23 @@ enum PrivateCloudDocument {
     }
     static func materialize(_ entity: CloudProjectionEntity,library: LibrarySnapshot,userID: UUID,client: any CloudTransport) async throws -> CloudProjectionEntity {
         guard entity.kind == "private",case .object(var envelope) = entity.payload,
-              envelope["category"] == .string("deckExtras"),case .object(var extras) = envelope["value"] else { return entity }
+              case .object(var extras) = envelope["value"] else { return entity }
+        if envelope["category"] == .string("folderFiles") {
+            if case .string(let path) = extras["libraryDocumentsBlob"] {
+                let documents: [LibraryFolderDocument]
+                if let existing = library.folderDocuments,try self.path(data:encode(existing),userID:userID) == path { documents = existing }
+                else {
+                    let bytes = try await client.downloadPrivateDocument(path:path)
+                    try validate(path:path,data:bytes,userID:userID)
+                    documents = try JSONDecoder().decode([LibraryFolderDocument].self,from:bytes)
+                    for item in documents { try item.document.validate() }
+                }
+                extras["libraryDocuments"] = try .encode(documents)
+            }
+            envelope["value"] = .object(extras)
+            var hydrated = entity; hydrated.payload = .object(envelope); return hydrated
+        }
+        guard envelope["category"] == .string("deckExtras") else { return entity }
         let local = CloudProjection.associatedDeck(entity).flatMap { id in library.decks.first(where: { $0.id == id }) }
         if case .string(let path) = extras["pdfLearningBlob"] {
             let record: PDFLearningRecord

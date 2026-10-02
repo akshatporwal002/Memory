@@ -84,6 +84,8 @@ final class MinimalistStudyUITests: XCTestCase {
         capture("Notes-Compact-Contents", app)
         let rail = app.descendants(matching: .any)["notes-contents-rail"].firstMatch
         XCTAssertTrue(rail.exists)
+        app.swipeUp()
+        XCTAssertTrue(rail.isHittable)
         rail.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.66)).tap()
         let selectedSection = expectation(for: NSPredicate(format: "value == %@", "Shared responsibility"), evaluatedWith: rail)
         wait(for: [selectedSection], timeout: 5)
@@ -114,6 +116,19 @@ final class MinimalistStudyUITests: XCTestCase {
         app.buttons["Close assistant"].tap()
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab-library"].isHittable)
+    }
+
+    @MainActor func testAssistantHistorySurvivesReopening() {
+        let app = launch(extra:["--ui-history-fixture"])
+        let entry = app.buttons["assistant-entry"]
+        XCTAssertTrue(entry.waitForExistence(timeout:15)); entry.tap()
+        XCTAssertTrue(app.staticTexts["CloudFront caches content near readers at edge locations."].waitForExistence(timeout:5))
+        app.buttons["Close assistant"].tap()
+        entry.tap()
+        app.buttons["Chat history"].tap()
+        XCTAssertTrue(app.staticTexts["Previous chats"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["Return to this screen's chat"].exists)
+        capture("Assistant-History",app)
     }
 
     @MainActor func testDarkAndLargeTextLayout() {

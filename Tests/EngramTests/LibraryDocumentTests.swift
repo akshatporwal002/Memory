@@ -53,4 +53,27 @@ final class LibraryDocumentTests: XCTestCase {
         snapshot = try await app.snapshot()
         XCTAssertFalse(EvidenceRetrieval.isCurrent(AttemptEvidence(id:evidence.id,text:evidence.text,version:evidence.version),in:snapshot))
     }
+    func testMovingFileAcrossNotebookFolderAndRootPreservesEvidence() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let first = try await app.createDeck(name:"AWS")
+        let second = try await app.createDeck(name:"Networking")
+        let folder = try await app.createFolder(name:"References")
+        let text = "CloudFront caches content at edge locations."
+        let document = LibraryDocument(name:"edges.md",kind:.markdown,pages:[PDFPageText(number:1,text:text)],originalData:Data(text.utf8))
+        try await app.addDocument(document,to:first.id)
+        try await app.moveDocument(id:document.id,to:.folder(folder))
+        var snapshot = try await app.snapshot()
+        XCTAssertNil(snapshot.liveDecks.first(where: { $0.id == first.id })?.documents?.first)
+        XCTAssertEqual(snapshot.folderDocuments?.first?.id,document.id)
+        let evidence = try XCTUnwrap(EvidenceRetrieval.retrieveLibrary(query:"CloudFront edge locations",library:snapshot).first(where: { $0.documentID == document.id }))
+        XCTAssertTrue(EvidenceRetrieval.isCurrent(AttemptEvidence(id:evidence.id,text:evidence.text,version:evidence.version),in:snapshot))
+        try await app.moveDocument(id:document.id,to:.notebook(second.id))
+        snapshot = try await app.snapshot()
+        XCTAssertEqual(snapshot.liveDecks.first(where: { $0.id == second.id })?.documents?.first?.id,document.id)
+        XCTAssertTrue(EvidenceRetrieval.isCurrent(AttemptEvidence(id:evidence.id,text:evidence.text,version:evidence.version),in:snapshot))
+        try await app.moveDocument(id:document.id,to:.folder(""))
+        snapshot = try await app.snapshot()
+        XCTAssertEqual(snapshot.folderDocuments?.first?.folderPath,"")
+        XCTAssertEqual(try JSONDecoder().decode(LibrarySnapshot.self,from:JSONEncoder().encode(snapshot)).folderDocuments,snapshot.folderDocuments)
+    }
 }
