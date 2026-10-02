@@ -22,6 +22,47 @@ enum AIActionRegistry {
     }
 }
 
+enum AssistantOutputPresentation {
+    static func visibleReply(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        // A model can occasionally print a proposed function call as text. It is
+        // neither an executed command nor a useful answer for the learner.
+        let lower = trimmed.lowercased()
+        if lower.contains("arguments"), (lower.contains("{") || lower.contains("function_call")) { return nil }
+        return trimmed
+    }
+
+    static func actionLabel(_ call: AIToolCall) -> String {
+        let name = call.name.components(separatedBy: ".").last ?? call.name
+        let args = (try? JSONSerialization.jsonObject(with: Data(call.arguments.utf8))) as? [String: String] ?? [:]
+        switch name {
+        case "inspect": return "Checking your library…"
+        case "retrieve": return "Finding relevant notes…"
+        case "navigate": return "Opening \(friendly(args["destination"] ?? "screen"))…"
+        case "edit":
+            switch args["operation"] {
+            case "create_deck": return "Creating a deck…"
+            case "rename_deck": return "Renaming a deck…"
+            case "save_note": return "Saving a question…"
+            case "append_section", "edit_section": return "Updating notes…"
+            case "delete_note", "delete_deck": return "Preparing a deletion…"
+            case "retention": return "Updating retention…"
+            case "remove_cover": return "Removing the cover…"
+            case "appearance": return "Updating appearance…"
+            default: return "Updating study settings…"
+            }
+        case "memory": return args["operation"] == "list" ? "Checking learning memory…" : "Updating learning memory…"
+        case "reveal_answer": return "Revealing the answer…"
+        default: return "Running an app action…"
+        }
+    }
+
+    private static func friendly(_ value: String) -> String {
+        value.replacingOccurrences(of: "_", with: " ")
+    }
+}
+
 @MainActor @Observable final class AssistantController {
     private(set) var busy = false
     private(set) var activeRunID: String?
@@ -76,7 +117,11 @@ enum AIActionRegistry {
                         try Task.checkCancellation()
                         guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }
                         switch event {
-                        case .textDelta(let delta): response.text += delta; output += delta
+                        case .textDelta(let delta):
+                            response.text += delta
+                            // Tool-capable rounds may include a textual JSON call before
+                            // the completed function-call event arrives. Never stream it.
+                            if !descriptor.supportsTools { output += delta }
                         case .toolCall(let call):
                             guard response.calls.count < 12 else { throw AIProviderError.exceededLimit }
                             if !response.calls.contains(where: { $0.id == call.id }) { response.calls.append(call); response.context.append(.call(call)) }
@@ -87,19 +132,27 @@ enum AIActionRegistry {
                     guard completed else { throw AIProviderError.incomplete }
                     guard descriptor.supportsTools || response.calls.isEmpty else { throw AIProviderError.unsupportedModel }
                     guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }
-                    if !response.text.isEmpty {
-                        output = ""
-                        conversation.messages.append(LearningChatMessage(role:"assistant",text:response.text,modelID:descriptor.id))
-                        input.append(.message(AIMessage(role:"assistant",text:response.text,modelID:descriptor.id)))
-                    }
                     if response.calls.isEmpty {
+                        guard let reply = AssistantOutputPresentation.visibleReply(response.text) else {
+                            throw AIProviderError.invalidTool
+                        }
+                        output = ""
+                        conversation.messages.append(LearningChatMessage(role:"assistant",text:reply,modelID:descriptor.id))
+                        input.append(.message(AIMessage(role:"assistant",text:reply,modelID:descriptor.id)))
                         try await persist(&conversation,input:input,model:model)
                         try await model.service.setAIRunStatus(runID,status:"completed"); await model.refresh(); return
+                    }
+                    // A command round's interim text is not a user-facing answer.
+                    // The next round will explain the executed results in plain language.
+                    output = ""
+                    if let text = AssistantOutputPresentation.visibleReply(response.text) {
+                        input.append(.message(AIMessage(role:"assistant",text:text,modelID:descriptor.id)))
                     }
                     input += response.context
                     try await persist(&conversation,input:input,model:model)
                     for call in response.calls {
                         try Task.checkCancellation()
+                        output = AssistantOutputPresentation.actionLabel(call)
                         // Persist complete calls before execution; the mutation journal is atomic with content.
                         try await persist(&conversation,input:input,model:model)
                         let result: String
@@ -111,7 +164,7 @@ enum AIActionRegistry {
                         try await persist(&conversation,input:input,model:model)
                         if pendingConfirmation != nil {
                             conversation.messages.append(LearningChatMessage(role:"assistant",text:result,modelID:descriptor.id))
-                            output += result
+                            output = ""
                             try await persist(&conversation,input:input,model:model)
                             try await model.service.setAIRunStatus(runID,status:"awaiting confirmation"); await model.refresh(); return
                         }

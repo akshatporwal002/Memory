@@ -3,9 +3,17 @@ import LearningCore
 import StudyApplication
 import PersistenceAdapters
 import SchedulingAdapters
+import AIInfrastructure
+@testable import Features
 
 final class UnifiedAITests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_788_393_600)
+    func testAssistantToolPayloadIsNeverShownAsReply() {
+        let call = AIToolCall(id:"call",name:"engram.edit",arguments:#"{"operation":"rename_deck","id":"deck-1"}"#)
+        XCTAssertEqual(AssistantOutputPresentation.actionLabel(call), "Renaming a deck…")
+        XCTAssertNil(AssistantOutputPresentation.visibleReply(#"{"name":"engram.edit","arguments":{"operation":"rename_deck"}}"#))
+        XCTAssertEqual(AssistantOutputPresentation.visibleReply("Done. Your deck is renamed."), "Done. Your deck is renamed.")
+    }
     func testAssistantCoverRemovalIsJournaledAndUndoable() async throws {
         let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
         let deck = try await app.createDeck(name:"Covered",now:now)
