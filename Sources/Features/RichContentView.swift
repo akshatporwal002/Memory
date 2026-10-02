@@ -119,18 +119,26 @@ private struct FormulaWebView {
         guard key != coordinator.key else { return }; coordinator.key = key
         guard source.utf8.count <= 30_000, let script = Bundle.module.url(forResource: "render", withExtension: "js", subdirectory: "RichContent"),
               let css = Bundle.module.url(forResource: "katex", withExtension: "css", subdirectory: "RichContent"),
-              let js = try? String(contentsOf: script, encoding: .utf8), let styles = try? String(contentsOf: css, encoding: .utf8) else {
+              let js = try? String(contentsOf: script, encoding: .utf8), var styles = try? String(contentsOf: css, encoding: .utf8) else {
             view.loadHTMLString("<pre>\(escape(source))</pre>", baseURL: nil); return
         }
+        if let fonts = try? FileManager.default.contentsOfDirectory(at: script.deletingLastPathComponent().appendingPathComponent("fonts"), includingPropertiesForKeys: nil) {
+            for font in fonts where font.pathExtension == "woff2" {
+                if let bytes = try? Data(contentsOf: font) {
+                    styles = styles.replacingOccurrences(of: "fonts/" + font.lastPathComponent, with: "data:font/woff2;base64," + bytes.base64EncodedString())
+                }
+            }
+        }
+        let safeScript = js.replacingOccurrences(of: "</script", with: "<\\/script", options: .caseInsensitive)
         let args = (try? JSONSerialization.data(withJSONObject: [kind,source,dark] as [Any])).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let safeArgs = args.replacingOccurrences(of: "<", with: "\\u003c").replacingOccurrences(of: ">", with: "\\u003e")
         let html = """
         <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src file:; img-src data:; connect-src 'none'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'">
         <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:17px -apple-system}#content{padding:8px 0;overflow:auto}svg{max-width:100%;height:auto}</style>
-        <div id="content"></div><script>\(js)</script><script>engramRender(...\(safeArgs));</script>
+        <div id="content"></div><script>\(safeScript)</script><script>engramRender(...\(safeArgs));</script>
         """
-        view.loadHTMLString(html, baseURL: script.deletingLastPathComponent())
+        view.loadHTMLString(html, baseURL: nil)
     }
     private func escape(_ text: String) -> String { text.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;") }
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {

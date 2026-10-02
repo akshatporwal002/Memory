@@ -173,12 +173,10 @@ struct LibraryLandingView: View {
             }.buttonStyle(.plain).accessibilityIdentifier("library-deck-\(entry.id)")
             deckMenu(entry).frame(width: 44, height: 44)
         }.padding(.vertical, 12).overlay(alignment: .bottom) { Divider() }
-            .overlay(alignment: .bottomLeading) {
-                LibraryRetentionIndicator(model: model, deck: entry.deck).padding(.bottom, 5)
-            }
     }
     private func directoryName(_ entry: LibraryDeckSummary) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 5) {
+            LibraryRetentionIndicator(model: model, deck: entry.deck)
             Text(entry.title).font(theme.font(.control)).fixedSize(horizontal: false, vertical: true)
             if !showFolders && !entry.folder.isEmpty {
                 Text(entry.folder.replacingOccurrences(of: "::", with: " / ")).font(.caption2).foregroundStyle(palette.secondaryText)

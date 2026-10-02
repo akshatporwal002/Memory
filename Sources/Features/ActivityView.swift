@@ -65,7 +65,7 @@ struct ActivityView: View {
                             }
                         }
                         .chartXAxis {
-                            AxisMarks {
+                            AxisMarks(values: .automatic(desiredCount: typeSize.isAccessibilitySize ? 3 : 5)) {
                                 AxisGridLine().foregroundStyle(palette.hairline)
                                 AxisValueLabel().foregroundStyle(palette.secondaryText)
                             }
@@ -73,14 +73,14 @@ struct ActivityView: View {
                         .environment(\.timeZone, TimeZone(identifier: model.library.settings.timeZoneID) ?? .gmt)
                         .frame(height: typeSize.isAccessibilitySize ? 280 : 180).padding(.vertical, 8).listRowSeparator(.hidden)
                         .accessibilityIdentifier("review-activity-chart")
-                    if selectedDate != nil { Button("Show entire period") { selectedDate = nil } }
-                    LabeledContent("Cards reviewed", value: summary.reviewedCount.formatted())
-                    if summary.attemptCount == 0 { Text("No reviews in this period. Study a deck to see your activity here.").engramSecondaryText() }
-                } else { ProgressView("Loading activity…") }
                 Group {
                     if typeSize.isAccessibilitySize { periodPicker.pickerStyle(.menu) }
                     else { periodPicker.pickerStyle(.segmented) }
                 }.listRowSeparator(.hidden)
+                    if selectedDate != nil { Button("Show entire period") { selectedDate = nil } }
+                    LabeledContent("Cards reviewed", value: summary.reviewedCount.formatted())
+                    if summary.attemptCount == 0 { Text("No reviews in this period. Study a deck to see your activity here.").engramSecondaryText() }
+                } else { ProgressView("Loading activity…") }
             } footer: { Text("Tap the chart to inspect a time. Review totals exclude undone and imported records.") }
 
             if let summary, let report {
