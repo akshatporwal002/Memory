@@ -108,6 +108,7 @@ struct AISettingsPage: View {
         Form {
             EngramListSection { NavigationLink("Engram account") { CloudAccountView(model:model) } }
             EngramListSection("ChatGPT account") { ChatGPTConnectionView(connection: model.chatGPT) }
+            EngramListSection { NavigationLink("Learning memory") { LearningMemoryView(model:model) } }
             EngramListSection {
                 Toggle("AI answer marking", isOn: Binding(get: { model.aiMarker.enabled }, set: { model.aiMarker.enabled = $0 }))
             } footer: { Text("When enabled, spoken answer text and relevant deck passages are sent to OpenAI. Audio stays local. Multiple choice is marked on this device.") }
@@ -120,10 +121,10 @@ struct AISettingsPage: View {
                             if model.aiMarker.loading { ProgressView("Loading models…") }
                             if !model.aiMarker.models.isEmpty {
                                 Picker("Grading model", selection: Binding(get: { model.aiMarker.selectedModel }, set: { model.aiMarker.selectedModel = $0 })) {
-                                    ForEach(model.aiMarker.models, id: \.self) { Text($0).tag($0) }
+                                    ForEach(model.aiMarker.models, id: \.self) { Text(model.aiMarker.title(for:$0)).tag($0) }
                                 }
                                 Picker("PDF generation", selection: Binding(get: { model.aiMarker.pdfModel }, set: { model.aiMarker.pdfModel = $0 })) {
-                                    ForEach(model.aiMarker.models, id: \.self) { Text($0).tag($0) }
+                                    ForEach(model.aiMarker.models, id: \.self) { Text(model.aiMarker.title(for:$0)).tag($0) }
                                 }
                             }
                             if let error = model.aiMarker.error { Text(error).engramErrorText() }

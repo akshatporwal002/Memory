@@ -9,6 +9,7 @@ import SchedulingAdapters
     private let repository: SQLiteLibraryRepository?
     private var client: SupabaseCloudClient?
     private var engine: CloudSyncEngine?
+    private var notificationTask: Task<Void,Never>?
     private(set) var userID: UUID?
     private(set) var busy = false
     private(set) var status = "Local library"
@@ -17,6 +18,7 @@ import SchedulingAdapters
     var invitation: CloudInvitation?
     var invitationDeckID: String?
     var confirmationUserID: UUID?
+    var pendingJoinToken: String?
     var configured: Bool { client != nil }
     init(repository: SQLiteLibraryRepository? = nil) {
         self.repository = repository
@@ -35,26 +37,49 @@ import SchedulingAdapters
     }
     func confirmInitialLibrary(upload: Bool,model: EngramModel) async {
         guard let id = confirmationUserID,let repository else { return }
+        guard !model.busy,!model.typedAnswer.busy else { error = "Finish the current edit or answer review before switching accounts."; return }
         do {
-            model.assistant.cancel(); model.voice.stop(); model.pdfLearning.cancel()
+            await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
             try await repository.selectAccount(id.uuidString.lowercased(),uploadLocal:upload)
-            userID = id; confirmationUserID = nil; await model.refresh(); await sync(model:model)
+            model.pdfLearning.selectAccount(id)
+            userID = id; confirmationUserID = nil; startNotifications(model:model); await model.refresh(); await sync(model:model)
         } catch { self.error = error.localizedDescription }
+    }
+    func cancelInitialLibrary() async {
+        do { try await client?.signOut(); confirmationUserID = nil }
+        catch { self.error = error.localizedDescription }
     }
     func restore(model: EngramModel) async {
         guard let client,let repository,!busy else { return }
-        do { let id = try await client.currentUserID(); try await repository.selectAccount(id.uuidString.lowercased()); userID = id; await model.refresh(); await sync(model:model) }
+        do {
+            let id = try await client.currentUserID()
+            guard try await repository.hasAccount(id.uuidString.lowercased()) else { confirmationUserID = id; return }
+            try await repository.selectAccount(id.uuidString.lowercased()); model.pdfLearning.selectAccount(id); userID = id; startNotifications(model:model); await model.refresh(); await sync(model:model)
+        }
         catch { status = "Local library" }
     }
     func signOut(model: EngramModel) async {
         guard let client,let repository,!busy else { return }; busy = true; defer { busy = false }
-        do { try await client.signOut(); model.assistant.cancel(); model.voice.stop(); model.pdfLearning.cancel(); try await repository.selectAccount(nil); userID = nil; conflicts = []; status = "Local library"; await model.refresh() }
+        guard !model.busy,!model.typedAnswer.busy else { error = "Finish the current edit or answer review before switching accounts."; return }
+        do { await model.assistant.stopAndWait(); try await client.signOut(); notificationTask?.cancel(); notificationTask = nil; model.voice.stop(); model.pdfLearning.selectAccount(nil); try await repository.selectAccount(nil); userID = nil; conflicts = []; status = "Local library"; await model.refresh() }
         catch { self.error = error.localizedDescription }
     }
-    func sync(model: EngramModel) async {
+    private func startNotifications(model: EngramModel) {
+        notificationTask?.cancel()
+        guard let client,let id = userID else { return }
+        notificationTask = Task { [weak self,weak model] in
+            do {
+                for try await _ in await client.notifications() {
+                    guard !Task.isCancelled,let self,let model,self.userID == id else { break }
+                    await self.sync(model:model)
+                }
+            } catch { /* Offline notification failure leaves cursor-based polling active. */ }
+        }
+    }
+    func sync(model: EngramModel,allowStudyBoundary: Bool = false) async {
         guard let engine,userID != nil,!busy else { return }; busy = true; status = "Syncing…"; defer { busy = false }
         do {
-            let report = try await engine.synchronize(); conflicts = report.conflicts
+            let report = try await engine.synchronize(allowStudyBoundary:allowStudyBoundary); conflicts = report.conflicts
             status = report.conflicts.isEmpty ? (report.pending == 0 ? "Synced" : "\(report.pending) pending") : "\(report.conflicts.count) conflicts"
             if !report.removedDecks.isEmpty { status += " · shared access removed" }
             if report.adjustedDueDates > 0 { status += " · \(report.adjustedDueDates) due dates reconciled" }

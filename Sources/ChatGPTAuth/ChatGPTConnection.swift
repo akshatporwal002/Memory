@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 
+public enum ChatGPTConnectionState: String,Sendable { case disconnected,connecting,connected,permissionMissing,expired,error }
+
 @MainActor public protocol ChatGPTCallbackListening: AnyObject {
     func start() async throws -> URL
     func authorize(_ attempt: OAuthAttempt, openBrowser: @MainActor (URL) throws -> Void,
@@ -28,6 +30,19 @@ import Observation
     @ObservationIgnored private var storageReady = false
 
     public var activeAccount: ChatGPTRegistration? { registrations.first { $0.clientID == activeClientID } }
+    public var state: ChatGPTConnectionState {
+        if signingIn { return .connecting }
+        if error != nil { return .error }
+        guard let account = activeAccount else { return .disconnected }
+        guard let credentials = account.credentials else { return .expired }
+        if !account.planUsageEnabled { return .permissionMissing }
+        if credentials.expiresAt <= Date() { return .expired }
+        return .connected
+    }
+    public func renewSession() async {
+        error = nil
+        do { _ = try await validAccessToken() } catch { self.error = error.localizedDescription }
+    }
 
     public init(storage: any ChatGPTCredentialStorage, client: ChatGPTOAuthClient,
                 makeListener: @escaping @MainActor () -> any ChatGPTCallbackListening,

@@ -24,9 +24,11 @@ import AIInfrastructure
             var attempt = AnswerAttempt(sessionID:session.id,item:item,noteID:note.id,answer:answer,prompt:question.prompt,
                 expected:revealed.answer ?? note.back,modelID:model.aiMarker.selectedModel,evidence:evidence)
             try await model.service.saveAnswerAttempt(attempt); await model.refresh()
+            let account = model.chatGPT.activeClientID
             let assessment = try await model.aiMarker.assess(answer:answer,note:note,prompt:question.prompt,expected:attempt.expectedAnswer,library:model.library,connection:model.chatGPT)
             try Task.checkCancellation()
             attempt.assessment = assessment
+            if assessment.method != "local-exact" { guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }; attempt.providerAccountID = account }
             attempt.annotations = attempt.validatedAnnotations(assessment.annotations ?? [])
             attempt.additions = assessment.additions ?? []
             if assessment.method == "local-exact" {

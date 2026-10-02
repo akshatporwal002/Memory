@@ -38,9 +38,11 @@ struct CloudAccountView: View {
             if let error = model.cloud.error { EngramInlineError(message:error) }
             if model.cloud.busy { ProgressView() }
         }.modifier(UtilityListStyle()).navigationTitle("Engram account").disabled(model.cloud.busy)
+            .onAppear { if let value = model.cloud.pendingJoinToken { token = value; model.cloud.pendingJoinToken = nil } }
             .confirmationDialog("Choose your account's starting library",isPresented:Binding(get: { model.cloud.confirmationUserID != nil },set: { _ in })) {
                 Button("Upload this device's local library") { Task { await model.cloud.confirmInitialLibrary(upload:true,model:model) } }
                 Button("Start with my cloud library") { Task { await model.cloud.confirmInitialLibrary(upload:false,model:model) } }
+                Button("Cancel",role:.cancel) { Task { await model.cloud.cancelInitialLibrary() } }
             } message: { Text("Uploading is optional. Local libraries and other accounts remain separate on this device.") }
             .confirmationDialog("Sign out of Engram?",isPresented:$confirmSignOut) {
                 Button("Sign out",role:.destructive) { Task { await model.cloud.signOut(model:model) } }

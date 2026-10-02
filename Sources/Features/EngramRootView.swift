@@ -63,6 +63,10 @@ public struct EngramRootView: View {
             if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
         }
         .task { await model.cloud.restore(model:model) }
+        .onChange(of:model.chatGPT.activeClientID) { _,_ in
+            model.assistant.cancel(); model.pdfLearning.cancel(); model.aiMarker.invalidateCatalog()
+            Task { if model.chatGPT.activeClientID != nil { await model.aiMarker.loadModels(connection:model.chatGPT) } }
+        }
         .onPreferenceChange(AssistantDockHeight.self) { assistantDockHeight = max(72, $0 + 12) }
         .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
         .confirmationDialog("Delete deck?", isPresented: Binding(get: { model.deleteDeck != nil }, set: { if !$0 { model.deleteDeck = nil } }), titleVisibility: .visible) {
@@ -93,13 +97,23 @@ public struct EngramRootView: View {
                 try? await Task.sleep(for: .seconds(30))
                 guard !Task.isCancelled else { break }
                 await model.refresh()
+                await model.cloud.sync(model:model)
             }
         }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh() } } }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh(); await model.cloud.sync(model:model) } } }
+        .onChange(of:model.library.session?.current?.presentationID) { old,new in
+            if old != nil,new != nil { Task { await model.cloud.sync(model:model,allowStudyBoundary:true) } }
+        }
         .onChange(of: model.portabilityRequested) { _, value in
             if value { model.portabilityRequested = false; portabilityAction?() }
         }
         .sheet(isPresented: $model.actionReviewPresented) { AIActionReviewView(model: model) }
+        .sheet(isPresented: $model.cloudAccountPresented) { NavigationStack { CloudAccountView(model:model) } }
+        .onOpenURL { url in
+            guard url.scheme == "engram",url.host == "join",let token = URLComponents(url:url,resolvingAgainstBaseURL:false)?.queryItems?.first(where: { $0.name == "token" })?.value,
+                  token.count == 64,token.allSatisfy({ $0.isHexDigit }) else { return }
+            model.cloud.pendingJoinToken = token; model.cloudAccountPresented = true
+        }
         .environment(\.engramTheme, model.theme)
         .environment(\.engramAssistantBottomInset, capturingScreenshots ? 0 : assistantDockHeight)
         .tint(scheme == .dark ? model.theme.palette(for: scheme).easyInk : model.theme.palette(for: scheme).anchor)

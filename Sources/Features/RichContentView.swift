@@ -113,8 +113,11 @@ private struct RichFormulaView: View {
     @State private var height: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var fontSize = 17.0
     var body: some View {
+        VStack(alignment:.leading,spacing:8) {
         FormulaWebView(kind: kind, source: source, dark: scheme == .dark, fontSize: fontSize, height: $height)
             .frame(height: height).accessibilityLabel(kind == "mermaid" ? "Diagram: \(source)" : "Mathematical content: \(source)")
+        if kind == "mermaid" { DisclosureGroup("Diagram text") { SwiftUI.Text(verbatim:source).font(.body).textSelection(.enabled) }.font(.caption) }
+        }
     }
 }
 
@@ -152,12 +155,12 @@ private struct FormulaWebView {
             }
         }
         let safeScript = js.replacingOccurrences(of: "</script", with: "<\\/script", options: .caseInsensitive)
-        let args = (try? JSONSerialization.data(withJSONObject: [kind,source,dark] as [Any])).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        let args = (try? JSONSerialization.data(withJSONObject: [kind,source,dark,fontSize] as [Any])).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let safeArgs = args.replacingOccurrences(of: "<", with: "\\u003c").replacingOccurrences(of: ">", with: "\\u003e")
         let html = """
         <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'">
-        <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:\(fontSize)px -apple-system}#content{padding:8px 0;overflow:auto}svg{max-width:100%;height:auto}</style>
+        <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:\(fontSize)px -apple-system}#content{padding:8px 0;overflow:auto}pre,.fallback{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}svg{max-width:100%;height:auto}</style>
         <div id="content"><pre>\(escape(source))</pre></div><script>\(safeScript)</script><script>engramRender(...\(safeArgs));</script>
         """
         view.loadHTMLString(html, baseURL: nil)

@@ -9,6 +9,7 @@ struct TypedAnswerView: View {
     @State private var discussion = ""
     @State private var discussing = false
     @State private var accepting = false
+    @FocusState private var inputFocused: Bool
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -58,7 +59,7 @@ struct TypedAnswerView: View {
                 }}
                 if assessment.rating != nil,!attempt.assisted {
                     EngramActionButton("Next",busy:model.busy || model.typedAnswer.busy) {
-                        Task { _ = await model.perform { try await $0.commitAnswerAttempt(id:attempt.id) } }
+                        Task { _ = await model.perform { try await $0.commitAnswerAttempt(id:attempt.id,providerAccountID:model.chatGPT.activeClientID) } }
                     }.accessibilityIdentifier("typed-answer-next")
                 }
                 Menu("Rate manually instead") {
@@ -68,15 +69,17 @@ struct TypedAnswerView: View {
                 }
             } else {
                 TextField("Type your answer",text:$answer,axis:.vertical).lineLimit(3...8)
+                    .focused($inputFocused)
                     .padding(12).background(palette.surface,in:RoundedRectangle(cornerRadius:12))
                     .accessibilityIdentifier("typed-answer-input")
                 EngramActionButton("Review answer",busy:model.typedAnswer.busy) {
-                    Task { await model.typedAnswer.assess(answer,model:model) }
+                    inputFocused = false; Task { await model.typedAnswer.assess(answer,model:model) }
                 }.disabled(answer.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
             }
             if let error = model.typedAnswer.error { EngramInlineError(message:error) }
             if model.typedAnswer.busy { ProgressView("Reviewing…") }
-        }.onChange(of:item.presentationID) { _,_ in answer = ""; discussion = ""; discussing = false; model.typedAnswer.error = nil }
+        }.toolbar { ToolbarItemGroup(placement:.keyboard) { Spacer(); Button("Done") { inputFocused = false } } }
+        .onChange(of:item.presentationID) { _,_ in answer = ""; discussion = ""; discussing = false; model.typedAnswer.error = nil }
     }
 }
 
@@ -103,7 +106,7 @@ private struct AnswerAnnotationView: View {
         for span in attempt.validatedAnnotations(attempt.annotations) {
             if span.startUTF16 > end { result = result + Text(verbatim:source.substring(with:NSRange(location:end,length:span.startUTF16-end))) }
             let segment = Text(verbatim:span.text)
-            if span.kind == "correct" { result = result + segment.foregroundColor(colored ? palette.goodInk : palette.primaryText) }
+            if span.kind == "correct" { result = result + segment.foregroundColor(colored ? palette.easyInk : palette.primaryText) }
             else { result = result + segment.strikethrough(colored).foregroundColor(colored ? palette.againInk : palette.primaryText) }
             end = span.startUTF16 + span.lengthUTF16
         }

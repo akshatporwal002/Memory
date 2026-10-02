@@ -13,7 +13,7 @@ private struct AssistantPassage: Identifiable, Sendable {
 }
 
 private struct AssistantMessage: Identifiable {
-    let id = UUID()
+    var id: String = UUID().uuidString
     let isUser: Bool
     let text: String
     let sources: [AssistantPassage]
@@ -57,7 +57,7 @@ struct ContextualAssistant: View {
         let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.activeContentKind ?? (model.activeDeckOverviewID != nil ? "deck" : model.creationPresented ? "creation" : model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue)
         return workflow + ":" + (deckID ?? "none")
     }
-    private var thread: [AssistantMessage] { (messages[context] ?? []) + (model.library.assistantState?.conversations.first(where: { $0.id == context })?.messages.map { AssistantMessage(isUser: $0.role == "user", text: $0.text, sources: []) } ?? []) }
+    private var thread: [AssistantMessage] { (messages[context] ?? []) + (model.library.assistantState?.conversations.first(where: { $0.id == context })?.messages.map { AssistantMessage(id: $0.id, isUser: $0.role == "user", text: $0.text, sources: []) } ?? []) }
     private var currentReviewPrompt: String? {
         guard model.reviewPresented, let card = model.library.session?.current?.card,
               let note = model.library.liveNotes.first(where: { $0.id == card.noteID }) else { return nil }
@@ -106,9 +106,11 @@ struct ContextualAssistant: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             .padding(.horizontal, 16)
         }
-        .confirmationDialog("Confirm the assistant's requested deletion", isPresented: Binding(get: { model.assistant.pendingConfirmation != nil }, set: { if !$0 { Task { await model.assistant.reject(model: model) } } })) {
-            Button("Delete", role: .destructive) { Task { await model.assistant.confirm(model: model) } }
+        .confirmationDialog("Confirm the assistant's requested change", isPresented: Binding(get: { model.assistant.pendingConfirmation != nil }, set: { if !$0 { Task { await model.assistant.reject(model: model) } } })) {
+            Button("Confirm change") { Task { await model.assistant.confirm(model: model) } }
             Button("Cancel", role: .cancel) { Task { await model.assistant.reject(model: model) } }
+        } message: {
+            Text(model.library.assistantState?.runs.flatMap(\.actions).last(where: { $0.id == model.assistant.pendingConfirmation?.id })?.summary ?? "Review this requested change before accepting.")
         }
         .animation(motion, value: open)
         .animation(motion, value: expanded)
@@ -259,12 +261,13 @@ struct ContextualAssistant: View {
             HStack {
                 Menu {
                     ForEach(model.aiMarker.models, id: \.self) { id in
-                        Button(id) { Task { await model.assistant.selectModel(id, contextID: context, model: model) } }
+                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: context, model: model) } }
                     }
+                    if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
                     Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
                 } label: {
-                    Text(model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel).font(.caption).lineLimit(1)
-                }.disabled(busy)
+                    Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).font(.caption).lineLimit(1)
+                }.frame(minHeight:44).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == context })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Spacer()
                 if busy { Button("Stop") { model.assistant.cancel() } }
                 Button("Review changes") { model.actionReviewPresented = true }

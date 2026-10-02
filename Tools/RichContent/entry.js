@@ -2,13 +2,13 @@ import mermaid from 'mermaid';
 import katex from 'katex';
 mermaid.initialize({startOnLoad: false, securityLevel: 'strict', suppressErrorRendering: true,
   maxTextSize: 30000, flowchart: {htmlLabels: false}});
-window.engramRender = async (kind, source, dark) => {
+window.engramRender = async (kind, source, dark, fontSize = 17) => {
   const root = document.getElementById('content');
   try {
     if (kind === 'mermaid') {
       if (/%%\s*\{|^\s*click\s/im.test(source)) throw new Error('Active diagram directives are disabled');
       mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:dark?'dark':'neutral',
-        suppressErrorRendering:true,maxTextSize:30000,flowchart:{htmlLabels:false}});
+        suppressErrorRendering:true,maxTextSize:30000,themeVariables:{fontSize:`${Math.min(80,Math.max(12,fontSize))}px`},flowchart:{htmlLabels:false}});
       const {svg} = await mermaid.render('engram-diagram', source);
       root.innerHTML = svg;
     } else if (kind === 'paragraph' || kind === 'richParagraph') {
@@ -34,6 +34,6 @@ window.engramRender = async (kind, source, dark) => {
       katex.render(source, root, {displayMode:kind==='displayMath',trust:false,
         throwOnError:true,maxExpand:1000,maxSize:20,output:'htmlAndMathml'});
     }
-  } catch (_) { root.textContent = source; }
+  } catch (_) { root.classList.add('fallback'); root.textContent = source; }
   window.webkit?.messageHandlers?.height?.postMessage(Math.min(2000,Math.max(36,root.scrollHeight+16)));
 };

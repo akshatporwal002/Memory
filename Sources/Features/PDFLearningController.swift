@@ -25,11 +25,19 @@ struct PDFLearningDraft: Codable {
     var notices: [String] = []
     @ObservationIgnored private var work: Task<Void, Never>?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
-    @ObservationIgnored private let storage: URL
+    @ObservationIgnored private var storage: URL
+    @ObservationIgnored private let localStorage: URL
     init(storageURL: URL? = nil) {
         storage = storageURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Engram/pdf-learning-draft.json")
+        localStorage = storage
         draft = (try? Data(contentsOf: storage)).flatMap { try? JSONDecoder().decode(PDFLearningDraft.self, from: $0) } ?? PDFLearningDraft()
+    }
+    func selectAccount(_ userID: UUID?) {
+        cancel(); saveTask?.cancel(); persistNow()
+        storage = userID.map { localStorage.deletingLastPathComponent().appendingPathComponent("pdf-learning-draft-" + $0.uuidString.lowercased() + ".json") } ?? localStorage
+        draft = (try? Data(contentsOf:storage)).flatMap { try? JSONDecoder().decode(PDFLearningDraft.self,from:$0) } ?? PDFLearningDraft()
+        error = nil; notices = []; status = ""
     }
     private func persist() {
         saveTask?.cancel()

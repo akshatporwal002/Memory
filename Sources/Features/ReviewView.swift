@@ -35,9 +35,11 @@ struct ReviewView: View {
                                         .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 }
                             }
+                            if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil {
                             controls(session: session, item: item, width: geometry.size.width)
                                 .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 .background(theme.palette(for: scheme).canvas)
+                            }
                         }
                     } else { completion }
                 }
@@ -145,10 +147,10 @@ struct ReviewView: View {
                 }
                 Section("Voice") { VoiceModeSettings(voice: model.voice) }
                 Section("Appearance") {
-                    Picker("Theme", selection: $model.theme) {
+                    Picker("Theme", selection: model.themeSelection) {
                         ForEach(EngramTheme.allCases) { Text($0.title).tag($0) }
                     }
-                    Picker("Appearance", selection: $model.appearance) {
+                    Picker("Appearance", selection: model.appearanceSelection) {
                         ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) }
                     }
                 }

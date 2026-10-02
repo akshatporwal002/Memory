@@ -19,6 +19,7 @@ struct LibraryLandingView: View {
     @AppStorage("engram.library.folders.v1") private var showFolders = false
     @State private var query = ""
     @State private var entries: [LibraryDeckSummary] = []
+    @State private var retention: [String:Double] = [:]
     @State private var expanded = Set<String>()
     @State private var openedDeck: String?
     @State private var photo: PhotosPickerItem?
@@ -53,6 +54,16 @@ struct LibraryLandingView: View {
         }
         .photosPicker(isPresented: $choosingCover, selection: $photo, matching: .images)
         .task(id: photo) { await savePickedCover() }
+        .task(id:"\(model.library.revision)-\(model.loaded)") {
+            let library = model.library,now = model.now
+            var values: [String:Double] = [:]
+            for deck in library.liveDecks {
+                let outlook = await model.service.memoryOutlook(for:deck,in:library,now:now)
+                guard !Task.isCancelled else { return }
+                if let average = outlook.average.first { values[deck.id] = average }
+            }
+            retention = values
+        }
         .onAppear {
             reload()
             if let id = model.libraryDeckRequest { open(id); model.libraryDeckRequest = nil }
@@ -176,7 +187,7 @@ struct LibraryLandingView: View {
     }
     private func directoryName(_ entry: LibraryDeckSummary) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            LibraryRetentionIndicator(model: model, deck: entry.deck)
+            LibraryRetentionIndicator(average:retention[entry.deck.id])
             Text(entry.title).font(theme.font(.control)).fixedSize(horizontal: false, vertical: true)
             if !showFolders && !entry.folder.isEmpty {
                 Text(entry.folder.replacingOccurrences(of: "::", with: " / ")).font(.caption2).foregroundStyle(palette.secondaryText)
@@ -247,9 +258,7 @@ struct LibraryLandingView: View {
 }
 
 private struct LibraryRetentionIndicator: View {
-    let model: EngramModel
-    let deck: Deck
-    @State private var average: Double?
+    let average: Double?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     var body: some View {
@@ -261,8 +270,6 @@ private struct LibraryRetentionIndicator: View {
                     Text(average, format: .percent.precision(.fractionLength(0))).font(.caption2).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 }.accessibilityElement(children: .ignore).accessibilityLabel("Estimated retention \(Int(average * 100)) percent")
             }
-        }.task(id: model.library.revision) {
-            average = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now).average.first
         }
     }
 }

@@ -65,9 +65,11 @@ struct ActivityView: View {
                             }
                         }
                         .chartXAxis {
-                            AxisMarks(values: .automatic(desiredCount: typeSize.isAccessibilitySize ? 3 : 5)) {
+                            AxisMarks(values: axisDates(report.points)) { value in
                                 AxisGridLine().foregroundStyle(palette.hairline)
-                                AxisValueLabel().foregroundStyle(palette.secondaryText)
+                                AxisValueLabel {
+                                    if let date = value.as(Date.self) { Text(axisLabel(date)).fixedSize().foregroundStyle(palette.secondaryText) }
+                                }
                             }
                         }
                         .environment(\.timeZone, TimeZone(identifier: model.library.settings.timeZoneID) ?? .gmt)
@@ -132,6 +134,16 @@ struct ActivityView: View {
                     do { try await Task.sleep(for: .seconds(60)) } catch { return }
                 } while !Task.isCancelled
             }
+    }
+    private func axisDates(_ points: [ActivityChartPoint]) -> [Date] {
+        guard !points.isEmpty else { return [] }
+        let indices = typeSize.isAccessibilitySize ? [0,points.count-1] : [0,points.count/2,points.count-1]
+        return Array(Set(indices)).sorted().map { points[$0].interval.start.addingTimeInterval(points[$0].interval.duration / 2) }
+    }
+    private func axisLabel(_ date: Date) -> String {
+        let formatter = DateFormatter(); formatter.timeZone = TimeZone(identifier:model.library.settings.timeZoneID) ?? .gmt
+        formatter.setLocalizedDateFormatFromTemplate(period == .today ? "j" : period == .week || period == .month ? "d" : "MMMyy")
+        return formatter.string(from:date)
     }
     private var periodPicker: some View {
         Picker("Period", selection: $period) {

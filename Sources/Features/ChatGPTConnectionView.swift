@@ -23,9 +23,9 @@ struct ChatGPTConnectionView: View {
                         Text(account.label).font(.subheadline).foregroundStyle(theme.palette(for: scheme).secondaryText)
                     }
                     Spacer()
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.palette(for: scheme).accentInk)
+                    Image(systemName: connection.state == .connected ? "checkmark.circle.fill" : "exclamationmark.circle").foregroundStyle(theme.palette(for: scheme).accentInk)
                 }
-                Text(account.planUsageEnabled ? "ChatGPT plan usage enabled" : "Connected · plan usage not granted")
+                Text(statusText)
                     .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                 Button("Sign out of ChatGPT") { Task { await connection.signOut() } }
                     .buttonStyle(.bordered).disabled(connection.busy)
@@ -66,6 +66,10 @@ struct ChatGPTConnectionView: View {
                 if let account = connection.activeAccount, !account.planUsageEnabled {
                     Button("Authorize ChatGPT plan usage") { signIn(account.clientID) }.buttonStyle(.bordered)
                 }
+                if connection.state == .expired {
+                    Button("Renew session") { Task { await connection.renewSession() } }.buttonStyle(.bordered)
+                    if let account = connection.activeAccount { Button("Sign in again") { signIn(account.clientID) } }
+                }
             }
             Text("Connect your AI account separately from Engram sync. Eligible accounts can grant plan usage; requests share your ChatGPT limits. Engram cannot access your ChatGPT conversations.")
                 .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
@@ -94,6 +98,16 @@ struct ChatGPTConnectionView: View {
         .onChange(of: connection.busy) { _, busy in if !busy { browser = nil } }
         .onChange(of: connection.waitingForBrowser) { _, waiting in if !waiting { browser = nil } }
         .onDisappear { connection.cancelSignIn() }
+    }
+    private var statusText: String {
+        switch connection.state {
+        case .disconnected: "Not connected"
+        case .connecting: "Connecting…"
+        case .connected: "ChatGPT plan usage enabled"
+        case .permissionMissing: "Permission needed for ChatGPT plan usage"
+        case .expired: "Session needs renewal"
+        case .error: "Connection needs attention"
+        }
     }
 
     private func signIn(_ clientID: String?) {

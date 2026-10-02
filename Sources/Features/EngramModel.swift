@@ -33,6 +33,7 @@ public struct DeckForm: Identifiable {
     public var settingsRoute: String?
     public var portabilityRequested = false
     var actionReviewPresented = false
+    var cloudAccountPresented = false
     var pdfLearningPresented = false
     public var answerFeedback: String?
     public var markingAnswer = false
@@ -118,7 +119,11 @@ public struct DeckForm: Identifiable {
     }
     public func refresh() async {
         guard !busy else { return }
-        do { library = try await service.snapshot(); now = Date(); loaded = true }
+        do {
+            library = try await service.snapshot(); now = Date(); loaded = true
+            if let value = library.assistantState?.preferences?["theme"],let choice = EngramTheme(rawValue:value) { theme = choice }
+            if let value = library.assistantState?.preferences?["appearance"],let choice = EngramAppearance(rawValue:value) { appearance = choice }
+        }
         catch { self.error = error.localizedDescription }
     }
     @discardableResult public func perform(_ operation: (StudyService) async throws -> Void) async -> Bool {

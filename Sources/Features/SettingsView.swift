@@ -2,12 +2,17 @@ import SwiftUI
 import LearningCore
 import DesignSystem
 
+@MainActor extension EngramModel {
+    var themeSelection: Binding<EngramTheme> { Binding(get:{self.theme},set:{value in Task { if await self.perform({ try await $0.saveAppPreferences(["theme":value.rawValue]) }) { self.theme = value } }}) }
+    var appearanceSelection: Binding<EngramAppearance> { Binding(get:{self.appearance},set:{value in Task { if await self.perform({ try await $0.saveAppPreferences(["appearance":value.rawValue]) }) { self.appearance = value } }}) }
+}
+
 struct ThemeMenu: View {
     @Bindable var model: EngramModel
     var body: some View {
         Menu {
-            Picker("Theme", selection: $model.theme) { ForEach(EngramTheme.allCases) { Text($0.title).tag($0) } }
-            Picker("Appearance", selection: $model.appearance) { ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) } }
+            Picker("Theme", selection: model.themeSelection) { ForEach(EngramTheme.allCases) { Text($0.title).tag($0) } }
+            Picker("Appearance", selection: model.appearanceSelection) { ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) } }
         } label: { Label("Appearance", systemImage: "circle.lefthalf.filled") }
     }
 }
@@ -154,8 +159,8 @@ struct SettingsView: View {
         case .appearance:
             Form {
                 EngramListSection {
-                    Picker("Appearance", selection: $model.appearance) { ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) } }
-                    Picker("Theme", selection: $model.theme) { ForEach(EngramTheme.allCases) { Text($0.title).tag($0) } }
+                    Picker("Appearance", selection: model.appearanceSelection) { ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) } }
+                    Picker("Theme", selection: model.themeSelection) { ForEach(EngramTheme.allCases) { Text($0.title).tag($0) } }
                 }
                 EngramListSection { Text("Text size, Reduce Motion and contrast follow your system accessibility settings.").engramSecondaryText() }
             }.modifier(UtilityListStyle()).navigationTitle(page.rawValue)
