@@ -42,5 +42,34 @@ do $$ begin
    raise exception 'Revoked retry authorized';
  exception when others then if sqlerrm='Revoked retry authorized' then raise; end if; end;
 end $$;
+select set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+do $$ declare invite jsonb; joined text; begin
+ invite := public.engram_invite('test-deck','editor',1);
+ perform set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000004","role":"authenticated"}',true);
+ joined := public.engram_accept(invite->>'token');
+ if joined<>'test-deck' then raise exception 'Invitation did not grant deck'; end if;
+ perform set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+ perform public.engram_revoke('test-deck',null,(invite->>'id')::uuid);
+ perform set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000002","role":"authenticated"}',true);
+ begin
+   perform public.engram_accept(invite->>'token'); raise exception 'Revoked invitation accepted';
+ exception when others then if sqlerrm='Revoked invitation accepted' then raise; end if; end;
+end $$;
+select set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+insert into storage.objects(bucket_id,name) values('engram-private-pdfs','10000000-0000-0000-0000-000000000001/source.pdf');
+select set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000004","role":"authenticated"}',true);
+do $$ begin
+ if exists(select 1 from storage.objects where bucket_id='engram-private-pdfs') then raise exception 'Shared editor sees original PDF'; end if;
+ begin
+   insert into storage.objects(bucket_id,name) values('engram-private-pdfs','10000000-0000-0000-0000-000000000001/outsider.pdf'); raise exception 'Editor wrote owner PDF';
+ exception when others then if sqlerrm='Editor wrote owner PDF' then raise; end if; end;
+end $$;
+select set_config('request.jwt.claims','{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}',true);
+select public.engram_apply('20000000-0000-0000-0000-000000000008','deck','test-deck','test-deck',1,'{"id":"test-deck","name":"Test","deleted":true}',true);
+select public.engram_apply('20000000-0000-0000-0000-000000000008','deck','test-deck','test-deck',1,'{"id":"test-deck","name":"Test","deleted":true}',true);
+do $$ begin
+ if (select count(*) from public.engram_entities where kind='deck')<>1 then raise exception 'Owner tombstone hidden'; end if;
+end $$;
+select public.engram_apply('20000000-0000-0000-0000-000000000009','deck','test-deck','test-deck',2,'{"id":"test-deck","name":"Restored","deleted":false}',false);
 rollback;
 select 'Engram permissions and idempotency checks passed' as result;

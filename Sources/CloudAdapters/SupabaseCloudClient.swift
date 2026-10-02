@@ -48,6 +48,18 @@ public struct CloudApply: Encodable, Sendable {
     public init(operationID: UUID,kind: String,id: String,deckID: String?,version: Int64,content: JSONValue,deleted: Bool = false) {
         operation_id = operationID; entity_kind = kind; entity_id = id; target_deck = deckID; base_version = version; self.content = content; is_deleted = deleted
     }
+    private enum CodingKeys: String, CodingKey { case operation_id, entity_kind, entity_id, target_deck, base_version, content, is_deleted }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy:CodingKeys.self)
+        try container.encode(operation_id,forKey:.operation_id)
+        try container.encode(entity_kind,forKey:.entity_kind)
+        try container.encode(entity_id,forKey:.entity_id)
+        // PostgREST requires the named argument even for learner-private entities.
+        try container.encode(target_deck,forKey:.target_deck)
+        try container.encode(base_version,forKey:.base_version)
+        try container.encode(content,forKey:.content)
+        try container.encode(is_deleted,forKey:.is_deleted)
+    }
 }
 public struct CloudApplyResult: Codable, Sendable {
     public var status: String
@@ -64,7 +76,14 @@ public struct CloudMembership: Codable, Sendable { public var deck_id: String; p
 public struct CloudInvitation: Codable, Sendable { public var id: UUID; public var token: String }
 
 /// App-account credentials and refresh are owned by Supabase Auth, separate from ChatGPT.
-public actor SupabaseCloudClient {
+public protocol CloudTransport: Sendable {
+    func currentUserID() async throws -> UUID
+    func apply(_ operation: CloudApply) async throws -> CloudApplyResult
+    func changes(after sequence: Int64) async throws -> [CloudChange]
+    func decks() async throws -> [CloudDeckAccess]
+    func memberships() async throws -> [CloudMembership]
+}
+public actor SupabaseCloudClient: CloudTransport {
     private let client: SupabaseClient
     public init(url: URL,publishableKey: String) throws {
         guard url.scheme == "https" || ["localhost","127.0.0.1"].contains(url.host ?? ""), !publishableKey.hasPrefix("sb_secret_") else { throw EngramError.invalid("Use a project URL and publishable key.") }
@@ -86,6 +105,23 @@ public actor SupabaseCloudClient {
     public func changes(after sequence: Int64) async throws -> [CloudChange] { try await client.from("engram_changes").select().gt("sequence",value:String(sequence)).order("sequence").limit(500).execute().value }
     public func decks() async throws -> [CloudDeckAccess] { try await client.from("engram_decks").select().execute().value }
     public func memberships() async throws -> [CloudMembership] { try await client.from("engram_members").select().execute().value }
+    /// Notifications are only download hints. The incremental HTTP cursor remains authoritative.
+    public func notifications() -> AsyncThrowingStream<Void,Error> {
+        let client = self.client
+        return AsyncThrowingStream { continuation in
+            let channel = client.channel("engram-changes-" + UUID().uuidString)
+            let changes = channel.postgresChange(AnyAction.self,schema:"public",table:"engram_changes",select:["sequence"])
+            let task = Task {
+                do {
+                    try await channel.subscribeWithError()
+                    for await _ in changes { try Task.checkCancellation(); continuation.yield(()) }
+                    continuation.finish()
+                } catch { continuation.finish(throwing:error) }
+                await client.removeChannel(channel)
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
     public func invite(deckID: String,role: String) async throws -> CloudInvitation {
         try await client.rpc("engram_invite",params:["target_deck":JSONValue.string(deckID),"member_role":.string(role),"valid_hours":.number(168)]).execute().value
     }

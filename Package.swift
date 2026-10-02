@@ -5,6 +5,7 @@ var targets: [Target] = [
     .target(name: "ChatGPTAuth"),
     .target(name: "AIInfrastructure"),
     .target(name: "CloudAdapters", dependencies: ["LearningCore", "PersistenceAdapters", .product(name: "Supabase", package: "supabase-swift")]),
+    .testTarget(name: "CloudAdapterTests", dependencies: ["CloudAdapters", "PersistenceAdapters", "LearningCore", "StudyApplication", "SchedulingAdapters"]),
     .testTarget(name: "AIInfrastructureTests", dependencies: ["AIInfrastructure"]),
     .testTarget(name: "ChatGPTAuthTests", dependencies: ["ChatGPTAuth"]),
     .target(name: "CSQLite", exclude: ["PROVENANCE.md"], cSettings: [.define("SQLITE_THREADSAFE", to: "1"), .define("SQLITE_OMIT_LOAD_EXTENSION")]),
@@ -33,3 +34,4 @@ targets += [.target(name: "DesignSystem"), .target(name: "Features", dependencie
 products += [.library(name: "DesignSystem", targets: ["DesignSystem"]), .library(name: "Features", targets: ["Features"])]
 let package = Package(name: "Engram", platforms: [.iOS(.v17), .macOS(.v14)], products: products,
     dependencies: [.package(url: "https://github.com/supabase/supabase-swift.git", exact: "2.55.3"), .package(path: "Vendor/FSRS"), .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.9.0"), .package(url: "https://github.com/FluidInference/FluidAudio.git", revision: "8145085136df11758cc1303ab54d8e032c12bd41")], targets: targets)
+

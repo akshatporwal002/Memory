@@ -28,8 +28,8 @@ revoke all on function engram_private.can_access(text,boolean) from public,anon;
 grant execute on function engram_private.can_access(text,boolean) to authenticated;
 create policy decks_read on public.engram_decks for select to authenticated using(owner_id=(select auth.uid()) or engram_private.can_access(id));
 create policy members_read on public.engram_members for select to authenticated using(user_id=(select auth.uid()) or exists(select 1 from public.engram_decks d where d.id=deck_id and d.owner_id=(select auth.uid())));
-create policy entities_read on public.engram_entities for select to authenticated using(learner_id=(select auth.uid()) or engram_private.can_access(deck_id));
-create policy changes_read on public.engram_changes for select to authenticated using(learner_id=(select auth.uid()) or engram_private.can_access(deck_id));
+create policy entities_read on public.engram_entities for select to authenticated using(learner_id=(select auth.uid()) or engram_private.can_access(deck_id) or exists(select 1 from public.engram_decks d where d.id=deck_id and d.owner_id=(select auth.uid())));
+create policy changes_read on public.engram_changes for select to authenticated using(learner_id=(select auth.uid()) or engram_private.can_access(deck_id) or exists(select 1 from public.engram_decks d where d.id=deck_id and d.owner_id=(select auth.uid())));
 revoke all on public.engram_decks,public.engram_members,public.engram_entities,public.engram_changes from anon,authenticated;
 grant select on public.engram_decks,public.engram_members,public.engram_entities,public.engram_changes to authenticated;
 
@@ -48,7 +48,7 @@ begin
      if base_version<>0 then raise exception 'Unknown deck'; end if;
      insert into public.engram_decks(id,owner_id) values(target_deck,actor);
    end if;
-   if not engram_private.can_access(target_deck,true) then raise exception 'Editor permission required'; end if;
+   if not engram_private.can_access(target_deck,true) and not exists(select 1 from public.engram_decks where id=target_deck and owner_id=actor) then raise exception 'Editor permission required'; end if;
    if is_deleted and entity_kind='deck' and not exists(select 1 from public.engram_decks where id=target_deck and owner_id=actor) then raise exception 'Owner permission required'; end if;
    -- Shared payloads have an explicit allowlist; original/extracted PDF records stay private.
    if entity_kind='deck' and content - array['id','name','deleted','createdAt','modifiedAt','sourceDocument','notebookBlocks','documentFormatVersion','desiredRetention'] <> '{}'::jsonb then raise exception 'Unsupported shared deck fields'; end if;
@@ -71,7 +71,7 @@ begin
  insert into public.engram_entities(id,kind,deck_id,learner_id,version,payload,deleted) values(entity_id,entity_kind,target_deck,case when entity_kind='private' then actor end,base_version+1,content,is_deleted)
  on conflict(kind,id) do update set version=excluded.version,payload=excluded.payload,deleted=excluded.deleted;
  insert into public.engram_changes(kind,entity_id,deck_id,learner_id,version,payload,deleted) values(entity_kind,entity_id,target_deck,case when entity_kind='private' then actor end,base_version+1,content,is_deleted);
- if entity_kind='deck' and is_deleted then update public.engram_decks set deleted=true where id=target_deck; end if;
+ if entity_kind='deck' then update public.engram_decks set deleted=is_deleted where id=target_deck; end if;
  result := jsonb_build_object('status','saved','version',base_version+1);
  insert into engram_private.operations(user_id,operation_id,request,result) values(actor,engram_apply.operation_id,request,result);
  return result;

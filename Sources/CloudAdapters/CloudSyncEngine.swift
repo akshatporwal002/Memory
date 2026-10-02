@@ -18,36 +18,43 @@ private struct CloudSyncState: Codable {
     var baselines: [String:CloudBaseline] = [:]
     var conflicts: [CloudConflict] = []
     var permissions: [String:String] = [:]
+    var revokedDecks: Set<String>?
 }
 public struct CloudSyncReport: Sendable { public var pending: Int; public var conflicts: [CloudConflict]; public var removedDecks: [String]; public var adjustedDueDates: Int }
 
 public actor CloudSyncEngine {
     private let repository: SQLiteLibraryRepository
-    private let client: SupabaseCloudClient
+    private let client: any CloudTransport
     private let scheduler: any Scheduler
-    public init(repository: SQLiteLibraryRepository,client: SupabaseCloudClient,scheduler: any Scheduler) { self.repository = repository; self.client = client; self.scheduler = scheduler }
-    public func synchronize() async throws -> CloudSyncReport {
+    public init(repository: SQLiteLibraryRepository,client: any CloudTransport,scheduler: any Scheduler) { self.repository = repository; self.client = client; self.scheduler = scheduler }
+    public func synchronize(allowStudyBoundary: Bool = false) async throws -> CloudSyncReport {
         let user = try await client.currentUserID()
-        guard try await client.currentUserID().uuidString.lowercased() == repository.activeAccountID() else { throw EngramError.conflict }
+        guard await repository.activeAccountID() == user.uuidString.lowercased() else { throw EngramError.conflict }
         let original = try await repository.read()
-        guard original.session?.current == nil else { return CloudSyncReport(pending:try await repository.pendingOperations().count,conflicts:[],removedDecks:[],adjustedDueDates:0) }
+        guard original.session?.current == nil || allowStudyBoundary else { return CloudSyncReport(pending:try await repository.pendingOperations().count,conflicts:[],removedDecks:[],adjustedDueDates:0) }
         var library = original
         var state = try await loadState()
         let decks = try await client.decks(), memberships = try await client.memberships()
         var permissions: [String:String] = [:]
-        for deck in decks where !deck.deleted {
+        for deck in decks where !deck.deleted || deck.owner_id == user {
             permissions[deck.id] = deck.owner_id == user ? "owner" : memberships.first(where: { $0.deck_id == deck.id && $0.user_id == user })?.role ?? "viewer"
         }
         let removed = state.permissions.keys.filter { permissions[$0] == nil }
+        var revoked = state.revokedDecks ?? []
+        revoked.formUnion(removed); revoked.subtract(permissions.keys)
+        state.revokedDecks = revoked
         for id in removed {
             let noteIDs = Set(library.notes.filter { $0.deckID == id }.map(\.id)), cardIDs = Set(library.cards.filter { $0.deckID == id }.map(\.id))
+            let attemptIDs = Set((library.answerAttempts ?? []).filter { noteIDs.contains($0.noteID) }.map(\.id))
             library.decks.removeAll { $0.id == id }; library.notes.removeAll { $0.deckID == id }; library.cards.removeAll { $0.deckID == id }
             library.reviews.removeAll { $0.deckID == id }; library.importedReviews.removeAll { cardIDs.contains($0.cardID) }
             library.corrections.removeAll { correction in !library.reviews.contains { $0.id == correction.reviewID } }
             library.answerAttempts?.removeAll { noteIDs.contains($0.noteID) }
             library.assistantState?.memory.removeAll { noteIDs.contains($0.noteID) }
-            state.baselines = state.baselines.filter { $0.value.entity.deckID != id }
-            state.conflicts.removeAll { $0.entity.deckID == id }
+            library.assistantState?.conversations.removeAll { conversation in conversation.id.contains(id) || noteIDs.contains(where:conversation.id.contains) || attemptIDs.contains(where:conversation.id.contains) }
+            library.assistantState?.runs.removeAll { $0.actions.flatMap(\.changes).contains { $0.deckID == id } }
+            state.baselines = state.baselines.filter { CloudProjection.associatedDeck($0.value.entity) != id }
+            state.conflicts.removeAll { CloudProjection.associatedDeck($0.entity) == id }
         }
         if permissions.keys.contains(where: { state.permissions[$0] == nil }) { state.cursor = 0 }
         let owned = Set(permissions.filter { $0.value == "owner" }.keys).union(library.decks.filter { state.permissions[$0.id] == nil && permissions[$0.id] == nil }.map(\.id))
@@ -58,6 +65,7 @@ public actor CloudSyncEngine {
                 let entity = CloudProjectionEntity(kind:change.kind,id:change.entity_id,deckID:change.deck_id,payload:change.payload,deleted:change.deleted)
                 let key = entity.key
                 state.cursor = max(state.cursor,change.sequence)
+                if let deckID = CloudProjection.associatedDeck(entity),revoked.contains(deckID) { continue }
                 if let baseline = state.baselines[key],baseline.version >= change.version { continue }
                 if let local = latest[key],let base = state.baselines[key], local.payload != base.entity.payload,local.payload != entity.payload {
                     // Card schedules are derived from immutable review events below, not field-merged.
@@ -89,13 +97,24 @@ public actor CloudSyncEngine {
             let state = try ReviewReconciliation.replay(card:card,events:library.activeReviews,settings:library.settings,scheduler:scheduler)
             if state != card.schedule { library.cards[index].schedule = state; library.cards[index].version += 1; adjustments += 1 }
         }
+        if let item = library.session?.current {
+            if let card = library.liveCards.first(where: { $0.id == item.card.id }) {
+                if card.version != item.card.version { library.session?.current = ReviewPresentation(card:card) }
+            } else { library.session?.current = nil }
+        }
         let pending = try await repository.pendingOperations().filter { $0.revision <= original.revision }
         var acknowledgements: [String] = []
         if let operation = pending.first {
-            let entities = try CloudProjection.entities(library,userID:user,ownedDecks:owned)
+            var entities = try CloudProjection.entities(library,userID:user,ownedDecks:owned)
+            let existing = Set(entities.map(\.key))
+            for base in state.baselines.values where base.entity.kind == "private" && !base.entity.deleted && !existing.contains(base.entity.key) {
+                guard case .object(let envelope) = base.entity.payload,case .string(let category) = envelope["category"], ["memory","conversation","attempt","media"].contains(category) else { continue }
+                var deleted = base.entity; deleted.deleted = true; entities.append(deleted)
+            }
             for entity in entities.sorted(by: { $0.kind == "deck" && $1.kind != "deck" }) {
                 try Task.checkCancellation()
-                if entity.deckID.map({ permissions[$0] == "viewer" || removed.contains($0) }) == true { continue }
+                if CloudProjection.associatedDeck(entity).map({ revoked.contains($0) }) == true { continue }
+                if entity.kind != "private",entity.deckID.map({ permissions[$0] == "viewer" }) == true { continue }
                 if state.conflicts.contains(where: { $0.id == entity.key }) { continue }
                 let baseline = state.baselines[entity.key]
                 if baseline?.entity.payload == entity.payload,baseline?.entity.deleted == entity.deleted { continue }
@@ -132,4 +151,5 @@ public actor CloudSyncEngine {
         return UUID(uuid:(bytes[0],bytes[1],bytes[2],bytes[3],bytes[4],bytes[5],bytes[6],bytes[7],bytes[8],bytes[9],bytes[10],bytes[11],bytes[12],bytes[13],bytes[14],bytes[15]))
     }
 }
+
 

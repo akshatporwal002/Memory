@@ -31,17 +31,25 @@ public enum CloudProjection {
         }
         for card in library.cards { try personal("card",card.id,card,deckID:card.deckID) }
         for review in library.reviews { try personal("review",review.id,review,deckID:review.deckID) }
-        for imported in library.importedReviews { try personal("importedReview",imported.id,imported) }
-        for correction in library.corrections { try personal("correction",correction.id,correction) }
+        for imported in library.importedReviews { try personal("importedReview",imported.id,imported,deckID:library.cards.first(where: { $0.id == imported.cardID })?.deckID) }
+        for correction in library.corrections { try personal("correction",correction.id,correction,deckID:library.reviews.first(where: { $0.id == correction.reviewID })?.deckID) }
         for media in library.media { try personal("media",media.name,media) }
         try personal("settings","study",library.settings)
-        for attempt in library.answerAttempts ?? [] { try personal("attempt",attempt.id,attempt) }
+        for attempt in library.answerAttempts ?? [] { try personal("attempt",attempt.id,attempt,deckID:library.notes.first(where: { $0.id == attempt.noteID })?.deckID) }
         if let state = library.assistantState {
-            for conversation in state.conversations { try personal("conversation",conversation.id,conversation) }
-            for run in state.runs { try personal("run",run.id,run) }
-            for memory in state.memory { try personal("memory",memory.id,memory) }
+            try personal("preferences","app",state.preferences ?? [:])
+            for conversation in state.conversations { try personal("conversation",conversation.id,conversation,deckID:library.decks.first(where: { conversation.id.contains($0.id) })?.id) }
+            for run in state.runs { try personal("run",run.id,run,deckID:run.actions.flatMap(\.changes).compactMap(\.deckID).first) }
+            for memory in state.memory { try personal("memory",memory.id,memory,deckID:library.notes.first(where: { $0.id == memory.noteID })?.deckID) }
         }
         return result
+    }
+    public static func associatedDeck(_ entity: CloudProjectionEntity) -> String? {
+        if let id = entity.deckID { return id }
+        guard case .object(let envelope) = entity.payload else { return nil }
+        if case .string(let id) = envelope["deckID"] { return id }
+        if case .object(let value) = envelope["value"],case .string(let id) = value["deckID"] { return id }
+        return nil
     }
     public static func apply(_ entity: CloudProjectionEntity,to library: inout LibrarySnapshot) throws {
         if entity.kind == "deck" {
@@ -52,14 +60,31 @@ public enum CloudProjection {
         if entity.kind == "note" {
             var note = try entity.payload.decode(Note.self)
             note.origin = library.notes.first(where: { $0.id == note.id })?.origin
+            if let before = library.notes.first(where: { $0.id == note.id }),before != note {
+                let ordinals = note.deleted ? [] : try CardRenderer.ordinals(for:NoteDraft(note:note))
+                for index in library.cards.indices where library.cards[index].noteID == note.id {
+                    library.cards[index].version += 1
+                    library.cards[index].retired = !ordinals.contains(library.cards[index].ordinal)
+                }
+            }
             replace(note,in:&library.notes); return
         }
         guard case .object(let envelope) = entity.payload,case .string(let category) = envelope["category"],case .string(let id) = envelope["id"],let value = envelope["value"] else { throw EngramError.invalid("Malformed learner entity.") }
+        if entity.deleted {
+            switch category {
+            case "memory": library.assistantState?.memory.removeAll { $0.id == id }
+            case "conversation": library.assistantState?.conversations.removeAll { $0.id == id }
+            case "attempt": library.answerAttempts?.removeAll { $0.id == id }
+            case "media": library.media.removeAll { $0.name == id }
+            default: break
+            }
+            return
+        }
         switch category {
         case "deckExtras":
             guard let index = library.decks.firstIndex(where: { $0.id == id }),case .object(let extras) = value else { return }
-            if case .number(let retention) = extras["desiredRetention"] { library.decks[index].desiredRetention = retention }
-            if case .string(let cover) = extras["coverMediaName"] { library.decks[index].coverMediaName = cover }
+            if case .number(let retention) = extras["desiredRetention"] { library.decks[index].desiredRetention = retention } else { library.decks[index].desiredRetention = nil }
+            if case .string(let cover) = extras["coverMediaName"] { library.decks[index].coverMediaName = cover } else { library.decks[index].coverMediaName = nil }
             if let pdf = extras["pdfLearning"] { library.decks[index].pdfLearning = try pdf.decode(PDFLearningRecord.self) }
         case "noteOrigin": if let index = library.notes.firstIndex(where: { $0.id == id }) { library.notes[index].origin = try value.decode(ImportOrigin.self) }
         case "card": replace(try value.decode(StudyCard.self),in:&library.cards)
@@ -69,9 +94,10 @@ public enum CloudProjection {
         case "media": replace(try value.decode(MediaFile.self),in:&library.media)
         case "settings": library.settings = try value.decode(StudySettings.self)
         case "attempt": var attempts = library.answerAttempts ?? []; replace(try value.decode(AnswerAttempt.self),in:&attempts); library.answerAttempts = attempts
-        case "conversation", "run", "memory":
+        case "conversation", "run", "memory", "preferences":
             var state = library.assistantState ?? LearningAssistantState()
-            if category == "conversation" { replace(try value.decode(LearningConversation.self),in:&state.conversations) }
+            if category == "preferences" { state.preferences = try value.decode([String:String].self) }
+            else if category == "conversation" { replace(try value.decode(LearningConversation.self),in:&state.conversations) }
             else if category == "run" { replace(try value.decode(AIActionRun.self),in:&state.runs) }
             else { replace(try value.decode(LearningMemory.self),in:&state.memory) }
             library.assistantState = state
