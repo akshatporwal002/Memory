@@ -1,6 +1,7 @@
 #if os(iOS)
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
 import LearningCore
 import StudyApplication
 import DesignSystem
@@ -18,11 +19,21 @@ struct LibraryExplorerView: View {
     @State private var importing = false
     @State private var importDeckID: String?
     @State private var deleteDocument: (deckID: String, document: LibraryDocument)?
+    @State private var folderName = ""
+    @State private var folderParent = ""
+    @State private var showingFolderPrompt = false
+    @State private var deleteFolderPath: String?
+    @State private var choosingPhoto = false
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var photoDeckID: String?
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var summaries: [LibraryDeckSummary] {
         LibraryDeckSummary.sorted(LibraryDeckSummary.make(in:model.library,now:model.now),by:.alphabetical,query:query)
     }
-    private var nodes: [LibraryFolder] { LibraryFolder.tree(summaries) }
+    private var nodes: [LibraryFolder] {
+        let folders = model.library.folders ?? []
+        return LibraryFolder.tree(summaries,explicitFolders:query.isEmpty ? folders : folders.filter { $0.localizedCaseInsensitiveContains(query) })
+    }
 
     var body: some View {
         ScrollView {
@@ -42,13 +53,14 @@ struct LibraryExplorerView: View {
                     }.font(.subheadline).frame(minHeight:44)
                     Divider()
                 }
-                if model.library.liveDecks.isEmpty {
+                if model.library.liveDecks.isEmpty && nodes.isEmpty {
                     VStack(alignment:.leading,spacing:10) {
                         Image(systemName:"folder").font(.title2).foregroundStyle(palette.secondaryText)
                         Text("A place for what you learn").font(theme.font(.section))
-                        Text("Create a notebook, then add questions, PDFs or Markdown sources.")
+                        Text("Create a folder or notebook, then add questions, PDFs, Markdown or images.")
                             .font(.subheadline).foregroundStyle(palette.secondaryText)
                         Button("Create notebook",action:newNotebook).font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                        Button("Create folder") { beginFolder(in:"") }.font(.subheadline).frame(minHeight:44)
                     }.padding(.top,30)
                 } else if nodes.isEmpty {
                     Text("No matching notebooks or files").foregroundStyle(palette.secondaryText).padding(.top,30)
@@ -57,7 +69,9 @@ struct LibraryExplorerView: View {
                         ForEach(nodes) { node in
                             LibraryExplorerNode(node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
                                                 openDeck:openDeck,openDocument:{ openedDocument = $0 },
-                                                newNotebook:newNotebook,importFile:beginImport,
+                                                newNotebook:newNotebook,newFolder:beginFolder,
+                                                importFile:beginImport,importPhoto:beginPhoto,
+                                                removeFolder:{ deleteFolderPath = $0 },
                                                 removeFile:{ deckID,document in deleteDocument = (deckID,document) })
                         }
                     }
@@ -75,8 +89,42 @@ struct LibraryExplorerView: View {
         .navigationDestination(item:$openedDeck) { id in LibraryDeckDestination(model:model,deckID:id) }
         .sheet(item:$openedDocument) { document in LibraryDocumentReader(document:document) }
         .fileImporter(isPresented:$importing,
-                      allowedContentTypes:[.pdf, UTType(filenameExtension:"md") ?? .plainText],
+                      allowedContentTypes:[.pdf, UTType(filenameExtension:"md") ?? .plainText,.image],
                       allowsMultipleSelection:true) { result in Task { await importFiles(result) } }
+        .photosPicker(isPresented:$choosingPhoto,selection:$selectedPhoto,matching:.images)
+        .onChange(of:selectedPhoto) { _,photo in
+            guard let photo,let deckID = photoDeckID else { return }
+            Task {
+                defer { selectedPhoto = nil; photoDeckID = nil }
+                do {
+                    guard let data = try await photo.loadTransferable(type:Data.self) else { throw EngramError.invalid("The selected photo could not be read.") }
+                    let name = "Photo-" + UUID().uuidString.prefix(8) + ".jpg"
+                    let document = try await Task.detached(priority:.userInitiated) { try LibraryDocumentImport.image(data:data,name:String(name)) }.value
+                    if await model.perform({ try await $0.addDocument(document,to:deckID) }),
+                       let deck = model.library.liveDecks.first(where:{ $0.id == deckID }) { expanded.insert(deck.name) }
+                } catch { model.error = "The photo could not be imported. \(error.localizedDescription)" }
+            }
+        }
+        .alert("New folder",isPresented:$showingFolderPrompt) {
+            TextField("Folder name",text:$folderName)
+            Button("Create") {
+                let name = folderName, parent = folderParent
+                Task {
+                    if await model.perform({ try await $0.createFolder(name:name,in:parent) }) {
+                        if !parent.isEmpty { expanded.insert(parent) }
+                    }
+                }
+            }
+            Button("Cancel",role:.cancel) {}
+        } message: { Text(folderParent.isEmpty ? "Add a folder to your Library." : "Add a folder inside \(folderParent.replacingOccurrences(of:"::",with:" / ")).") }
+        .confirmationDialog("Delete empty folder?",isPresented:Binding(get:{ deleteFolderPath != nil },set:{ if !$0 { deleteFolderPath = nil } })) {
+            if let path = deleteFolderPath {
+                Button("Delete folder",role:.destructive) {
+                    Task { _ = await model.perform { try await $0.removeEmptyFolder(path:path) }; deleteFolderPath = nil }
+                }
+            }
+            Button("Cancel",role:.cancel) { deleteFolderPath = nil }
+        } message: { Text("Folders containing notebooks or subfolders must be emptied first.") }
         .confirmationDialog("Remove source file?",isPresented:Binding(get:{ deleteDocument != nil },set:{ if !$0 { deleteDocument = nil } })) {
             if let target = deleteDocument {
                 Button("Remove \(target.document.name)",role:.destructive) {
@@ -94,6 +142,7 @@ struct LibraryExplorerView: View {
 
     private var addMenu: some View {
         Menu {
+            Button("New folder",systemImage:"folder.badge.plus") { beginFolder(in:"") }
             Button("New notebook",systemImage:"book.closed.badge.plus",action:newNotebook)
             if !model.library.liveDecks.isEmpty {
                 Menu("Add source file",systemImage:"doc.badge.plus") {
@@ -101,17 +150,24 @@ struct LibraryExplorerView: View {
                         Button(deck.name.replacingOccurrences(of:"::",with:" / ")) { beginImport(deck.id) }
                     }
                 }
+                Menu("Add image from Photos",systemImage:"photo.on.rectangle") {
+                    ForEach(model.library.liveDecks) { deck in
+                        Button(deck.name.replacingOccurrences(of:"::",with:" / ")) { beginPhoto(deck.id) }
+                    }
+                }
             }
         } label: { Image(systemName:"plus").font(.body.weight(.medium)).frame(width:44,height:44).contentShape(Rectangle()) }
             .buttonStyle(.plain).accessibilityLabel("Add notebook or source file")
     }
     private func newNotebook() { model.creationPresented = true }
+    private func beginFolder(in parent: String) { folderParent = parent; folderName = ""; showingFolderPrompt = true }
     private func newNotebook(in folder: String) {
         if model.deckCreationDraft.subject.isEmpty { model.deckCreationDraft.subject = folder }
         model.creationPresented = true
     }
     private func openDeck(_ id: String) { model.selectedDeckID = id; openedDeck = id }
     private func beginImport(_ deckID: String) { importDeckID = deckID; importing = true }
+    private func beginPhoto(_ deckID: String) { photoDeckID = deckID; selectedPhoto = nil; choosingPhoto = true }
     private func importFiles(_ result: Result<[URL],Error>) async {
         guard let deckID = importDeckID else { return }
         do {
@@ -133,7 +189,10 @@ private struct LibraryExplorerNode: View {
     let openDeck: (String) -> Void
     let openDocument: (LibraryDocument) -> Void
     let newNotebook: (String) -> Void
+    let newFolder: (String) -> Void
     let importFile: (String) -> Void
+    let importPhoto: (String) -> Void
+    let removeFolder: (String) -> Void
     let removeFile: (String,LibraryDocument) -> Void
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -154,7 +213,7 @@ private struct LibraryExplorerNode: View {
                     if let deck = node.deck { openDeck(deck.id) } else { toggle() }
                 } label: {
                     HStack(spacing:8) {
-                        Image(systemName:branch ? (isExpanded ? "folder.fill" : "folder") : "book.closed")
+                        Image(systemName:node.deck == nil || branch ? (isExpanded ? "folder.fill" : "folder") : "book.closed")
                             .font(.system(size:15)).foregroundStyle(palette.secondaryText).frame(width:20)
                         Text(node.title).font(.subheadline.weight(node.deck == nil ? .medium : .regular))
                             .lineLimit(1).frame(maxWidth:.infinity,alignment:.leading)
@@ -165,17 +224,22 @@ private struct LibraryExplorerNode: View {
             .padding(.leading,CGFloat(depth * 16))
             .contextMenu {
                 if let deck = node.deck { Button("Open notebook") { openDeck(deck.id) }; Button("Add PDF or Markdown") { importFile(deck.id) } }
+                if let deck = node.deck { Button("Add image from Photos") { importPhoto(deck.id) } }
                 Button("New notebook here") { newNotebook(node.path) }
+                Button("New folder here") { newFolder(node.path) }
+                if node.isExplicit && node.deck == nil && node.children.isEmpty {
+                    Button("Delete empty folder",role:.destructive) { removeFolder(node.path) }
+                }
             }
             if isExpanded {
                 if let deck = node.deck {
                     ForEach(documents) { document in
                         Button { openDocument(document) } label: {
                             HStack(spacing:8) {
-                                Image(systemName:document.kind == .pdf ? "doc.richtext" : "doc.text")
+                                Image(systemName:document.kind == .pdf ? "doc.richtext" : document.kind == .image ? "photo" : "doc.text")
                                     .font(.system(size:14)).frame(width:20)
                                 Text(document.name).lineLimit(1).frame(maxWidth:.infinity,alignment:.leading)
-                                Text(document.kind == .pdf ? "PDF" : "MD").font(.caption2)
+                                Text(document.kind == .pdf ? "PDF" : document.kind == .image ? "IMG" : "MD").font(.caption2)
                             }.font(.subheadline).foregroundStyle(palette.secondaryText)
                                 .frame(minHeight:44).contentShape(Rectangle())
                         }.buttonStyle(.plain).padding(.leading,CGFloat((depth + 1) * 16 + 18))
@@ -186,7 +250,8 @@ private struct LibraryExplorerNode: View {
                 ForEach(node.children) { child in
                     LibraryExplorerNode(node:child,depth:depth + 1,expanded:$expanded,searching:searching,
                                         openDeck:openDeck,openDocument:openDocument,newNotebook:newNotebook,
-                                        importFile:importFile,removeFile:removeFile)
+                                        newFolder:newFolder,importFile:importFile,importPhoto:importPhoto,
+                                        removeFolder:removeFolder,removeFile:removeFile)
                 }
             }
         }

@@ -22,7 +22,7 @@ struct LibraryCreateDeckView: View {
             let pieces = deck.name.components(separatedBy: "::")
             return (1..<pieces.count).map { pieces.prefix($0).joined(separator: "::") }
         }
-        return Array(Set(paths)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return Array(Set(paths + (model.library.folders ?? []))).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
     private var canCreate: Bool {
         !model.busy && parsed.issues.isEmpty &&

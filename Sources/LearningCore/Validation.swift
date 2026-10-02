@@ -5,6 +5,12 @@ public enum LibraryValidation {
         guard library.schemaVersion == 1 else { throw EngramError.unsupported("Library schema \(library.schemaVersion) needs a newer Engram. Your file was not changed.") }
         guard library.notes.count <= 250_000, library.cards.count <= 500_000 else { throw EngramError.invalid("This library exceeds the current 250,000 note / 500,000 card limit.") }
         try unique(library.decks.map(\.id), "deck")
+        let folders = library.folders ?? []
+        guard folders.count <= 5_000,
+              Set(folders.map { $0.lowercased() }).count == folders.count else {
+            throw EngramError.invalid("The Library has duplicate folders or exceeds 5,000 folders.")
+        }
+        for folder in folders { try validateFolderPath(folder) }
         try unique(library.notes.map(\.id), "note")
         try unique(library.cards.map(\.id), "card")
         try unique(library.reviews.map(\.id), "review")
@@ -73,6 +79,15 @@ public enum LibraryValidation {
     }
     public static func validateMediaName(_ name: String) throws {
         guard !name.isEmpty, name.utf8.count <= 240, !name.contains("/"), !name.contains("\\"), !name.contains(":"), name != ".", name != "..", !name.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else { throw EngramError.invalid("Unsafe media filename: \(name.prefix(80))") }
+    }
+    public static func validateFolderPath(_ path: String) throws {
+        guard !path.isEmpty, path.utf8.count <= 200,
+              !path.contains("/"), !path.contains("\\"),
+              path.components(separatedBy: "::").allSatisfy({ segment in
+                  !segment.isEmpty && segment != "." && segment != ".." &&
+                  segment == segment.trimmingCharacters(in: .whitespacesAndNewlines) &&
+                  !segment.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })
+              }) else { throw EngramError.invalid("Use a folder name without slashes or empty path segments.") }
     }
     private static func unique(_ values: [String], _ type: String) throws {
         guard Set(values).count == values.count, values.allSatisfy({ !$0.isEmpty }) else { throw EngramError.invalid("Duplicate or empty \(type) identifiers.") }

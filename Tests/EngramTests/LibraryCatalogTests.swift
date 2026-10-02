@@ -72,6 +72,21 @@ final class LibraryCatalogTests: XCTestCase {
         XCTAssertEqual(tree[0].children[1].children.first?.deck?.id, "b")
     }
 
+    func testExplicitEmptyFoldersSurviveBackupAndCanContainNotebooks() async throws {
+        let service = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let parent = try await service.createFolder(name:"AWS")
+        let child = try await service.createFolder(name:"Storage",in:parent)
+        var library = try await service.snapshot()
+        XCTAssertEqual(LibraryFolder.tree([],explicitFolders:library.folders ?? []).first?.children.first?.path,child)
+        let restored = try JSONDecoder().decode(LibrarySnapshot.self,from:JSONEncoder().encode(library))
+        XCTAssertEqual(restored.folders,library.folders)
+        _ = try await service.createDeck(name:"AWS::Storage::S3")
+        do { try await service.removeEmptyFolder(path:child); XCTFail("Expected nonempty-folder protection") } catch { }
+        library = try await service.snapshot()
+        XCTAssertEqual(LibraryFolder.tree(LibraryDeckSummary.make(in:library,now:now),explicitFolders:library.folders ?? []).first?.children.first?.deckCount,1)
+    }
+
+
     func testCoverSurvivesNativeBackupWithoutChangingCardsOrReviews() async throws {
         var library = LibrarySnapshot()
         add("deck", phase: .review, to: &library)

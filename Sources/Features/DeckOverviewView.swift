@@ -2,6 +2,7 @@ import SwiftUI
 import LearningCore
 import DesignSystem
 import UniformTypeIdentifiers
+import PhotosUI
 
 /// A single reading surface: memory, practice, then the two ways into a deck's content.
 struct DeckOverviewView: View {
@@ -12,6 +13,8 @@ struct DeckOverviewView: View {
     @State private var showPDFSource = false
     @State private var openedDocument: LibraryDocument?
     @State private var importingDocument = false
+    @State private var choosingPhoto = false
+    @State private var selectedPhoto: PhotosPickerItem?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var textSize
@@ -51,7 +54,7 @@ struct DeckOverviewView: View {
                                 ForEach(documents) { document in
                                     Button { openedDocument = document } label: {
                                         HStack(spacing:10) {
-                                            Image(systemName:document.kind == .pdf ? "doc.richtext" : "doc.text")
+                                            Image(systemName:document.kind == .pdf ? "doc.richtext" : document.kind == .image ? "photo" : "doc.text")
                                                 .frame(width:20)
                                             Text(document.name).lineLimit(1)
                                             Spacer(minLength:8)
@@ -72,6 +75,7 @@ struct DeckOverviewView: View {
                             Button("Add question", systemImage: "plus") { model.newNote(deckID: deckID) }
                             Button("Edit notes", systemImage: "square.and.pencil") { openNotes() }
                             Button("Add PDF or Markdown", systemImage:"doc.badge.plus") { importingDocument = true }
+                            Button("Add image from Photos",systemImage:"photo.on.rectangle") { selectedPhoto = nil; choosingPhoto = true }
                             Button("Rename deck", systemImage: "pencil") { model.deckForm = DeckForm(deck: deck) }
                             if deck.pdfLearning != nil {
                                 Button("PDF source pages", systemImage: "doc.text.magnifyingglass") { showPDFSource = true }
@@ -92,8 +96,21 @@ struct DeckOverviewView: View {
             if let source = deck?.pdfLearning?.source { PDFSourcePagesView(source: source) }
         }
         .sheet(item:$openedDocument) { document in LibraryDocumentReader(document:document) }
+        .photosPicker(isPresented:$choosingPhoto,selection:$selectedPhoto,matching:.images)
+        .onChange(of:selectedPhoto) { _,photo in
+            guard let photo else { return }
+            Task {
+                defer { selectedPhoto = nil }
+                do {
+                    guard let data = try await photo.loadTransferable(type:Data.self) else { throw EngramError.invalid("The selected photo could not be read.") }
+                    let name = "Photo-" + String(UUID().uuidString.prefix(8)) + ".jpg"
+                    let document = try await Task.detached(priority:.userInitiated) { try LibraryDocumentImport.image(data:data,name:name) }.value
+                    _ = await model.perform { try await $0.addDocument(document,to:deckID) }
+                } catch { model.error = "The photo could not be imported. \(error.localizedDescription)" }
+            }
+        }
         .fileImporter(isPresented:$importingDocument,
-                      allowedContentTypes:[.pdf,UTType(filenameExtension:"md") ?? .plainText],
+                      allowedContentTypes:[.pdf,UTType(filenameExtension:"md") ?? .plainText,.image],
                       allowsMultipleSelection:true) { result in
             Task {
                 do {

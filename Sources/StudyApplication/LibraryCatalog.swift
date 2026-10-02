@@ -85,22 +85,26 @@ public struct LibraryFolder: Identifiable, Sendable {
     public let path: String
     public let title: String
     public let deck: LibraryDeckSummary?
+    public let isExplicit: Bool
     public let children: [LibraryFolder]
     public var deckCount: Int { (deck == nil ? 0 : 1) + children.reduce(0) { $0 + $1.deckCount } }
     public var dueCount: Int { (deck?.dueCount ?? 0) + children.reduce(0) { $0 + $1.dueCount } }
 
-    public static func tree(_ entries: [LibraryDeckSummary], parent: String = "") -> [Self] {
+    public static func tree(_ entries: [LibraryDeckSummary], explicitFolders: [String] = [], parent: String = "") -> [Self] {
         let prefix = parent.isEmpty ? "" : parent + "::"
         var seen = Set<String>()
         // Entries arrive sorted; each branch inherits its first descendant's priority.
-        return entries.compactMap { entry in
-            guard entry.deck.name.hasPrefix(prefix) else { return nil }
-            let remainder = String(entry.deck.name.dropFirst(prefix.count))
+        let paths = entries.map(\.deck.name) + explicitFolders
+        return paths.compactMap { fullPath in
+            guard fullPath.hasPrefix(prefix),fullPath.count > prefix.count else { return nil }
+            let remainder = String(fullPath.dropFirst(prefix.count))
             let name = remainder.components(separatedBy: "::")[0]
             let path = prefix + name
             guard seen.insert(path).inserted else { return nil }
             return Self(path: path, title: name, deck: entries.first { $0.deck.name == path },
-                children: tree(entries.filter { $0.deck.name.hasPrefix(path + "::") }, parent: path))
+                isExplicit: explicitFolders.contains(path),
+                children: tree(entries.filter { $0.deck.name.hasPrefix(path + "::") },
+                               explicitFolders: explicitFolders.filter { $0.hasPrefix(path + "::") },parent:path))
         }
     }
 }

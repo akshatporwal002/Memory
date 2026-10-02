@@ -1,6 +1,31 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testLibraryCreatesPersistentEmptyFolder() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout:15))
+        app.buttons["tab-library"].tap()
+        app.buttons["Add notebook or source file"].tap()
+        app.buttons["New folder"].tap()
+        let prompt = app.alerts["New folder"]
+        XCTAssertTrue(prompt.waitForExistence(timeout:5))
+        prompt.textFields.firstMatch.tap()
+        prompt.textFields.firstMatch.typeText("Research")
+        prompt.buttons["Create"].tap()
+        XCTAssertTrue(app.buttons["library-folder-Research"].waitForExistence(timeout:5))
+        capture("Library-Folder",app)
+    }
+    @MainActor func testLibraryOpensImportedImage() {
+        let app = launch(extra:["--ui-image-fixture"])
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout:15))
+        app.buttons["tab-library"].tap()
+        let file = app.buttons["library-file-9E2B947C-DBFC-4DF4-A15E-921021983344"]
+        XCTAssertTrue(file.waitForExistence(timeout:5))
+        file.tap()
+        XCTAssertTrue(app.navigationBars["CloudFront diagram.jpg"].waitForExistence(timeout:5))
+        capture("Library-Image-Reader",app)
+    }
+
     @MainActor func testPDFSampleApprovalAndSourceLinkedSave() {
         let app = launch(extra: ["--ui-pdf-fixture"])
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))

@@ -168,6 +168,38 @@ public actor StudyService {
         let deck = Deck(name: clean, createdAt: now, modifiedAt: now); library.decks.append(deck)
         try await save(library); return deck
     }
+    public func createFolder(name: String, in parent: String = "") async throws -> String {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.contains("::") else { throw EngramError.invalid("Enter one folder name at a time.") }
+        let path = parent.isEmpty ? clean : parent + "::" + clean
+        try LibraryValidation.validateFolderPath(path)
+        var library = try await repository.read()
+        let existing = library.folders ?? []
+        guard parent.isEmpty || existing.contains(parent) ||
+              existing.contains(where: { $0.hasPrefix(parent + "::") }) ||
+              library.liveDecks.contains(where: { $0.name == parent || $0.name.hasPrefix(parent + "::") }) else {
+            throw EngramError.missing("parent folder")
+        }
+        guard !library.liveDecks.contains(where: { $0.name.caseInsensitiveCompare(path) == .orderedSame }) else {
+            throw EngramError.invalid("A notebook already uses that name. Choose another folder name.")
+        }
+        guard !existing.contains(where: { $0.caseInsensitiveCompare(path) == .orderedSame }) else {
+            throw EngramError.invalid("That folder already exists.")
+        }
+        library.folders = existing + [path]
+        try await save(library)
+        return path
+    }
+    public func removeEmptyFolder(path: String) async throws {
+        var library = try await repository.read()
+        guard library.folders?.contains(path) == true else { throw EngramError.missing("folder") }
+        guard !library.liveDecks.contains(where: { $0.name == path || $0.name.hasPrefix(path + "::") }),
+              !(library.folders ?? []).contains(where: { $0.hasPrefix(path + "::") }) else {
+            throw EngramError.invalid("Move or remove the contents before deleting this folder.")
+        }
+        library.folders?.removeAll { $0 == path }
+        try await save(library)
+    }
     public func renameDeck(id: String, name: String) async throws {
         var library = try await repository.read()
         guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }

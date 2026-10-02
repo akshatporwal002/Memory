@@ -7,6 +7,9 @@ import DesignSystem
 import LearningCore
 import AnkiAdapters
 import UniformTypeIdentifiers
+#if os(iOS)
+import UIKit
+#endif
 
 @main
 struct EngramApp: App {
@@ -126,6 +129,19 @@ private struct ApplicationRoot: View {
                         NotebookBlock(id: "ui-cost", text: "# Cost and billing\nAWS Budgets helps you compare spending against a planned amount and configure alerts. Cost Explorer helps you investigate spending patterns over time. Pricing Calculator estimates costs before you deploy.\n\nChoose the service that matches the question: an estimate before deployment, an analysis of past spending, or an alert when costs cross a limit. These are different needs and should not be treated as interchangeable.")
                     ]
                 }
+                #if os(iOS)
+                if ProcessInfo.processInfo.arguments.contains("--ui-image-fixture") {
+                    let image = UIGraphicsImageRenderer(size:CGSize(width:600,height:400)).jpegData(withCompressionQuality:0.8) { _ in
+                        UIColor(red:0.17,green:0.27,blue:0.18,alpha:1).setFill()
+                        UIBezierPath(rect:CGRect(x:0,y:0,width:600,height:400)).fill()
+                        ("CloudFront\nedge locations" as NSString).draw(in:CGRect(x:50,y:120,width:500,height:160),
+                            withAttributes:[.font:UIFont.systemFont(ofSize:42,weight:.medium),.foregroundColor:UIColor.white])
+                    }
+                    snapshot.decks[0].documents = [LibraryDocument(id:"9E2B947C-DBFC-4DF4-A15E-921021983344",
+                        name:"CloudFront diagram.jpg",kind:.image,
+                        pages:[PDFPageText(number:1,text:"CloudFront edge locations cache content near users.")],originalData:image)]
+                }
+                #endif
                 let studyQuestions = [
                     ("Which service delivers cached content close to users? A) Amazon EC2 B) Amazon CloudFront C) AWS CloudTrail D) Amazon RDS", "B) Amazon CloudFront. It caches content at edge locations, reducing latency and origin load."),
                     ("What is cloud computing?", "On-demand access to computing resources."),

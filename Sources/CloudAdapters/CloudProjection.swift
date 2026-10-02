@@ -35,6 +35,7 @@ public enum CloudProjection {
         for imported in library.importedReviews { try personal("importedReview",imported.id,imported,deckID:library.cards.first(where: { $0.id == imported.cardID })?.deckID) }
         for correction in library.corrections { try personal("correction",correction.id,correction,deckID:library.reviews.first(where: { $0.id == correction.reviewID })?.deckID) }
         for media in library.media { try personal("media",media.name,media) }
+        try personal("folders","library",library.folders ?? [])
         try personal("settings","study",library.settings)
         for attempt in library.answerAttempts ?? [] { try personal("attempt",attempt.id,attempt,deckID:library.notes.first(where: { $0.id == attempt.noteID })?.deckID) }
         if let state = library.assistantState {
@@ -104,6 +105,7 @@ public enum CloudProjection {
         case "importedReview": replace(try value.decode(ImportedReview.self),in:&library.importedReviews)
         case "correction": replace(try value.decode(ReviewCorrection.self),in:&library.corrections)
         case "media": replace(try value.decode(MediaFile.self),in:&library.media)
+        case "folders": library.folders = try value.decode([String].self)
         case "settings": library.settings = try value.decode(StudySettings.self)
         case "attempt": var attempts = library.answerAttempts ?? []; replace(try value.decode(AnswerAttempt.self),in:&attempts); library.answerAttempts = attempts
         case "conversation", "run", "memory", "preferences":

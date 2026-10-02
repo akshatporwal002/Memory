@@ -1,7 +1,7 @@
 import Foundation
 
 public enum LibraryDocumentKind: String, Codable, Sendable {
-    case pdf, markdown
+    case pdf, markdown, image
 }
 
 /// A source file attached to a notebook. Extracted text is indexed for retrieval;
@@ -24,12 +24,12 @@ public struct LibraryDocument: Codable, Equatable, Identifiable, Sendable {
         guard UUID(uuidString: id) != nil,
               !name.isEmpty, name.utf8.count <= 240,
               !name.contains("/"), !name.contains("\\"),
-              (1...300).contains(pages.count),
+              (kind == .image ? (0...1) : (1...300)).contains(pages.count),
               Set(pages.map(\.number)).count == pages.count,
               pages.allSatisfy({ $0.number > 0 }),
               pages.reduce(0, { $0 + $1.text.utf8.count }) <= 2_000_000,
-              pages.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
-            throw EngramError.invalid("Choose a readable PDF or Markdown file with selectable text.")
+              (kind == .image || pages.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })) else {
+            throw EngramError.invalid("Choose a readable source file.")
         }
         switch kind {
         case .pdf:
@@ -41,6 +41,12 @@ public struct LibraryDocument: Codable, Equatable, Identifiable, Sendable {
                   String(data: originalData, encoding: .utf8) != nil,
                   name.lowercased().hasSuffix(".md") || name.lowercased().hasSuffix(".markdown") else {
                 throw EngramError.invalid("Choose a UTF-8 Markdown file smaller than 2 MB.")
+            }
+        case .image:
+            guard originalData.count <= 10_000_000,
+                  originalData.starts(with: [0xFF, 0xD8, 0xFF]),
+                  name.lowercased().hasSuffix(".jpg") || name.lowercased().hasSuffix(".jpeg") else {
+                throw EngramError.invalid("Choose a readable image smaller than 10 MB.")
             }
         }
     }

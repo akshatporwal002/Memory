@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9_-]+$')][string]$View,
+    [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$')][string]$View,
     [Parameter(Mandatory = $true)][string]$Image
 )
 
