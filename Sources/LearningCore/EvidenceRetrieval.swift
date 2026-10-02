@@ -17,10 +17,10 @@ public enum EvidenceRetrieval {
         let bounded = max(0,min(12,limit))
         let terms = tokens(query)
         var candidates = library.liveNotes.filter { $0.deckID == deckID }.map { note in
-            RetrievedEvidence(id:note.id,deckID:deckID,title:String(note.front.prefix(72)),text:String((note.front + "\n" + note.back + "\n" + note.source).prefix(2400)),version:note.modifiedAt.ISO8601Format(),noteID:note.id)
+            RetrievedEvidence(id:note.id,deckID:deckID,title:String(note.front.prefix(72)),text:String((note.front + "\n" + note.back + "\n" + note.source).prefix(2400)),version:String(note.modifiedAt.timeIntervalSince1970),noteID:note.id)
         }
         candidates += NotebookDocument.blocks(for:deck,in:library).filter { $0.kind == .text }.map { block in
-            RetrievedEvidence(id:"passage-" + block.id,deckID:deckID,title:String(block.text.split(separator:"\n").first?.prefix(72) ?? "Notebook section"),text:String(block.text.prefix(2400)),version:deck.modifiedAt?.ISO8601Format() ?? "legacy",blockID:block.id)
+            RetrievedEvidence(id:"passage-" + block.id,deckID:deckID,title:String(block.text.split(separator:"\n").first?.prefix(72) ?? "Notebook section"),text:String(block.text.prefix(2400)),version:deck.modifiedAt.map { String($0.timeIntervalSince1970) } ?? "legacy",blockID:block.id)
         }
         if let pdf = deck.pdfLearning {
             candidates += retrieve(source:pdf.source,brief:pdf.brief,query:query,deckID:deckID,limit:bounded)
@@ -30,6 +30,18 @@ public enum EvidenceRetrieval {
             let bscore = terms.intersection(tokens(b.element.text)).count + (b.element.noteID == preferredNoteID ? 10000 : 0)
             return ascore == bscore ? a.offset < b.offset : ascore > bscore
         }.prefix(bounded).map(\.element))
+    }
+    public static func isCurrent(_ evidence: AttemptEvidence,in library: LibrarySnapshot) -> Bool {
+        if let note = library.liveNotes.first(where: { $0.id == evidence.id }) {
+            return evidence.version == String(note.modifiedAt.timeIntervalSince1970)
+        }
+        for deck in library.liveDecks {
+            if NotebookDocument.blocks(for:deck,in:library).contains(where: { "passage-" + $0.id == evidence.id }) {
+                return evidence.version == (deck.modifiedAt.map { String($0.timeIntervalSince1970) } ?? "legacy")
+            }
+            if let source = deck.pdfLearning?.source,source.chunks.contains(where: { $0.id == evidence.id }) { return evidence.version == source.id }
+        }
+        return false
     }
     public static func retrieve(source: PDFLearningSource,brief: PDFLearningBrief,query: String,deckID: String = "pdf-draft",limit: Int = 8) -> [RetrievedEvidence] {
         PDFRetrieval.retrieve(source:source,brief:brief,query:query,limit:max(0,min(12,limit))).map {

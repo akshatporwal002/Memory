@@ -20,14 +20,27 @@ import LearningCore
     private(set) var catalog: [AIModelDescriptor] = []
     private(set) var models: [String] = []
     private(set) var loading = false
+    private(set) var catalogAccountID: String?
     var error: String?
+    func invalidateCatalog() { catalog = []; models = []; catalogAccountID = nil }
+    func title(for id: String) -> String { catalog.first(where: { $0.model == id })?.title ?? (id.isEmpty ? "Choose model" : id) }
+    func resolveTools(_ descriptor: AIModelDescriptor,connection: ChatGPTConnection) async throws -> AIModelDescriptor {
+        let account = connection.activeClientID
+        let resolved = try await ChatGPTAIProvider().resolveTools(descriptor,token:try await connection.validAccessToken())
+        guard account == connection.activeClientID else { throw EngramError.conflict }
+        if let index = catalog.firstIndex(where: { $0.id == resolved.id }) { catalog[index] = resolved }
+        return resolved
+    }
     func loadModels(connection: ChatGPTConnection) async {
         guard !loading else { return }; loading = true; defer { loading = false }
         error = nil
         do {
+            let account = connection.activeClientID
             let token = try await connection.validAccessToken()
             let available = try await ChatGPTAIProvider().models(token: token)
+            guard account == connection.activeClientID else { throw EngramError.conflict }
             catalog = available
+            catalogAccountID = account
             models = available.map(\.model)
             if chatModel.isEmpty { chatModel = models.first ?? "" }
             if pdfModel.isEmpty { pdfModel = chatModel }
@@ -41,7 +54,7 @@ import LearningCore
             return AnswerAssessment(outcome: .correct, reason: "Your answer matches the expected answer.", method: "local-exact")
         }
         guard enabled else { throw EngramError.invalid("Enable AI marking in Settings, or reveal and rate this answer manually.") }
-        if selectedModel.isEmpty { await loadModels(connection: connection) }
+        if catalogAccountID != connection.activeClientID || catalog.isEmpty { await loadModels(connection: connection) }
         guard !selectedModel.isEmpty, models.contains(selectedModel) else { throw EngramError.invalid("Choose an available ChatGPT model in Settings.") }
         let token = try await connection.validAccessToken()
         let account = connection.activeClientID

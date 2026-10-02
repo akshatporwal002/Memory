@@ -24,6 +24,7 @@ public struct AnswerAttempt: Codable, Equatable, Identifiable, Sendable {
     public var prompt: String
     public var expectedAnswer: String
     public var modelID: String
+    public var providerAccountID: String?
     public var evidence: [AttemptEvidence]
     public var acceptedImprovement: String?
     public var assessment: AnswerAssessment?

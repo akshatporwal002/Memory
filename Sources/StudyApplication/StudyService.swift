@@ -349,9 +349,13 @@ public actor StudyService {
         var library = try await repository.read(); library.session = nil; try await save(library)
     }
     /// Only a fully inspected/confirmed restore invokes this operation. Export pre-restore backup first.
-    public func restore(_ candidate: LibrarySnapshot, expectedRevision: Int) async throws {
+    public func restore(_ candidate: LibrarySnapshot, expectedRevision: Int,expectedContext: String? = nil) async throws {
         try LibraryValidation.validate(candidate)
         var restored = candidate; restored.revision = expectedRevision; restored.session = nil
+        let current = try await repository.read()
+        guard current.revision == expectedRevision else { throw EngramError.conflict }
+        if let expectedContext { guard current.repositoryContext == expectedContext else { throw EngramError.conflict } }
+        restored.repositoryContext = current.repositoryContext
         try await repository.commit(restored, expectedRevision: expectedRevision)
     }
 

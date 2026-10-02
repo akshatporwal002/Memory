@@ -9,6 +9,9 @@ public enum ReviewReconciliation {
         // First event's before-state preserves imported baselines rather than resetting mature cards.
         var state = first.before, history: [ReviewEvent] = []
         for event in ordered {
+            // A sequential historical event already records its exact transition. Replay is
+            // required only after concurrent events diverge from that captured before-state.
+            if event.before == state { state = event.after; history.append(event); continue }
             guard let recorded = event.settingsSnapshot ?? (event.before.settingsVersion == settings.version ? settings : nil) else { throw EngramError.invalid("A historical settings version is missing. Resolve the schedule rather than inventing it.") }
             let outcomes = try scheduler.outcomes(state:state,history:history,now:event.reviewedAt,settings:recorded)
             guard let next = outcomes[event.rating] else { throw EngramError.invalid("Review replay failed.") }

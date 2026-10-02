@@ -14,6 +14,19 @@ public enum LibraryValidation {
         try unique(library.media.map(\.name), "media filename")
         let decks = Set(library.decks.map(\.id)), notes = Set(library.notes.map(\.id)), cards = Set(library.cards.map(\.id))
         let reviews = Set(library.reviews.map(\.id))
+        if let state = library.assistantState {
+            try unique(state.conversations.map(\.id),"conversation")
+            try unique(state.runs.map(\.id),"AI run")
+            try unique(state.memory.map(\.id),"learning memory")
+            guard state.conversations.count <= 10_000,state.runs.count <= 100_000,state.memory.count <= 100_000,
+                  (state.preferences?.count ?? 0) <= 100,state.preferences?.values.allSatisfy({ $0.utf8.count <= 2000 }) ?? true,
+                  state.memory.allSatisfy({ notes.contains($0.noteID) && !$0.text.isEmpty && $0.text.utf8.count <= 10_000 }),
+                  state.conversations.allSatisfy({ $0.messages.count <= 2000 && ($0.toolHistoryJSON?.count ?? 0) <= 2_000_000 && $0.messages.allSatisfy { $0.text.utf8.count <= 200_000 } }) else { throw EngramError.invalid("Assistant history exceeds supported limits or has missing question references.") }
+        }
+        if let attempts = library.answerAttempts {
+            try unique(attempts.map(\.id),"answer attempt")
+            guard attempts.count <= 500_000,attempts.allSatisfy({ notes.contains($0.noteID) && cards.contains($0.cardID) && $0.originalAnswer.utf8.count <= 16_000 && $0.evidence.count <= 20 && $0.createdAt.timeIntervalSince1970.isFinite }) else { throw EngramError.invalid("Answer attempts contain invalid references or exceeded limits.") }
+        }
         guard library.notes.allSatisfy({ decks.contains($0.deckID) }),
               library.cards.allSatisfy({ notes.contains($0.noteID) && decks.contains($0.deckID) && $0.schedule.due.timeIntervalSince1970.isFinite }),
               library.reviews.allSatisfy({ cards.contains($0.cardID) }),

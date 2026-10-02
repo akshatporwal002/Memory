@@ -12,6 +12,7 @@ public struct PendingSyncOperation: Codable, Equatable, Identifiable, Sendable {
 public actor SQLiteLibraryRepository: LibraryRepository {
     private let db: SQLiteConnection
     private var partition = "local"
+    private var lease = UUID().uuidString
     public init(url: URL, migrating legacy: URL? = nil) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         db = try SQLiteConnection(url: url)
@@ -38,9 +39,11 @@ public actor SQLiteLibraryRepository: LibraryRepository {
     }
     public func read() throws -> LibrarySnapshot {
         guard let row = try db.rows("SELECT payload FROM libraries WHERE account=?", [partition]).first, let payload = row["payload"] else { throw EngramError.storage("Account library missing.") }
-        return try JSONDecoder().decode(LibrarySnapshot.self, from: Data(payload.utf8))
+        var snapshot = try JSONDecoder().decode(LibrarySnapshot.self, from: Data(payload.utf8))
+        snapshot.repositoryContext = lease; return snapshot
     }
     public func commit(_ snapshot: LibrarySnapshot, expectedRevision: Int) throws {
+        guard snapshot.repositoryContext == lease else { throw EngramError.conflict }
         try LibraryValidation.validate(snapshot)
         try db.execute("BEGIN IMMEDIATE")
         do {
@@ -53,6 +56,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
                     guard snapshot.notes.filter({ $0.deckID == id }) == prior.notes.filter({ $0.deckID == id }) else { throw EngramError.invalid("This shared deck is read-only.") }
                     var before = prior.decks.first { $0.id == id }, after = snapshot.decks.first { $0.id == id }
                     before?.desiredRetention = nil; after?.desiredRetention = nil
+                    before?.modifiedAt = nil; after?.modifiedAt = nil
                     guard before == after else { throw EngramError.invalid("This shared deck is read-only.") }
                 } else if role == "editor", let after = snapshot.decks.first(where: { $0.id == id }), after.deleted, prior.decks.first(where: { $0.id == id })?.deleted == false {
                     throw EngramError.invalid("Only the deck owner can delete a shared deck.")
@@ -69,6 +73,9 @@ public actor SQLiteLibraryRepository: LibraryRepository {
         } catch { try? db.execute("ROLLBACK"); throw error }
     }
     /// Caller confirms any initial local-library upload. Signing in alone never uploads it.
+    public func hasAccount(_ userID: String) throws -> Bool {
+        !(try db.rows("SELECT account FROM libraries WHERE account=?",["user:" + userID])).isEmpty
+    }
     public func selectAccount(_ userID: String?, uploadLocal: Bool = false) throws {
         let next = userID.map { "user:" + $0 } ?? "local"
         guard !next.contains("\u{0}") else { throw EngramError.invalid("Invalid account.") }
@@ -80,7 +87,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
                 try db.execute("INSERT INTO libraries(account,revision,payload,upload_enabled) VALUES(?,?,?,?)", [next,String(snapshot.revision),try Self.encode(snapshot),userID == nil ? "0" : "1"])
                 if uploadLocal, userID != nil { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),try Self.encode(snapshot)]) }
             }
-            try db.execute("COMMIT"); partition = next
+            try db.execute("COMMIT"); if partition != next { lease = UUID().uuidString }; partition = next
         } catch { try? db.execute("ROLLBACK"); throw error }
     }
     public func activeAccountID() -> String? { partition.hasPrefix("user:") ? String(partition.dropFirst(5)) : nil }
@@ -94,6 +101,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
     }
     /// Incoming projection, change cursor, permissions and acknowledgements advance together.
     public func adoptCloudSnapshot(_ snapshot: LibrarySnapshot,expectedRevision: Int,state: Data,acknowledging: [String],permissions: [String:String]) throws {
+        guard snapshot.repositoryContext == lease else { throw EngramError.conflict }
         try LibraryValidation.validate(snapshot)
         try db.execute("BEGIN IMMEDIATE")
         do {

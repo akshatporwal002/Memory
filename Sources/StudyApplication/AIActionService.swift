@@ -4,6 +4,8 @@ import LearningCore
 public enum AIContentOperation: Sendable {
     case createDeck(String), renameDeck(String,String), saveNote(NoteDraft), deleteNote(String), deleteDeck(String)
     case saveNotebook(String,[NotebookBlock]), retention(String,Double?), suspend(String,Bool), settings(StudySettings)
+    case memory(LearningMemory), deleteMemory(String)
+    case preferences([String:String],baseline:[String:String])
 }
 extension StudyService {
     public func saveConversation(_ conversation: LearningConversation) async throws {
@@ -32,7 +34,9 @@ extension StudyService {
         let library = try await repository.read()
         if let existing = library.assistantState?.runs.flatMap(\.actions).first(where: { $0.id == callID && $0.status == "completed" }) { guard existing.name == name, existing.arguments == arguments else { throw EngramError.conflict }; return existing }
         guard library.revision == expectedRevision else { throw EngramError.conflict }
-        let journal = AIJournalRepository(base:repository,runID:runID,conversationID:conversationID,callID:callID,name:name,arguments:arguments)
+        let baseline: [String:String]?
+        if case .preferences(_,let values) = operation { baseline = values } else { baseline = nil }
+        let journal = AIJournalRepository(base:repository,runID:runID,conversationID:conversationID,callID:callID,name:name,arguments:arguments,preferencesBaseline:baseline)
         let service = StudyService(repository:journal,scheduler:scheduler)
         switch operation {
         case .createDeck(let name): _ = try await service.createDeck(name:name,now:now)
@@ -44,6 +48,11 @@ extension StudyService {
         case .retention(let id,let value): try await service.setDeckRetention(id:id,desiredRetention:value)
         case .suspend(let id,let value): try await service.setSuspended(cardID:id,suspended:value)
         case .settings(let settings): try await service.updateSettings(settings)
+        case .memory(let memory): try await service.saveLearningMemory(memory)
+        case .deleteMemory(let id): try await service.deleteLearningMemory(id:id)
+        case .preferences(let values,_):
+            var next = try await journal.read(); var state = next.assistantState ?? LearningAssistantState()
+            state.preferences = values; next.assistantState = state; try await journal.commit(next,expectedRevision:expectedRevision)
         }
         guard let record = try await repository.read().assistantState?.runs.flatMap(\.actions).first(where: { $0.id == callID }) else { throw EngramError.storage("Action journal missing") }
         return record
@@ -59,6 +68,10 @@ extension StudyService {
     }
     public func undoAIChange(runID: String,actionID: String,changeID: String,now: Date = Date()) async throws {
         try await undoAIChange(runID:runID,actionID:actionID,changeID:changeID,now:now,preserveMetadata:false)
+    }
+    public func resolveAIUndo(runID: String,actionID: String,changeID: String,choice: String,expectedRevision: Int,now: Date = Date()) async throws {
+        guard ["base","yours","theirs"].contains(choice) else { throw EngramError.invalid("Choose Base, Yours, or Theirs.") }
+        try await undoAIChange(runID:runID,actionID:actionID,changeID:changeID,now:now,preserveMetadata:false,resolution:choice,expectedRevision:expectedRevision)
     }
     public func undoAIRun(id: String,now: Date = Date()) async throws {
         let original = try await repository.read()
@@ -77,20 +90,30 @@ extension StudyService {
         for index in final.decks.indices where final.decks[index] != original.decks.first(where: { $0.id == final.decks[index].id }) { final.decks[index].modifiedAt = now }
         try await repository.commit(final,expectedRevision:original.revision)
     }
-    private func undoAIChange(runID: String,actionID: String,changeID: String,now: Date,preserveMetadata: Bool) async throws {
+    private func undoAIChange(runID: String,actionID: String,changeID: String,now: Date,preserveMetadata: Bool,resolution: String? = nil,expectedRevision: Int? = nil) async throws {
         var library = try await repository.read()
+        if let expectedRevision { guard library.revision == expectedRevision else { throw EngramError.conflict } }
         guard var state = library.assistantState, let ri = state.runs.firstIndex(where: { $0.id == runID }),
               let ai = state.runs[ri].actions.firstIndex(where: { $0.id == actionID }),
               let ci = state.runs[ri].actions[ai].changes.firstIndex(where: { $0.id == changeID }) else { throw EngramError.missing("action") }
-        let change = state.runs[ri].actions[ai].changes[ci]
+        var change = state.runs[ri].actions[ai].changes[ci]
         guard change.undoneAt == nil else { return }
+        if resolution == "yours" {
+            state.runs[ri].actions[ai].changes[ci].undoneAt = now; library.assistantState = state
+            try await repository.commit(library,expectedRevision:library.revision); return
+        }
+        if resolution == "base" {
+            change.beforeDeck = change.afterDeck; change.beforeNote = change.afterNote
+            change.beforeSettings = change.afterSettings; change.beforeCard = change.afterCard; change.beforeMemory = change.afterMemory
+            change.beforePreferences = change.afterPreferences
+        }
         if let after = change.afterDeck {
-            guard let index = library.decks.firstIndex(where: { $0.id == after.id }),library.decks[index] == after else { throw EngramError.conflict }
+            guard let index = library.decks.firstIndex(where: { $0.id == after.id }),resolution != nil || library.decks[index] == after else { throw EngramError.conflict }
             if var before = change.beforeDeck { if !preserveMetadata { before.modifiedAt = now }; library.decks[index] = before }
             else { library.decks[index].deleted = true; library.decks[index].modifiedAt = now }
         }
         if let after = change.afterNote {
-            guard let index = library.notes.firstIndex(where: { $0.id == after.id }),library.notes[index] == after else { throw EngramError.conflict }
+            guard let index = library.notes.firstIndex(where: { $0.id == after.id }),resolution != nil || library.notes[index] == after else { throw EngramError.conflict }
             if var before = change.beforeNote { if !preserveMetadata { before.modifiedAt = now }; library.notes[index] = before }
             else { library.notes[index].deleted = true }
             for index in library.cards.indices where library.cards[index].noteID == after.id {
@@ -101,13 +124,24 @@ extension StudyService {
             }
         }
         if let after = change.afterSettings {
-            guard library.settings == after,let before = change.beforeSettings else { throw EngramError.conflict }
-            library.settings = before; library.settings.version = preserveMetadata ? before.version : after.version + 1
+            guard resolution != nil || library.settings == after,let before = change.beforeSettings else { throw EngramError.conflict }
+            let nextVersion = library.settings.version + 1
+            library.settings = before; library.settings.version = preserveMetadata ? before.version : nextVersion
         }
         if let after = change.afterCard {
             guard let index = library.cards.firstIndex(where: { $0.id == after.id }), let before = change.beforeCard,
-                  library.cards[index].suspended == after.suspended else { throw EngramError.conflict }
+                  resolution != nil || library.cards[index].suspended == after.suspended else { throw EngramError.conflict }
             library.cards[index].suspended = before.suspended; library.cards[index].version += 1
+        }
+        if change.beforeMemory != nil || change.afterMemory != nil {
+            let id = change.afterMemory?.id ?? change.beforeMemory!.id
+            guard resolution != nil || state.memory.first(where: { $0.id == id }) == change.afterMemory else { throw EngramError.conflict }
+            state.memory.removeAll { $0.id == id }
+            if let before = change.beforeMemory { state.memory.append(before) }
+        }
+        if let after = change.afterPreferences {
+            guard resolution != nil || (state.preferences ?? [:]) == after else { throw EngramError.conflict }
+            state.preferences = change.beforePreferences
         }
         if !preserveMetadata, let id = change.deckID { syncNotebooks(&library,deckIDs:[id]) }
         state.runs[ri].actions[ai].changes[ci].undoneAt = now
@@ -121,10 +155,18 @@ extension StudyService {
         guard let memory else { return }
         guard !memory.text.isEmpty,memory.text.utf8.count <= 10_000 else { throw EngramError.invalid("Keep learning memory under 10 KB.") }
         var library = try await repository.read(), state = LearningAssistantState()
+        guard library.liveNotes.contains(where: { $0.id == memory.noteID }) else { throw EngramError.missing("memory question") }
         state = library.assistantState ?? state
         if let index = state.memory.firstIndex(where: { $0.id == memory.id }) { state.memory[index] = memory }
         else { state.memory.append(memory) }
         library.assistantState = state; try await repository.commit(library,expectedRevision:library.revision)
+    }
+    public func saveAppPreferences(_ values: [String:String]) async throws {
+        var library = try await repository.read(),state = library.assistantState ?? LearningAssistantState()
+        var next = state.preferences ?? [:]
+        for (key,value) in values { next[key] = value }
+        state.preferences = next; library.assistantState = state
+        try await repository.commit(library,expectedRevision:library.revision)
     }
     public func deleteLearningMemory(id: String) async throws {
         var library = try await repository.read()
@@ -136,8 +178,10 @@ extension StudyService {
 private actor AIJournalRepository: LibraryRepository {
     let base: any LibraryRepository
     let runID: String,conversationID: String,callID: String,name: String,arguments: String
-    init(base: any LibraryRepository,runID: String,conversationID: String,callID: String,name: String,arguments: String) {
+    let preferencesBaseline: [String:String]?
+    init(base: any LibraryRepository,runID: String,conversationID: String,callID: String,name: String,arguments: String,preferencesBaseline: [String:String]? = nil) {
         self.base = base; self.runID = runID; self.conversationID = conversationID; self.callID = callID; self.name = name; self.arguments = arguments
+        self.preferencesBaseline = preferencesBaseline
     }
     func read() async throws -> LibrarySnapshot { try await base.read() }
     func commit(_ snapshot: LibrarySnapshot,expectedRevision: Int) async throws {
@@ -159,6 +203,17 @@ private actor AIJournalRepository: LibraryRepository {
         }
         if prior.settings != next.settings {
             var change = AIContentChange(); change.beforeSettings = prior.settings; change.afterSettings = next.settings; changes.append(change)
+        }
+        if prior.assistantState?.preferences != next.assistantState?.preferences {
+            var change = AIContentChange(); change.beforePreferences = prior.assistantState?.preferences ?? preferencesBaseline ?? [:]; change.afterPreferences = next.assistantState?.preferences ?? [:]; changes.append(change)
+        }
+        for id in Set((prior.assistantState?.memory ?? []).map(\.id)).union((next.assistantState?.memory ?? []).map(\.id)) {
+            let before = prior.assistantState?.memory.first { $0.id == id },after = next.assistantState?.memory.first { $0.id == id }
+            if before != after {
+                let noteID = after?.noteID ?? before?.noteID
+                var change = AIContentChange(deckID:next.notes.first(where: { $0.id == noteID })?.deckID,noteID:noteID)
+                change.beforeMemory = before; change.afterMemory = after; changes.append(change)
+            }
         }
         let record = AIActionRecord(id:callID,name:name,arguments:arguments,status:"completed",summary:"\(name): \(changes.count) saved changes",changes:changes)
         StudyService.appendAIRecord(record,runID:runID,conversationID:conversationID,to:&next)

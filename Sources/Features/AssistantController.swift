@@ -11,7 +11,7 @@ enum AIActionRegistry {
         tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|edit_note|review|pdf|import_export|action_history", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
         tool("edit", "Perform a requested content edit. First inspect the target and supply its exact version. Deletions await confirmation. All edits appear in Review changes.", ["operation":"create_deck|rename_deck|save_note|delete_note|delete_deck|append_section|edit_section|retention|suspend|study_setting|appearance", "id":"Existing target ID or empty for creation", "deck_id":"Destination deck", "version":"Exact inspected version token", "name":"Deck name, section ID or setting name", "front":"Question/section text", "back":"Answer", "value":"Setting value as string"]),
         tool("reveal_answer", "Reveal the current answer only when explicitly requested. Marks the attempt assisted and disables automatic recall grading.", [:]),
-        tool("memory", "Read personal memory, or save/edit/delete a correction explicitly accepted by the learner. Never use memory as grading authority.", ["operation":"list|save|delete", "id":"Memory ID if editing/deleting", "note_id":"Related note ID", "text":"Accepted correction"])
+        tool("memory", "Read personal memory, or save/edit/delete a correction explicitly accepted by the learner. Never use memory as grading authority.", ["operation":"list|save|delete", "id":"Memory ID if editing/deleting", "note_id":"Related note ID", "text":"Accepted correction", "version":"Exact token from memory list, or empty for creation"])
     ]
     private static func tool(_ name: String,_ summary: String,_ fields: [String:String]) -> AIToolDefinition {
         let properties = fields.mapValues { ["type":"string","description":$0] }
@@ -30,6 +30,12 @@ enum AIActionRegistry {
     private var task: Task<Void,Never>?
     private(set) var output = ""
     func cancel() { task?.cancel() }
+    func stopAndWait() async { let running = task; running?.cancel(); await running?.value }
+    func restoreConfirmation(_ action: AIActionRecord,run: AIActionRun) {
+        guard !busy,action.status == "pending" else { return }
+        activeRunID = run.id; pendingConversationID = run.conversationID
+        pendingConfirmation = AIToolCall(id:action.id,name:action.name,arguments:action.arguments)
+    }
     func start(question: String,contextID: String,context: String,evidence: String,sourceOnly: Bool,model: EngramModel) {
         guard !busy else { return }
         busy = true; error = nil; output = ""
@@ -39,13 +45,17 @@ enum AIActionRegistry {
             activeRunID = runID
             do {
                 await model.refresh()
-                if model.aiMarker.catalog.isEmpty { await model.aiMarker.loadModels(connection:model.chatGPT) }
+                if model.aiMarker.catalog.isEmpty || model.aiMarker.catalogAccountID != model.chatGPT.activeClientID { await model.aiMarker.loadModels(connection:model.chatGPT) }
                 var conversation = model.library.assistantState?.conversations.first(where: { $0.id == contextID }) ?? LearningConversation(id:contextID)
                 let selected = conversation.modelID ?? model.aiMarker.chatModel
-                guard let descriptor = model.aiMarker.catalog.first(where: { $0.model == selected }) else { throw EngramError.invalid("Choose an available model in chat.") }
+                guard let available = model.aiMarker.catalog.first(where: { $0.model == selected }) else { throw EngramError.invalid("Choose an available model in chat.") }
+                let descriptor = try await model.aiMarker.resolveTools(available,connection:model.chatGPT)
                 conversation.modelID = selected
                 let account = model.chatGPT.activeClientID
                 var input = conversation.toolHistoryJSON.flatMap { try? JSONDecoder().decode([AIInput].self,from:$0) } ?? conversation.messages.suffix(16).map { .message(AIMessage(role:$0.role,text:$0.text,modelID:$0.modelID)) }
+                let records = model.library.assistantState?.runs.flatMap(\.actions) ?? []
+                let receipts = Dictionary(records.map { ($0.id, "\($0.status): \($0.summary)") },uniquingKeysWith: { _,new in new })
+                input = AIHistoryRecovery.reconcile(input,receipts:receipts)
                 input.append(.message(AIMessage(role:"user",text:question)))
                 conversation.messages.append(LearningChatMessage(role:"user",text:question))
                 try await persist(&conversation,input:input,model:model)
@@ -68,11 +78,13 @@ enum AIActionRegistry {
                         case .textDelta(let delta): response.text += delta; output += delta
                         case .toolCall(let call):
                             guard response.calls.count < 12 else { throw AIProviderError.exceededLimit }
-                            if !response.calls.contains(where: { $0.id == call.id }) { response.calls.append(call) }
+                            if !response.calls.contains(where: { $0.id == call.id }) { response.calls.append(call); response.context.append(.call(call)) }
+                        case .contextItem(let item): response.context.append(.context(item))
                         case .completed: completed = true
                         }
                     }
                     guard completed else { throw AIProviderError.incomplete }
+                    guard descriptor.supportsTools || response.calls.isEmpty else { throw AIProviderError.unsupportedModel }
                     guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }
                     if !response.text.isEmpty {
                         output = ""
@@ -83,9 +95,10 @@ enum AIActionRegistry {
                         try await persist(&conversation,input:input,model:model)
                         try await model.service.setAIRunStatus(runID,status:"completed"); await model.refresh(); return
                     }
+                    input += response.context
+                    try await persist(&conversation,input:input,model:model)
                     for call in response.calls {
                         try Task.checkCancellation()
-                        input.append(.call(call))
                         // Persist complete calls before execution; the mutation journal is atomic with content.
                         try await persist(&conversation,input:input,model:model)
                         let result: String
@@ -121,10 +134,14 @@ enum AIActionRegistry {
         guard !busy,model.aiMarker.models.contains(id) else { return }
         var conversation = model.library.assistantState?.conversations.first(where: { $0.id == contextID }) ?? LearningConversation(id:contextID)
         conversation.modelID = id; model.aiMarker.chatModel = id
+        // Provider continuation blobs can be specific to the previous model. Keep the visible
+        // conversation while starting subsequent turns from its messages; actions remain journalled.
+        conversation.toolHistoryJSON = nil
         _ = await model.perform { try await $0.saveConversation(conversation) }
     }
     func confirm(model: EngramModel) async {
-        guard let call = pendingConfirmation,let runID = activeRunID,let context = pendingConversationID else { return }
+        guard !busy,let call = pendingConfirmation,let runID = activeRunID,let context = pendingConversationID else { return }
+        busy = true; defer { busy = false }
         pendingConfirmation = nil
         do {
             let result = try await execute(call,runID:runID,conversationID:context,model:model,confirmed:true)
@@ -141,6 +158,11 @@ enum AIActionRegistry {
         guard let call = pendingConfirmation,let runID = activeRunID,let context = pendingConversationID else { return }
         pendingConfirmation = nil
         try? await model.service.recordAIAction(runID:runID,conversationID:context,record:AIActionRecord(id:call.id,name:call.name,arguments:call.arguments,status:"cancelled",summary:"Cancelled by you"))
+        var conversation = model.library.assistantState?.conversations.first(where: { $0.id == context }) ?? LearningConversation(id:context)
+        var history = conversation.toolHistoryJSON.flatMap { try? JSONDecoder().decode([AIInput].self,from:$0) } ?? []
+        if let index = history.lastIndex(where: { if case .result(let id, _) = $0 { return id == call.id }; return false }) { history[index] = .result(callID:call.id,output:"Cancelled by the learner. No action was executed.") }
+        conversation.toolHistoryJSON = try? JSONEncoder().encode(history)
+        try? await model.service.saveConversation(conversation)
         try? await model.service.setAIRunStatus(runID,status:"cancelled"); await model.refresh()
     }
     private func execute(_ call: AIToolCall,runID: String,conversationID: String,model: EngramModel,confirmed: Bool = false) async throws -> String {
@@ -162,10 +184,19 @@ enum AIActionRegistry {
             return "Answer revealed. This attempt is assisted; use manual rating."
         }
         if name == "memory" {
+            if args["operation"] != "list", !confirmed {
+                pendingConfirmation = call; pendingConversationID = conversationID
+                try await model.service.recordAIAction(runID:runID,conversationID:conversationID,record:AIActionRecord(id:call.id,name:name,arguments:call.arguments,status:"pending",summary:"Confirm personal memory change: " + (args["text"] ?? args["id"] ?? "")))
+                return "This personal memory change is awaiting your acceptance."
+            }
             switch args["operation"] {
-            case "list": return try json(library.assistantState?.memory ?? [])
-            case "save": try await model.service.saveLearningMemory(LearningMemory(id:args["id"].flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString,noteID:args["note_id"] ?? "",text:args["text"] ?? ""))
-            case "delete": try await model.service.deleteLearningMemory(id:args["id"] ?? "")
+            case "list": return try json((library.assistantState?.memory ?? []).prefix(30).map { ["id":$0.id,"note_id":$0.noteID,"text":$0.text,"version":Self.version(try! json($0))] })
+            case "save", "delete":
+                let id = args["id"].flatMap { $0.isEmpty ? nil : $0 } ?? "memory-" + call.id
+                if let before = library.assistantState?.memory.first(where: { $0.id == id }) { guard args["version"] == Self.version(try json(before)) else { throw EngramError.conflict } }
+                let operation: AIContentOperation = args["operation"] == "delete" ? .deleteMemory(id) : .memory(LearningMemory(id:id,noteID:args["note_id"] ?? "",text:args["text"] ?? ""))
+                let record = try await model.service.executeAIContent(operation,runID:runID,conversationID:conversationID,callID:call.id,name:"memory",arguments:call.arguments,expectedRevision:library.revision)
+                await model.refresh(); return try json(record)
             default: throw AIProviderError.invalidTool
             }
             await model.refresh(); return "Personal learning memory updated."
@@ -225,11 +256,12 @@ enum AIActionRegistry {
             }
             settings.version += 1; operation = .settings(settings)
         case "appearance":
-            if args["name"] == "theme",let value = EngramTheme(rawValue:args["value"] ?? "") { model.theme = value }
-            else if args["name"] == "appearance",let value = EngramAppearance(rawValue:args["value"] ?? "") { model.appearance = value }
+            let key = args["name"] ?? "",value = args["value"] ?? ""
+            if key == "theme",EngramTheme(rawValue:value) != nil {}
+            else if key == "appearance",EngramAppearance(rawValue:value) != nil {}
             else { throw AIProviderError.invalidTool }
-            try await model.service.recordAIAction(runID:runID,conversationID:conversationID,record:AIActionRecord(id:call.id,name:name,arguments:call.arguments,status:"completed",summary:"Appearance updated"))
-            await model.refresh(); return "Appearance updated."
+            var preferences = library.assistantState?.preferences ?? ["theme":model.theme.rawValue,"appearance":model.appearance.rawValue]
+            preferences[key] = value; operation = .preferences(preferences,baseline:["theme":model.theme.rawValue,"appearance":model.appearance.rawValue])
         default: throw AIProviderError.invalidTool
         }
         let record = try await model.service.executeAIContent(operation,runID:runID,conversationID:conversationID,callID:call.id,name:op,arguments:call.arguments,expectedRevision:library.revision)
@@ -243,6 +275,10 @@ enum AIActionRegistry {
             guard let deck = library.liveDecks.first(where: { $0.id == id }) else { throw EngramError.missing("deck") }
             // Do not disclose private full PDF records in broad assistant browsing.
             var readable = deck; readable.pdfLearning = nil
+            if library.session?.current?.card.deckID == id,library.session?.current?.revealedAt == nil {
+                readable.notebookBlocks = nil
+                readable.sourceDocument = nil
+            }
             return "version: \(Self.version(try json(deck)))\n" + (try json(readable))
         case "note":
             guard let note = library.liveNotes.first(where: { $0.id == id }) else { throw EngramError.missing("note") }
@@ -267,7 +303,8 @@ enum AIActionRegistry {
         case "questions": model.questionsDeckID = id
         case "notes": model.notebookWritingOnly = true; model.notebookDeckID = id
         case "settings": model.settingsRoute = args["page"].flatMap { $0.isEmpty ? nil : $0 }; model.settingsPresented = true
-        case "new_deck", "pdf": model.creationPresented = true
+        case "new_deck": model.creationPresented = true
+        case "pdf": model.pdfLearningPresented = true
         case "edit_note": guard let note = model.library.liveNotes.first(where: { $0.id == id }) else { throw EngramError.missing("note") }; model.edit(note)
         case "review": await model.beginReview(deckID:id.isEmpty ? nil : id)
         case "import_export": model.portabilityRequested = true

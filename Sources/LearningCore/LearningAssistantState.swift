@@ -28,6 +28,10 @@ public struct AIContentChange: Codable, Equatable, Identifiable, Sendable {
     public var afterSettings: StudySettings?
     public var beforeCard: StudyCard?
     public var afterCard: StudyCard?
+    public var beforeMemory: LearningMemory?
+    public var afterMemory: LearningMemory?
+    public var beforePreferences: [String:String]?
+    public var afterPreferences: [String:String]?
     public var undoneAt: Date?
     public init(deckID: String? = nil, noteID: String? = nil) { self.deckID = deckID; self.noteID = noteID }
 }
@@ -62,6 +66,7 @@ public struct LearningMemory: Codable, Equatable, Identifiable, Sendable {
     }
 }
 public struct LearningAssistantState: Codable, Equatable, Sendable {
+    public var preferences: [String:String]?
     public var conversations: [LearningConversation] = []
     public var runs: [AIActionRun] = []
     public var memory: [LearningMemory] = []

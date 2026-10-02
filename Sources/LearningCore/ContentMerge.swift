@@ -24,6 +24,9 @@ public enum ContentMerge {
             }
             var result: [String:Any] = [:]
             for key in Set(bd.keys).union(yd.keys).union(td.keys).sorted() {
+                if key == "modifiedAt", let ydate = yd[key] as? Double, let tdate = td[key] as? Double {
+                    result[key] = max(ydate,tdate); continue
+                }
                 let value = merge(bd[key] ?? NSNull(),yd[key] ?? NSNull(),td[key] ?? NSNull(),path:path + "/" + key,conflicts:&conflicts)
                 if !(value is NSNull) { result[key] = value }
             }

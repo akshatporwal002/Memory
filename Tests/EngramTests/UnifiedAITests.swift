@@ -6,6 +6,89 @@ import SchedulingAdapters
 
 final class UnifiedAITests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_788_393_600)
+    func testUndoConflictRequiresChoiceAndPreservesLaterEditsUntilResolved() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Original",now:now)
+        let action = try await app.executeAIContent(.renameDeck(deck.id,"Assistant"),runID:"run",conversationID:"chat",callID:"call",name:"rename",arguments:"Assistant",expectedRevision:try await app.snapshot().revision,now:now)
+        try await app.renameDeck(id:deck.id,name:"Human")
+        let change = try XCTUnwrap(action.changes.first)
+        do { try await app.undoAIChange(runID:"run",actionID:"call",changeID:change.id); XCTFail("Overlapping undo accepted") } catch {}
+        let before = try await app.snapshot(); XCTAssertEqual(before.liveDecks.first?.name,"Human")
+        try await app.resolveAIUndo(runID:"run",actionID:"call",changeID:change.id,choice:"theirs",expectedRevision:before.revision,now:now)
+        let after = try await app.snapshot(); XCTAssertEqual(after.liveDecks.first?.name,"Original"); XCTAssertGreaterThan(after.revision,before.revision)
+    }
+    func testAppearanceAndMemoryActionsHaveVersionedUndo() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Study",now:now)
+        let note = try await app.saveNote(NoteDraft(deckID:deck.id,front:"Energy?",back:"ATP"),now:now)
+        let values = ["theme":"neutral","appearance":"dark"],baseline = ["theme":"warm","appearance":"system"]
+        _ = try await app.executeAIContent(.preferences(values,baseline:baseline),runID:"prefs",conversationID:"chat",callID:"prefs",name:"appearance",arguments:"dark",expectedRevision:try await app.snapshot().revision)
+        try await app.undoAIRun(id:"prefs")
+        let restored = try await app.snapshot(); XCTAssertEqual(restored.assistantState?.preferences,baseline)
+        _ = try await app.executeAIContent(.memory(LearningMemory(id:"m",noteID:note.id,text:"Accepted correction")),runID:"memory",conversationID:"chat",callID:"memory",name:"memory",arguments:"accepted",expectedRevision:restored.revision)
+        try await app.undoAIRun(id:"memory")
+        let result = try await app.snapshot(); XCTAssertTrue(result.assistantState?.memory.isEmpty ?? false)
+    }
+    func testLegacyMigrationPreservesIDsAndVerifiesBackup() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Imported")
+        _ = try await app.saveNote(NoteDraft(deckID:deck.id,front:"Question",back:"Answer"),now:now)
+        let original = try await app.snapshot(),bytes = try JSONEncoder().encode(original),legacy = directory.appendingPathComponent("library.json")
+        try bytes.write(to:legacy)
+        let repository = try SQLiteLibraryRepository(url:directory.appendingPathComponent("library.sqlite"),migrating:legacy)
+        let migrated = try await repository.read(); XCTAssertEqual(migrated,original)
+        let backup = try XCTUnwrap(FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil).first { $0.lastPathComponent.hasSuffix(".backup") })
+        XCTAssertEqual(try Data(contentsOf:backup),bytes); XCTAssertEqual(try Data(contentsOf:legacy),bytes)
+    }
+    func testAccountSwitchInvalidatesCapturedMutationEvenWithSameRevision() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        let repo = try SQLiteLibraryRepository(url:directory.appendingPathComponent("library.sqlite"))
+        try await repo.selectAccount("a")
+        var captured = try await repo.read(); captured.decks = [Deck(name:"Account A secret")]
+        try await repo.selectAccount("b")
+        do { try await repo.commit(captured,expectedRevision:captured.revision); XCTFail("Cross-account write accepted") } catch {}
+        let isolated = try await repo.read(); XCTAssertTrue(isolated.decks.isEmpty)
+        let serialized = String(decoding:try JSONEncoder().encode(captured),as:UTF8.self); XCTAssertFalse(serialized.contains("repositoryContext"))
+    }
+    func testStaleEvidenceCannotCommitAnAutomaticGrade() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Study",now:now)
+        let note = try await app.saveNote(NoteDraft(deckID:deck.id,front:"Energy?",back:"ATP"),now:now)
+        let initial = try await app.snapshot()
+        var blocks = NotebookDocument.blocks(for:try XCTUnwrap(initial.liveDecks.first),in:initial)
+        blocks.append(NotebookBlock(id:"source",text:"ATP stores energy"))
+        try await app.saveNotebook(deckID:deck.id,blocks:blocks,expectedRevision:initial.revision,now:now)
+        let session = try await app.startSession(deckID:deck.id,now:now)
+        let item = try XCTUnwrap(session.current)
+        var attempt = AnswerAttempt(sessionID:session.id,item:item,noteID:note.id,answer:"ATP",prompt:"Energy?",expected:"ATP",modelID:"fixture",evidence:[AttemptEvidence(id:"passage-source",text:"ATP stores energy",version:String(now.timeIntervalSince1970))],now:now)
+        attempt.assessment = AnswerAssessment(outcome:.correct,reason:"Source supported",method:"ai")
+        try await app.saveAnswerAttempt(attempt)
+        blocks[blocks.count-1].text = "Different evidence"
+        try await app.saveNotebook(deckID:deck.id,blocks:blocks,expectedRevision:try await app.snapshot().revision,now:now.addingTimeInterval(0.1))
+        do { try await app.commitAnswerAttempt(id:attempt.id,now:now); XCTFail("Stale source was graded") } catch {}
+        let result = try await app.snapshot(); XCTAssertTrue(result.reviews.isEmpty)
+    }
+    func testAcceptedImprovementIsDeferredUntilNextAndPreservesOriginalRecall() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        let deck = try await app.createDeck(name:"Study",now:now)
+        let note = try await app.saveNote(NoteDraft(deckID:deck.id,front:"Energy?",back:"ATP"),now:now)
+        let session = try await app.startSession(deckID:deck.id,now:now)
+        var attempt = AnswerAttempt(sessionID:session.id,item:try XCTUnwrap(session.current),noteID:note.id,answer:"Sugar",prompt:"Energy?",expected:"ATP",modelID:"fixture",evidence:[],now:now)
+        attempt.assessment = AnswerAssessment(outcome:.incorrect,reason:"Incorrect original attempt",method:"fixture")
+        attempt.acceptedImprovement = "ATP — adenosine triphosphate"
+        try await app.saveAnswerAttempt(attempt)
+        let provisional = try await app.snapshot(); XCTAssertEqual(provisional.liveNotes.first?.back,"ATP"); XCTAssertTrue(provisional.reviews.isEmpty)
+        try await app.commitAnswerAttempt(id:attempt.id,now:now)
+        let result = try await app.snapshot()
+        XCTAssertEqual(result.liveNotes.first?.back,attempt.acceptedImprovement)
+        XCTAssertEqual(result.reviews.first?.rating,.again)
+        XCTAssertEqual(result.answerAttempts?.first?.originalAnswer,"Sugar")
+        XCTAssertNotNil(result.assistantState?.runs.first?.actions.first?.changes.first?.beforeNote)
+    }
     func testProvisionalAttemptSurvivesReopenAndNextCommitsOnce() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:directory) }

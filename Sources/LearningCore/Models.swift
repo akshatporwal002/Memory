@@ -184,6 +184,11 @@ public struct StudySession: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct LibrarySnapshot: Codable, Equatable, Sendable {
+    /// Ephemeral repository lease; never included in backups or synchronized content.
+    public var repositoryContext: String? = nil
+    private enum CodingKeys: String,CodingKey {
+        case assistantState,answerAttempts,schemaVersion,revision,libraryID,decks,notes,cards,reviews,corrections,importedReviews,media,settings,session
+    }
     public var assistantState: LearningAssistantState?
     public var answerAttempts: [AnswerAttempt]?
     public var schemaVersion = 1
@@ -199,6 +204,9 @@ public struct LibrarySnapshot: Codable, Equatable, Sendable {
     public var settings = StudySettings()
     public var session: StudySession?
     public init() {}
+    public static func == (lhs: Self,rhs: Self) -> Bool {
+        lhs.assistantState == rhs.assistantState && lhs.answerAttempts == rhs.answerAttempts && lhs.schemaVersion == rhs.schemaVersion && lhs.revision == rhs.revision && lhs.libraryID == rhs.libraryID && lhs.decks == rhs.decks && lhs.notes == rhs.notes && lhs.cards == rhs.cards && lhs.reviews == rhs.reviews && lhs.corrections == rhs.corrections && lhs.importedReviews == rhs.importedReviews && lhs.media == rhs.media && lhs.settings == rhs.settings && lhs.session == rhs.session
+    }
     public var activeReviews: [ReviewEvent] {
         let undone = Set(corrections.map(\.reviewID)); return reviews.filter { !undone.contains($0.id) }
     }

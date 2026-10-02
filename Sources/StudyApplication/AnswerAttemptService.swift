@@ -6,7 +6,9 @@ extension StudyService {
         var library = try await repository.read()
         guard attempt.originalAnswer.utf8.count <= 16_000,attempt.evidence.count <= 20,
               library.session?.id == attempt.sessionID,library.session?.current?.presentationID == attempt.presentationID,
-              library.session?.current?.card.version == attempt.cardVersion else { throw EngramError.conflict }
+              library.session?.current?.card.version == attempt.cardVersion,
+              library.liveCards.contains(where: { $0.id == attempt.cardID && $0.version == attempt.cardVersion }),
+              attempt.evidence.allSatisfy({ EvidenceRetrieval.isCurrent($0,in:library) }) else { throw EngramError.conflict }
         var attempts = library.answerAttempts ?? []
         if let index = attempts.firstIndex(where: { $0.id == attempt.id }) {
             let prior = attempts[index]
@@ -30,16 +32,18 @@ extension StudyService {
         }
         library.answerAttempts = attempts; try await repository.commit(library,expectedRevision:library.revision)
     }
-    public func commitAnswerAttempt(id: String,manualGrade: Grade? = nil,now: Date = Date()) async throws {
+    public func commitAnswerAttempt(id: String,manualGrade: Grade? = nil,providerAccountID: String? = nil,now: Date = Date()) async throws {
         var library = try await repository.read()
         guard var attempts = library.answerAttempts,let index = attempts.firstIndex(where: { $0.id == id }) else { throw EngramError.missing("answer attempt") }
         if attempts[index].committedAt != nil { return }
         let attempt = attempts[index]
+        if manualGrade == nil,let account = attempt.providerAccountID { guard account == providerAccountID else { throw EngramError.conflict } }
         guard var session = library.session,session.id == attempt.sessionID,var item = session.current,
               item.presentationID == attempt.presentationID,
               let ci = library.cards.firstIndex(where: { $0.id == attempt.cardID && !$0.retired && !$0.suspended }),
               library.cards[ci].version == attempt.cardVersion else { throw EngramError.conflict }
         guard !attempt.assisted || manualGrade != nil else { throw EngramError.invalid("This answer was assisted. Choose a manual grade.") }
+        guard manualGrade != nil || attempt.evidence.allSatisfy({ EvidenceRetrieval.isCurrent($0,in:library) }) else { throw EngramError.conflict }
         guard let grade = manualGrade ?? attempt.assessment?.rating else { throw EngramError.invalid("Unclear feedback cannot save an automatic grade. Choose a manual rating or discuss the feedback.") }
         let outcomes = try scheduler.outcomes(state:item.card.schedule,history:library.activeReviews.filter { $0.cardID == item.card.id },now:attempt.createdAt,settings:library.settings)
         guard let outcome = outcomes[grade] else { throw EngramError.invalid("The scheduler could not grade this answer.") }

@@ -123,6 +123,6 @@ extension StudyService {
         try Task.checkCancellation()
         try await preImportBackup(original)
         try Task.checkCancellation()
-        try await restore(candidate, expectedRevision: expectedRevision)
+        try await restore(candidate, expectedRevision: expectedRevision,expectedContext:original.repositoryContext)
     }
 }
