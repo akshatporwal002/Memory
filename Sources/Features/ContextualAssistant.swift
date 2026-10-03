@@ -319,7 +319,7 @@ struct ContextualAssistant: View {
                 Spacer(minLength:8)
                 Button(action:newChat) { Image(systemName:"plus").frame(width:44,height:44).contentShape(Rectangle()) }
                     .accessibilityLabel("New chat").disabled(busy)
-                Button { composerFocused = false; withAnimation(motion) { stage = expanded ? .medium : .expanded } } label: {
+                Button { withAnimation(motion) { stage = expanded ? .medium : .expanded } } label: {
                     Image(systemName:expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right").frame(width:44,height:44).contentShape(Rectangle())
                 }.accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
                 Button(action:close) { Image(systemName:"xmark").frame(width:44,height:44).contentShape(Rectangle()) }
@@ -461,12 +461,12 @@ struct ContextualAssistant: View {
 
     private func changeStage(for translation: CGFloat) {
         guard abs(translation) > 10 else { return }
-        composerFocused = false
         withAnimation(motion) {
             if translation < 0 { stage = stage == .compact ? .medium : .expanded }
             else if showingHistory { showingHistory = false; stage = .compact }
             else { stage = expanded ? .medium : stage == .medium ? .compact : .closed }
         }
+        if stage == .closed { composerFocused = false }
     }
     private func newChat() {
         selectedHistoryID = UUID().uuidString
