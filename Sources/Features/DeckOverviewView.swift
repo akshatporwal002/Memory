@@ -35,7 +35,6 @@ struct DeckOverviewView: View {
                                 .font(.subheadline).foregroundStyle(palette.secondaryText)
                         }
                         DeckMemoryPanel(model: model, deck: deck)
-                            .accessibilityIdentifier("deck-memory-outlook")
                         Button { Task { await model.beginReview(deckID: deck.id) } } label: {
                             HStack { Text("Study notebook"); Spacer(); Image(systemName: "arrow.up.right") }
                                 .font(.subheadline.weight(.semibold)).frame(minHeight:44)

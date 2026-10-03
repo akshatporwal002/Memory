@@ -36,12 +36,30 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(outlook.aboveTarget, 0)
         XCTAssertEqual(outlook.belowTarget, 1)
         XCTAssertEqual(outlook.newCount, 1)
-        XCTAssertEqual(outlook.average.count, 8)
+        XCTAssertEqual(outlook.average.count, outlook.sampleDates.count)
+        XCTAssertLessThanOrEqual(outlook.average.count, 65)
+        XCTAssertEqual(outlook.sampleDates.first, now)
+        XCTAssertEqual(outlook.sampleDates.last, DeckMemoryOutlook.forecastEnd(examDate: nil, now: now))
         XCTAssertEqual(outlook.cards.first?.prompt, "What is S3?")
         XCTAssertEqual(outlook.nextPlannedReview,reviewed.due)
         XCTAssertEqual(outlook.scheduledWithinWeek,1)
         let activity = ActivitySummary.make(in: library, period: .all, now: now, estimator: ConstantEstimator())
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
+    }
+
+    func testExamDateHorizonAndPersistence() async throws {
+        let now = Date(timeIntervalSince1970: 1_788_393_600)
+        let future = now.addingTimeInterval(120 * 86_400)
+        XCTAssertEqual(DeckMemoryOutlook.forecastEnd(examDate: future, now: now), future)
+        XCTAssertEqual(DeckMemoryOutlook.forecastEnd(examDate: now.addingTimeInterval(-1), now: now), DeckMemoryOutlook.forecastEnd(examDate: nil, now: now))
+        let app = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let deck = try await app.createDeck(name: "Exam")
+        try await app.setDeckExamDate(id: deck.id, date: future)
+        var snapshot = try await app.snapshot()
+        XCTAssertEqual(snapshot.decks.first?.examDate, future)
+        try await app.setDeckExamDate(id: deck.id, date: nil)
+        snapshot = try await app.snapshot()
+        XCTAssertNil(snapshot.decks.first?.examDate)
     }
 
     func testDeckRetentionPersistsAndCanReturnToDefault() async throws {

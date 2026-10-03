@@ -36,6 +36,7 @@ final class CloudSyncTests: XCTestCase {
         try await a.selectAccount(user.uuidString.lowercased()); try await b.selectAccount(user.uuidString.lowercased())
         var library = try await a.read(),deck = Deck(id:"pdf-deck",name:"PDF")
         let original = Data("%PDF-1.7 fixture".utf8),source = PDFLearningSource(filename:"source.pdf",pages:[PDFPageText(number:1,text:"ATP stores energy")],originalPDFData:original)
+        deck.examDate = Date(timeIntervalSince1970: 1_800_000_000)
         deck.pdfLearning = PDFLearningRecord(source:source,brief:PDFLearningBrief(),items:[])
         let markdown = Data("# Energy\nATP stores energy".utf8)
         deck.documents = [LibraryDocument(name:"energy.md",kind:.markdown,pages:[PDFPageText(number:1,text:String(decoding:markdown,as:UTF8.self))],originalData:markdown)]
@@ -44,11 +45,13 @@ final class CloudSyncTests: XCTestCase {
         library.folderDocuments = [LibraryFolderDocument(folderPath:"Learning::Sources",document:LibraryDocument(name:"private.md",kind:.markdown,pages:[PDFPageText(number:1,text:"Private source text")],originalData:Data("Private source text".utf8)))]
         let projection = try CloudProjection.entities(library,userID:user,ownedDecks:[deck.id])
         XCTAssertNil(try projection.first(where: { $0.kind == "deck" })?.payload.decode(Deck.self).documents)
+        XCTAssertNil(try projection.first(where: { $0.kind == "deck" })?.payload.decode(Deck.self).examDate)
         try await a.commit(library,expectedRevision:library.revision)
         let ea = CloudSyncEngine(repository:a,client:server,scheduler:FSRSScheduler()),eb = CloudSyncEngine(repository:b,client:server,scheduler:FSRSScheduler())
         _ = try await ea.synchronize(); _ = try await eb.synchronize()
         let received = try await b.read(); XCTAssertEqual(received.liveDecks.first?.pdfLearning?.source.originalPDFData,original)
         XCTAssertEqual(received.liveDecks.first?.documents?.first?.originalData,markdown)
+        XCTAssertEqual(received.liveDecks.first?.examDate, deck.examDate)
         XCTAssertEqual(received.folders,library.folders)
         XCTAssertEqual(received.folderDocuments,library.folderDocuments)
         let data = try PrivateCloudDocument.encode(try XCTUnwrap(deck.pdfLearning)),path = PrivateCloudDocument.path(data:data,userID:user)

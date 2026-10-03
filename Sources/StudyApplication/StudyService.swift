@@ -57,6 +57,15 @@ public actor StudyService {
         return deck
     }
 
+    public func setDeckExamDate(id: String, date: Date?) async throws {
+        guard date.map({ $0.timeIntervalSince1970.isFinite }) ?? true else { throw EngramError.invalid("Choose a valid exam date.") }
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }
+        library.decks[index].examDate = date
+        library.decks[index].modifiedAt = Date()
+        try await save(library)
+    }
+
     public func setDeckRetention(id: String, desiredRetention: Double?) async throws {
         guard desiredRetention.map({ $0.isFinite && (0.8...0.97).contains($0) }) ?? true else {
             throw EngramError.invalid("Choose a desired retention between 80% and 97%.")

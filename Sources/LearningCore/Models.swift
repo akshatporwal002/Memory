@@ -48,6 +48,8 @@ public struct Deck: Codable, Identifiable, Equatable, Sendable {
     public var notebookBlocks: [NotebookBlock]?
     /// Nil inherits the library's desired retention. Old backups decode as nil.
     public var desiredRetention: Double?
+    /// Optional learning deadline used for the deck forecast.
+    public var examDate: Date?
     /// Missing means the original arrow-only document format.
     public var documentFormatVersion: Int?
     public init(id: String = UUID().uuidString, name: String, deleted: Bool = false,

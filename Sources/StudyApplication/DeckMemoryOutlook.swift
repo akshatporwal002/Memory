@@ -8,6 +8,7 @@ public struct MemoryCardEstimate: Identifiable, Sendable {
 }
 
 public struct DeckMemoryOutlook: Sendable {
+    public let sampleDates: [Date]
     public let target: Double
     public let inheritsTarget: Bool
     public let aboveTarget: Int
@@ -20,6 +21,10 @@ public struct DeckMemoryOutlook: Sendable {
     public let scheduledWithinWeek: Int
 
     public static func make(deck: Deck, library: LibrarySnapshot, now: Date, estimator: (any MemoryEstimating)?) -> Self {
+        let end = forecastEnd(examDate: deck.examDate, now: now)
+        let duration = max(1, end.timeIntervalSince(now))
+        let intervals = max(1, Int(min(64, ceil(duration / 86_400))))
+        let dates = (0...intervals).map { index in now.addingTimeInterval(duration * pow(Double(index) / Double(intervals), 2)) }
         let target = deck.desiredRetention ?? library.settings.desiredRetention
         var settings = library.settings
         settings.desiredRetention = target
@@ -30,16 +35,15 @@ public struct DeckMemoryOutlook: Sendable {
         var unavailable = 0
         for card in cards {
             if card.schedule.phase == .new { newCount += 1; continue }
-            let points = (0...7).compactMap { day -> Double? in
-                let date = now.addingTimeInterval(Double(day) * 86_400)
+            let points = dates.compactMap { date -> Double? in
                 return estimator?.recallProbability(state: card.schedule, now: date, settings: settings)
             }
-            guard points.count == 8 else { unavailable += 1; continue }
+            guard points.count == dates.count else { unavailable += 1; continue }
             estimated.append(MemoryCardEstimate(id: card.id, prompt: notes[card.noteID]?.front ?? "Question", probabilities: points))
         }
-        let average = (0...7).map { day in estimated.isEmpty ? 0 : estimated.reduce(0) { $0 + $1.probabilities[day] } / Double(estimated.count) }
+        let average = dates.indices.map { day in estimated.isEmpty ? 0 : estimated.reduce(0) { $0 + $1.probabilities[day] } / Double(estimated.count) }
         let scheduled = cards.filter { $0.schedule.phase != .new }.map(\.schedule.due)
-        return Self(target: target, inheritsTarget: deck.desiredRetention == nil,
+        return Self(sampleDates: dates, target: target, inheritsTarget: deck.desiredRetention == nil,
                     aboveTarget: estimated.filter { $0.probabilities[0] >= target }.count,
                     belowTarget: estimated.filter { $0.probabilities[0] < target }.count,
                     newCount: newCount, unavailableCount: unavailable,
@@ -47,4 +51,9 @@ public struct DeckMemoryOutlook: Sendable {
                     nextPlannedReview: scheduled.min(),
                     scheduledWithinWeek: scheduled.filter { $0 <= now.addingTimeInterval(7 * 86_400) }.count)
     }
+    public static func forecastEnd(examDate: Date?, now: Date, calendar: Calendar = .current) -> Date {
+        if let examDate, examDate > now { return examDate }
+        return calendar.dateInterval(of: .year, for: now)?.end.addingTimeInterval(-1) ?? now.addingTimeInterval(365 * 86_400)
+    }
+
 }
