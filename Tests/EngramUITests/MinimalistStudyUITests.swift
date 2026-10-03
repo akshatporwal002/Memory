@@ -131,6 +131,18 @@ final class MinimalistStudyUITests: XCTestCase {
         let app = launch(extra:["--ui-monochrome","--ui-rich-theme-fixture"] + (dark ? ["--ui-dark"] : []))
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout:15))
         capture(prefix + "-Today",app)
+        app.buttons["assistant-entry"].tap()
+        let composer = app.textFields["assistant-composer"].firstMatch.exists ? app.textFields["assistant-composer"].firstMatch : app.textViews["assistant-composer"].firstMatch
+        XCTAssertTrue(composer.waitForExistence(timeout:5)); composer.tap()
+        composer.typeText("Explain CloudFront")
+        capture(prefix + "-Chat-Keyboard",app)
+        if app.keyboards.firstMatch.exists { XCTAssertLessThanOrEqual(composer.frame.maxY,app.keyboards.firstMatch.frame.minY + 2) }
+        app.buttons["Send message"].tap()
+        XCTAssertTrue(app.buttons["Expand assistant"].waitForExistence(timeout:5))
+        app.buttons["Expand assistant"].tap()
+        XCTAssertTrue(app.buttons["Collapse assistant"].waitForExistence(timeout:5))
+        capture(prefix + "-Chat-Expanded",app)
+        app.buttons["Close assistant"].tap()
         app.buttons["tab-library"].tap(); capture(prefix + "-Library",app)
         app.buttons["library-deck-ui-deck"].tap()
         XCTAssertTrue(app.buttons["deck-notes"].waitForExistence(timeout:5))

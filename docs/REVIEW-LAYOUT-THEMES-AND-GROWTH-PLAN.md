@@ -21,6 +21,7 @@ Planned 3 October 2026 against `akshat/dev` at `262f819`. Review layout, quiet h
 ## 3. Theme compatibility — parallel workstream
 
 - Preserve Warm as the default. Add a colour-only Monochrome theme with a pure white light canvas and pure black dark canvas. Keep the existing System / Light / Dark appearance preference independent of theme and preserve the editorial typography.
+- Follow-up: invert the open assistant panel in Mono: black with white text over a white page, white with dark text over a black page. Keep the closed navigation dock matched to the page. Rich content and controls inherit the panel's opposite appearance.
 - Define every app-owned colour in DesignSystem. Add explicit inline tokens for success, incorrect, selected-answer, missing-content, charts, assistant tint and decorative growth where existing tokens have incompatible meanings. In particular, `goodInk` is text on a filled grade button and is not an inline green-text token.
 - Replace semantic raw RGB/named colours in feature views, including the current MCQ `correctInk`. Review Today, Library, decks, study, chat, grading, settings, account/sharing, PDF/Markdown viewers and action history.
 - Pass theme colours into bundled math/diagram rendering. Theme changes must refresh cached rich blocks without losing conversation, draft, session or scroll state.

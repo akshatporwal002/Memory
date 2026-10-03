@@ -52,6 +52,8 @@ struct ContextualAssistant: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     private var palette: EngramPalette { theme.palette(for: scheme) }
+    private var chatScheme: ColorScheme { theme == .monochrome ? (scheme == .dark ? .light : .dark) : scheme }
+    private var chatPalette: EngramPalette { theme.palette(for: chatScheme) }
     private var open: Bool { stage != .closed }
     private var expanded: Bool { stage == .expanded }
     private var phoneDock: Bool {
@@ -149,7 +151,12 @@ struct ContextualAssistant: View {
             VStack(alignment: .trailing, spacing: 0) {
                 Spacer(minLength: 0)
                 glassContainer {
-                    if open { assistantSurface(panel(height: geometry.size.height), open: true) }
+                    if open {
+                        assistantSurface(panel(height: geometry.size.height)
+                            .foregroundStyle(chatPalette.primaryText).tint(chatPalette.accentInk)
+                            .environment(\.colorScheme, chatScheme), open: true)
+                            .environment(\.colorScheme, chatScheme)
+                    }
                     else { dock(narrow: phoneDock || geometry.size.width < 600) }
                 }
                 .background(GeometryReader { dock in
@@ -189,6 +196,9 @@ struct ContextualAssistant: View {
         #endif
     }
     @ViewBuilder private func assistantSurface<Content: View>(_ content: Content, open: Bool) -> some View {
+        if open && theme == .monochrome {
+            invertedChatSurface(content)
+        } else {
         #if os(iOS)
         if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
             content.glassEffect(.regular.tint(open ? palette.selection : .clear).interactive(), in: .rect(cornerRadius: open ? 24 : 25))
@@ -196,6 +206,20 @@ struct ContextualAssistant: View {
         } else { fallbackSurface(content, open: open) }
         #else
         fallbackSurface(content, open: open)
+        #endif
+        }
+    }
+    @ViewBuilder private func invertedChatSurface<Content: View>(_ content: Content) -> some View {
+        let surface = content.background(chatPalette.canvas, in: RoundedRectangle(cornerRadius: 24))
+        #if os(iOS)
+        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
+            surface.glassEffect(.clear.interactive(), in: .rect(cornerRadius: 24))
+                .glassEffectID("assistant", in: glassNamespace)
+        } else {
+            surface.matchedGeometryEffect(id: reduceMotion ? "panel" : "assistant", in: glassNamespace)
+        }
+        #else
+        surface.matchedGeometryEffect(id: reduceMotion ? "panel" : "assistant", in: glassNamespace)
         #endif
     }
     private func fallbackSurface<Content: View>(_ content: Content, open: Bool) -> some View {
@@ -257,7 +281,7 @@ struct ContextualAssistant: View {
 
     private func panel(height: CGFloat) -> some View {
         VStack(spacing: 0) {
-          Capsule().fill(palette.secondaryText.opacity(0.5)).frame(width:32,height:4)
+          Capsule().fill(chatPalette.secondaryText.opacity(0.5)).frame(width:32,height:4)
             .frame(maxWidth:.infinity,minHeight:44).contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance:8).onEnded { value in changeStage(for:value.translation.height) })
             .accessibilityLabel("Drag up to expand chat or down to collapse")
@@ -266,7 +290,7 @@ struct ContextualAssistant: View {
             .accessibilityAction(named:Text("Collapse chat")) { changeStage(for:100) }
           if !thread.isEmpty || !recentConversations.isEmpty {
             HStack(spacing: 8) {
-                Image(systemName: "sparkle").foregroundStyle(palette.accentInk)
+                Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk)
                 Text(showingHistory ? "Previous chats" : deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
                 Button {
@@ -291,7 +315,7 @@ struct ContextualAssistant: View {
                         Button(deck.name) { selectedDeckID = deck.id; prompt = "" }
                     }
                 } label: { Label("Sources: \(deckName)", systemImage: "book.closed").lineLimit(1) }
-                    .font(.caption).foregroundStyle(palette.secondaryText)
+                    .font(.caption).foregroundStyle(chatPalette.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 28)
             }
             if showingHistory {
@@ -314,7 +338,7 @@ struct ContextualAssistant: View {
                                     Text(conversation.messages.first(where:{ $0.role == "user" })?.text ?? conversation.id)
                                         .font(.subheadline.weight(.medium)).lineLimit(1)
                                     Text(conversation.messages.last?.text ?? "")
-                                        .font(.caption).foregroundStyle(palette.secondaryText).lineLimit(2)
+                                        .font(.caption).foregroundStyle(chatPalette.secondaryText).lineLimit(2)
                                 }.frame(maxWidth:.infinity,minHeight:58,alignment:.leading)
                             }.buttonStyle(.plain)
                             Divider()
@@ -328,7 +352,7 @@ struct ContextualAssistant: View {
                         LazyVStack(alignment: .leading, spacing: 14) {
                             ForEach(thread) { message in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(message.isUser ? "You" : "Assistant").font(.caption.weight(.semibold)).foregroundStyle(palette.secondaryText)
+                                    Text(message.isUser ? "You" : "Assistant").font(.caption.weight(.semibold)).foregroundStyle(chatPalette.secondaryText)
                                     RichContentView(source: message.text).font(.subheadline)
                                     if !message.isUser {
                                         ForEach(message.sources) { source in
@@ -362,7 +386,7 @@ struct ContextualAssistant: View {
                         .font(.caption.weight(.medium)).frame(maxWidth:.infinity,minHeight:38,alignment:.leading)
                 }.buttonStyle(.plain)
             }
-            if let error = error ?? model.assistant.error { Text(error).font(.caption).foregroundStyle(palette.againInk).frame(maxWidth: .infinity, alignment: .leading) }
+            if let error = error ?? model.assistant.error { Text(error).font(.caption).foregroundStyle(chatPalette.againInk).frame(maxWidth: .infinity, alignment: .leading) }
             if model.chatGPT.activeAccount == nil && error != nil {
                 Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
                     .font(.caption.weight(.medium)).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
@@ -383,8 +407,9 @@ struct ContextualAssistant: View {
                 Button("Review changes") { model.actionReviewPresented = true }
             }.font(.caption).frame(minHeight: 44)
             HStack(spacing: 10) {
-                if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(palette.accentInk) }
-                TextField(model.pdfLearningPresented ? "Ask about this PDF…" : "Ask about your notes…", text: $prompt, axis: .vertical)
+                if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk) }
+                TextField("", text: $prompt,
+                    prompt: Text(model.pdfLearningPresented ? "Ask about this PDF…" : "Ask about your notes…").foregroundStyle(chatPalette.secondaryText), axis: .vertical)
                     .lineLimit(1...3).focused($composerFocused)
                     .simultaneousGesture(TapGesture().onEnded { composerFocused = true })
                     .id(composerEpoch)
