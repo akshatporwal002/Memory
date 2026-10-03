@@ -240,16 +240,23 @@ struct ContextualAssistant: View {
         content.background(chatPalette.canvas.opacity(reduceTransparency || contrast == .increased ? 1 : 0.65),in:Capsule())
             .background(.regularMaterial,in:Capsule())
     }
+    private var readingShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 28, style: .continuous)
+    }
     @ViewBuilder private var readingBackdrop: some View {
         if !showsTranscript { Color.clear }
         else if reduceTransparency || contrast == .increased {
-            Rectangle().fill(chatPalette.canvas)
-                .overlay(Rectangle().strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 1))
+            readingShape.fill(chatPalette.canvas)
+                .overlay(readingShape.strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 1))
         } else {
-            Rectangle().fill(.regularMaterial)
-                .overlay(chatPalette.canvas.opacity(theme == .monochrome ? 0.78 : 0.68))
-                .overlay(Rectangle().strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 1))
+            readingGlass
+                .overlay(readingShape.strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 0.75))
         }
+    }
+    private var readingGlass: some View {
+        readingShape.fill(.regularMaterial)
+            .overlay(readingShape.fill(chatPalette.canvas.opacity(0.78)))
+            .overlay(readingShape.strokeBorder(.white.opacity(chatScheme == .dark ? 0.12 : 0.35), lineWidth: 1))
     }
     private func fallbackSurface<Content: View>(_ content: Content, open: Bool) -> some View {
         content.background(open ? palette.selection : palette.surface, in: RoundedRectangle(cornerRadius: open ? 24 : 25))
