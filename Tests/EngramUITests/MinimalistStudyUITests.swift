@@ -11,6 +11,11 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(range.label.contains("1 month"))
         let dates = app.descendants(matching: .any)["deck-graph-window"].firstMatch
         let initial = dates.label
+        for name in ["Target", "Planned reviews", "No more reviews"] {
+            let label = app.staticTexts["deck-curve-label-" + name]
+            XCTAssertTrue(label.exists)
+            XCTAssertGreaterThan(label.frame.intersection(app.frame).width, 0)
+        }
         capture("Deck-One-Month", app)
         let chart = app.descendants(matching: .any)["deck-retention-chart"].firstMatch
         chart.swipeLeft()

@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 import LearningCore
-import StudyApplication
+@testable import StudyApplication
 import PersistenceAdapters
 import SchedulingAdapters
 
@@ -56,6 +56,15 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(RetentionTimeline.duration(months: 0, now: now, start: now, end: end), end.timeIntervalSince(now))
         XCTAssertEqual(RetentionTimeline.duration(months: 1, now: now, start: now, end: now.addingTimeInterval(100)), 100)
         XCTAssertGreaterThan(RetentionTimeline.duration(months: 1, now: now, start: now, end: now), 0)
+    }
+
+    func testFutureJumpIsVerticalWithoutChangingProbabilities() {
+        let review = Date(timeIntervalSince1970: 1000)
+        let points = [MemoryHistoryPoint(date: review.addingTimeInterval(-100), probability: 0.95), MemoryHistoryPoint(date: review.addingTimeInterval(-0.001), probability: 0.8), MemoryHistoryPoint(date: review, probability: 1)]
+        let displayed = DeckMemoryOutlook.verticalReviewPoints(points, reviewDates: [review])
+        XCTAssertEqual(displayed[1].date, displayed[2].date)
+        XCTAssertEqual(displayed.map(\.probability), points.map(\.probability))
+        XCTAssertEqual(points[1].date, review.addingTimeInterval(-0.001))
     }
 
     func testVisibleEndpointAxisHasTenPercentBottomMargin() {

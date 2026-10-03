@@ -112,6 +112,20 @@ public struct DeckMemoryOutlook: Sendable {
                     nextPlannedReview: scheduled.min(),
                     scheduledWithinWeek: scheduled.filter { $0 <= now.addingTimeInterval(7 * 86_400) }.count)
     }
+    /// Display-only: collapse each pre-review sample onto its review timestamp for an exact vertical jump.
+    public static func verticalReviewPoints(_ points: [MemoryHistoryPoint], reviewDates: [Date]) -> [MemoryHistoryPoint] {
+        let reviews = Set(reviewDates)
+        return points.enumerated().map { index, point in
+            guard index + 1 < points.count else { return point }
+            let next = points[index + 1]
+            if reviews.contains(next.date), next.date.timeIntervalSince(point.date) > 0,
+               next.date.timeIntervalSince(point.date) < 0.002 {
+                return MemoryHistoryPoint(date: next.date, probability: point.probability)
+            }
+            return point
+        }
+    }
+
     /// Put the visible orange endpoint 10% above the plot bottom, with a 10-point minimum span.
     public static func recallAxisDomain(endpoint: Double?) -> ClosedRange<Double> {
         guard let endpoint, endpoint.isFinite, (0...1).contains(endpoint) else { return 0...100 }

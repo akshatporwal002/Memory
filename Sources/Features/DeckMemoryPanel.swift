@@ -48,6 +48,7 @@ struct DeckMemoryPanel: View {
                         Image(systemName: "chevron.right").font(.caption)
                     }.font(.subheadline).frame(minHeight: 44)
                 }
+                HStack(spacing: 12) {
                 Button {
                     useExamDate = (deck.examDate ?? .distantPast) > model.now
                     examDate = useExamDate ? deck.examDate! : outlook.sampleDates.last ?? model.now
@@ -59,6 +60,20 @@ struct DeckMemoryPanel: View {
                         Image(systemName: "chevron.down").font(.caption2)
                     }.font(.caption).foregroundStyle(palette.secondaryText).frame(minHeight: 44)
                 }.buttonStyle(.plain).accessibilityIdentifier("deck-forecast-horizon")
+                    Spacer(minLength: 4)
+                    Menu {
+                        Button("1 month") { setWindow(1) }
+                        Button("2 months") { setWindow(2) }
+                        Button("3 months") { setWindow(3) }
+                        Button("Full horizon") { setWindow(0) }
+                        if windowMonths > 0 { Button("Back to today") { timelineScroll = min(model.now, latestStart); inspectedDate = nil } }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(windowMonths == 0 ? "Full horizon" : windowMonths == 1 ? "1 month" : "\(windowMonths) months")
+                            Image(systemName: "chevron.down").font(.caption2)
+                        }.font(.caption).frame(minHeight: 44)
+                    }.accessibilityIdentifier("deck-graph-range")
+                }
                 if outlook.cards.isEmpty {
                     Text("Review cards to see a recall curve. New and learning cards have no reliable estimate yet.")
                         .font(.subheadline).foregroundStyle(palette.secondaryText)
@@ -71,6 +86,7 @@ struct DeckMemoryPanel: View {
                     }
                     let endpoint = DeckMemoryOutlook.recallAt(window.end, dates: outlook.sampleDates, probabilities: values)
                     let axis = DeckMemoryOutlook.recallAxisDomain(endpoint: endpoint)
+                    HStack(spacing: 4) {
                     Chart {
                         ForEach(selected?.history ?? outlook.history) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
@@ -91,7 +107,7 @@ struct DeckMemoryPanel: View {
                                 .lineStyle(StrokeStyle(lineWidth: 1.3, dash: [2, 4]))
                                 .interpolationMethod(.monotone)
                         }
-                        ForEach(selected?.projection ?? outlook.projection) { point in
+                        ForEach(DeckMemoryOutlook.verticalReviewPoints(selected?.projection ?? outlook.projection, reviewDates: selected?.reviewDates ?? outlook.reviewDates).enumerated().map { Point(id: $0.offset, date: $0.element.date, probability: $0.element.probability) }) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Planned reviews"))
                                 .foregroundStyle(curveColor).lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
                                 .interpolationMethod(.linear)
@@ -130,6 +146,19 @@ struct DeckMemoryPanel: View {
                     .accessibilityAction(named: "Previous window") { timelineScroll = max(outlook.startDate, timelineScroll.addingTimeInterval(-visibleDuration)) }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
                     .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; visible scale \(Int(axis.lowerBound.rounded())) to 100 percent; forecast assumes Good at each planned review")
+                    GeometryReader { geometry in
+                        let projection = selected?.projection ?? outlook.projection
+                        let planned = DeckMemoryOutlook.recallAt(window.end, dates: projection.map(\.date), probabilities: projection.map(\.probability))
+                        let labels = edgeLabels(target: outlook.target, planned: planned, noReview: endpoint, axis: axis, height: geometry.size.height)
+                        ForEach(labels) { label in
+                            Text(label.value, format: .percent.precision(.fractionLength(0)))
+                                .font(.caption2).monospacedDigit().foregroundStyle(label.color)
+                                .accessibilityLabel(label.name + " " + label.value.formatted(.percent.precision(.fractionLength(0))))
+                                .accessibilityIdentifier("deck-curve-label-" + label.name)
+                                .position(x: geometry.size.width / 2, y: label.y)
+                        }
+                    }.frame(width: 46, height: 180).allowsHitTesting(false)
+                    }
                     HStack(spacing: 16) {
                         Label("Planned reviews", systemImage: "line.diagonal").foregroundStyle(curveColor)
                         Label("No more reviews", systemImage: "line.diagonal").foregroundStyle(palette.answerSelectionInk)
@@ -138,18 +167,6 @@ struct DeckMemoryPanel: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("deck-graph-window")
                         .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
-                    Menu {
-                        Button("1 month") { setWindow(1) }
-                        Button("2 months") { setWindow(2) }
-                        Button("3 months") { setWindow(3) }
-                        Button("Full horizon") { setWindow(0) }
-                        if windowMonths > 0 { Button("Back to today") { timelineScroll = min(model.now, latestStart); inspectedDate = nil } }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(windowMonths == 0 ? "Full horizon" : windowMonths == 1 ? "1 month" : "\(windowMonths) months")
-                            Image(systemName: "chevron.down").font(.caption2)
-                        }.font(.caption).frame(minHeight: 44)
-                    }.accessibilityIdentifier("deck-graph-range")
                     if selected == nil,let next = outlook.nextPlannedReview {
                         HStack(alignment:.firstTextBaseline) {
                             Text(next <= model.now ? "Review due now" : "Next planned review · " + next.formatted(.dateTime.month(.abbreviated).day()))
@@ -252,6 +269,27 @@ struct DeckMemoryPanel: View {
                     outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
                 }
         }
+    }
+
+    private struct EdgeLabel: Identifiable {
+        var id: String { name }
+        let name: String
+        let value: Double
+        let color: Color
+        var y: CGFloat
+    }
+    private func edgeLabels(target: Double, planned: Double?, noReview: Double?, axis: ClosedRange<Double>, height: CGFloat) -> [EdgeLabel] {
+        var labels = [("Target", Optional(target), palette.accentInk), ("Planned reviews", planned, curveColor), ("No more reviews", noReview, palette.answerSelectionInk)].compactMap { name, value, color -> EdgeLabel? in
+            guard let value else { return nil }
+            let y = height * CGFloat((100 - value * 100) / (100 - axis.lowerBound))
+            return EdgeLabel(name: name, value: value, color: color, y: min(max(8, y), height - 8))
+        }.sorted { $0.y < $1.y }
+        for index in labels.indices.dropFirst() { labels[index].y = max(labels[index].y, labels[index - 1].y + 17) }
+        if let last = labels.last, last.y > height - 8 {
+            labels[labels.count - 1].y = height - 8
+            for index in labels.indices.dropLast().reversed() { labels[index].y = min(labels[index].y, labels[index + 1].y - 17) }
+        }
+        return labels
     }
 
     private func setWindow(_ months: Int) {

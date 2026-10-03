@@ -46,3 +46,10 @@ Dynamic visible-window scaling now supersedes the fixed Y-axis. The no-review pr
 
 Eleven focused tests passed, including endpoint interpolation, 10%-of-height margins at different recall levels, minimum span and invalid-input fallbacks. Native scrolling/range selection passed in /tmp/engram-dynamic-visible-axis.xcresult. Initial/scrolled screenshots were inspected and rotated in current_ui.
 Signed app installed and launched on the paired iPhone at 23:06 on 3 October 2026.
+
+The horizon/exam control and month range now share one row above the graph. A dedicated right-edge column shows the target, planned-review estimate and no-review estimate at the visible end date, using their curve colours and collision spacing. Values update while scrolling and switching cards. Forecast pre-review points are drawn at the same timestamp as their post-review points, producing exact vertical jumps without changing probabilities, simulated dates or saved scheduling. Indexed display IDs preserve both points at a shared timestamp.
+
+Average estimated recall is the unweighted arithmetic mean of eligible reviewed cards’ current FSRS recall probabilities. New, individually suspended, retired/missing-note and unsupported-state cards are excluded. Future reviews assume Good; past wrong answers affect current scheduling states, while staggered per-card review dates create smaller increments in deck averages.
+
+All twelve focused tests passed, including display-only vertical jumps with preserved probabilities. Native scrolling and all three visible right-edge labels passed in /tmp/engram-labelled-curves-final.xcresult. The initial overlay labels were clipped by the scrolling plot; an external column fixed that issue. Final initial/scrolled screenshots were inspected and archived.
+Signed app installed and launched on the paired iPhone at 23:46 on 3 October 2026.
