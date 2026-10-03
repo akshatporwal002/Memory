@@ -29,7 +29,8 @@ public struct EngramRootView: View {
     public var body: some View {
         GeometryReader { geometry in
             Group {
-                if geometry.size.width < 600 {
+                // Keep the phone's navigation stack alive through rotation; tablet windows still adapt.
+                if usesPhoneTodayTitle || geometry.size.width < 600 {
                     TabView(selection: $model.destination) {
                         ForEach(EngramDestination.allCases) { destination in
                             NavigationStack { page(destination) }.engramHideStudyTabs(!capturingScreenshots)

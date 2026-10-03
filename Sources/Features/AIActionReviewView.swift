@@ -5,6 +5,8 @@ import DesignSystem
 struct AIActionReviewView: View {
     @Bindable var model: EngramModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
     @State private var conflict: String?
     @State private var undoConflict: UndoConflict?
     private var runs: [AIActionRun] { Array((model.library.assistantState?.runs ?? []).reversed()) }
@@ -55,7 +57,7 @@ struct AIActionReviewView: View {
                     Section("Base · after the assistant edit") { RichContentView(source:after(item.change)); Button("Use Base") { resolve(item,choice:"base") } }
                     Section("Yours · current content") { RichContentView(source:current(item.change)); Button("Keep Yours") { resolve(item,choice:"yours") } }
                     Section("Theirs · proposed undo") { RichContentView(source:before(item.change)); Button("Apply Theirs") { resolve(item,choice:"theirs") } }
-                    if let conflict { Text(conflict).foregroundStyle(.red) }
+                    if let conflict { Text(conflict).foregroundStyle(theme.palette(for: scheme).againInk) }
                 }.modifier(UtilityListStyle()).navigationTitle("Resolve undo")
                     .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Cancel") { undoConflict = nil } } }
             }

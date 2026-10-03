@@ -73,6 +73,8 @@ public struct DeckForm: Identifiable {
     public var selectedCardID: String?
     /// Presentation-only memory prevents replaying the completion flourish on sheet re-entry.
     public var animatedCompletionSessions: Set<String> = []
+    /// Keep unsubmitted selection through adaptive navigation rebuilds, scoped to one presentation.
+    var reviewChoiceSelection: (presentationID: String, choiceID: String)?
     public var search = ""
     public var draft: NoteDraft?
     public var editorPresented = false

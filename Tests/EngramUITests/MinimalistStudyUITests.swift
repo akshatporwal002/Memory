@@ -1,6 +1,151 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testLandscapeLongAnswersScrollIndependently() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch(extra:["--ui-review-mcq-fixture","--ui-long-mcq","--ui-eight-choices"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15))
+        for _ in 0..<8 where !app.buttons["Start review"].isHittable { app.swipeUp() }
+        app.buttons["Start review"].tap()
+        let options = app.scrollViews["review-options-pane"]
+        XCTAssertTrue(options.waitForExistence(timeout:5))
+        let question = app.staticTexts["review-question"]
+        let questionFrame = question.frame
+        let correct = app.buttons["review-option-B"]
+        options.swipeUp()
+        for _ in 0..<12 where correct.frame.intersection(options.frame).height < 44 {
+            if correct.frame.midY < options.frame.minY { options.swipeDown() }
+            else { options.swipeUp() }
+        }
+        let visibleAnswer = correct.frame.intersection(options.frame)
+        XCTAssertGreaterThanOrEqual(visibleAnswer.height,44)
+        guard !visibleAnswer.isNull, visibleAnswer.height >= 44 else { return }
+        XCTAssertEqual(question.frame.minY,questionFrame.minY,accuracy:2)
+        XCTAssertLessThan(question.frame.maxX,correct.frame.minX)
+        capture("Review-Landscape-Long",app)
+        let answerPoint = app.coordinate(withNormalizedOffset:.zero).withOffset(CGVector(dx:visibleAnswer.midX,dy:visibleAnswer.midY))
+        answerPoint.tap(); answerPoint.tap()
+        XCTAssertEqual(correct.value as? String,"Correct answer")
+        let explanation = app.staticTexts["review-explanation"]
+        XCTAssertTrue(explanation.waitForExistence(timeout:5))
+        for _ in 0..<10 where explanation.frame.intersection(options.frame).height < 44 {
+            if explanation.frame.midY < options.frame.minY { options.swipeDown() }
+            else { options.swipeUp() }
+        }
+        XCTAssertGreaterThanOrEqual(explanation.frame.intersection(options.frame).height,44)
+        capture("Review-Landscape-Long-Feedback",app)
+    }
+
+    @MainActor func testLandscapeAccessibilityUsesOneReadableColumn() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch(extra:["--ui-review-mcq-fixture","--ui-long-mcq","--ui-large-text"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15))
+        for _ in 0..<8 where !app.buttons["Start review"].isHittable { app.swipeUp() }
+        app.buttons["Start review"].tap()
+        XCTAssertTrue(app.scrollViews["review-mcq-stacked"].waitForExistence(timeout:5))
+        XCTAssertFalse(app.scrollViews["review-options-pane"].exists)
+        capture("Review-Landscape-Accessibility",app)
+    }
+    @MainActor func testMCQRotationPreservesSelectionAndFeedback() {
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch(extra:["--ui-review-mcq-fixture"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15)); app.buttons["Start review"].tap()
+        let correct = app.buttons["review-option-B"]
+        XCTAssertTrue(correct.waitForExistence(timeout:5)); correct.tap()
+        XCTAssertEqual(correct.value as? String,"Selected")
+        let label = correct.label
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let split = app.scrollViews["review-options-pane"]
+        XCTAssertTrue(split.waitForExistence(timeout:5))
+        let positioned = expectation(for:NSPredicate { _,_ in app.staticTexts["review-question"].frame.maxX < correct.frame.minX },evaluatedWith:app)
+        wait(for:[positioned],timeout:5)
+        XCTAssertEqual(correct.value as? String,"Selected"); XCTAssertEqual(correct.label,label)
+        capture("Review-Landscape-Selected",app)
+        correct.tap()
+        XCTAssertTrue(app.staticTexts["review-explanation"].waitForExistence(timeout:5))
+        capture("Review-Landscape-Feedback",app)
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.scrollViews["review-mcq-stacked"].waitForExistence(timeout:5))
+        XCTAssertEqual(correct.value as? String,"Correct answer"); XCTAssertEqual(correct.label,label)
+        capture("Review-Rotated-Feedback",app)
+    }
+
+    @MainActor func testLongMCQAtLargestTextRemainsReachable() {
+        let app = launch(extra:["--ui-review-mcq-fixture","--ui-long-mcq","--ui-eight-choices","--ui-largest-text","--ui-monochrome","--ui-dark"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15))
+        for _ in 0..<8 where !app.buttons["Start review"].isHittable { app.swipeUp() }
+        app.buttons["Start review"].tap()
+        XCTAssertTrue(app.staticTexts["review-question"].waitForExistence(timeout:5))
+        capture("Review-Long-Largest-Question",app)
+        let correct = app.buttons["review-option-B"]
+        let scroll = app.scrollViews["review-mcq-stacked"]
+        for _ in 0..<18 where !correct.isHittable { scroll.swipeUp() }
+        XCTAssertTrue(correct.isHittable); correct.tap(); correct.tap()
+        XCTAssertEqual(correct.value as? String,"Correct answer")
+        XCTAssertTrue(app.buttons["Next question"].waitForExistence(timeout:5))
+        capture("Review-Long-Largest-Feedback",app)
+        app.buttons["Next question"].tap()
+        XCTAssertFalse(app.buttons["review-option-B"].exists)
+    }
+
+    @MainActor func testTwoChoiceQuestionAndQuietVoiceMenu() {
+        let app = launch(extra:["--ui-review-mcq-fixture","--ui-two-choices","--ui-neutral"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15)); app.buttons["Start review"].tap()
+        XCTAssertTrue(app.buttons["review-option-B"].waitForExistence(timeout:5))
+        XCTAssertFalse(app.buttons["review-option-C"].exists)
+        XCTAssertFalse(app.buttons["review-voice-mode"].exists)
+        capture("Review-Two-Choices-Neutral",app)
+        app.buttons["Review options"].tap()
+        XCTAssertTrue(app.switches["Voice mode"].waitForExistence(timeout:5))
+        capture("Review-Voice-Menu",app)
+    }
+
+    @MainActor func testMonochromeLightScreens() { verifyThemeScreens(dark:false) }
+    @MainActor func testMonochromeDarkScreens() { verifyThemeScreens(dark:true) }
+
+    @MainActor func testThemeChangeKeepsUnsubmittedAnswer() {
+        let app = launch(extra:["--ui-review-mcq-fixture"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout:15)); app.buttons["Start review"].tap()
+        let correct = app.buttons["review-option-B"]
+        XCTAssertTrue(correct.waitForExistence(timeout:5)); correct.tap()
+        let label = correct.label
+        app.buttons["Review options"].tap()
+        let picker = app.descendants(matching:.any)["review-theme-picker"].firstMatch
+        for _ in 0..<6 where !picker.exists || !picker.isHittable { app.swipeUp() }
+        XCTAssertTrue(picker.waitForExistence(timeout:5)); picker.tap()
+        app.buttons["Engram Mono"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(correct.waitForExistence(timeout:5))
+        XCTAssertEqual(correct.value as? String,"Selected"); XCTAssertEqual(correct.label,label)
+        capture("Review-Mono-Selected",app)
+        correct.tap()
+        XCTAssertEqual(correct.value as? String,"Correct answer")
+        capture("Review-Mono-Feedback",app)
+    }
+
+    @MainActor private func verifyThemeScreens(dark:Bool) {
+        let prefix = dark ? "Mono-Black" : "Mono-White"
+        let app = launch(extra:["--ui-monochrome","--ui-rich-theme-fixture"] + (dark ? ["--ui-dark"] : []))
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout:15))
+        capture(prefix + "-Today",app)
+        app.buttons["tab-library"].tap(); capture(prefix + "-Library",app)
+        app.buttons["library-deck-ui-deck"].tap()
+        XCTAssertTrue(app.buttons["deck-notes"].waitForExistence(timeout:5))
+        capture(prefix + "-Deck",app)
+        app.buttons["deck-notes"].tap()
+        XCTAssertTrue(app.navigationBars["Notes"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout:10))
+        capture(prefix + "-Rich-Notes",app)
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["tab-activity"].tap(); capture(prefix + "-Activity",app)
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout:5))
+        capture(prefix + "-Settings",app)
+    }
     @MainActor func testLibraryCreatesPersistentEmptyFolder() {
         let app = launch()
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout:15))
@@ -213,7 +358,7 @@ final class MinimalistStudyUITests: XCTestCase {
         app.launch(); return app
     }
     @MainActor private func capture(_ name: String, _ app: XCUIApplication) {
-        let image = XCTAttachment(screenshot: app.screenshot())
+        let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         image.name = name; image.lifetime = .keepAlways; add(image)
     }
 }

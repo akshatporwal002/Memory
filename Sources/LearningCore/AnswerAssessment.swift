@@ -39,10 +39,10 @@ public struct MultipleChoiceQuestion: Codable, Equatable, Sendable {
     }
     public static func parse(front: String, back: String) -> Self? {
         let front = NotebookDocument.plainText(front), back = NotebookDocument.plainText(back)
-        guard let expression = try? NSRegularExpression(pattern: #"(?:^|\s|;)([A-F])\)\s+"#) else { return nil }
+        guard let expression = try? NSRegularExpression(pattern: #"(?:^|\s|;)([A-Z])\)\s+"#) else { return nil }
         let range = NSRange(front.startIndex..., in: front)
         let matches = expression.matches(in: front, range: range)
-        guard (2...6).contains(matches.count), let first = matches.first,
+        guard (2...8).contains(matches.count), let first = matches.first,
               let firstRange = Range(first.range, in: front) else { return nil }
         let prompt = String(front[..<firstRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         var choices: [Choice] = []
@@ -53,7 +53,7 @@ public struct MultipleChoiceQuestion: Codable, Equatable, Sendable {
             guard !text.isEmpty else { return nil }
             choices.append(Choice(id: String(front[label]), text: text))
         }
-        guard !prompt.isEmpty, choices.map(\.id) == Array(["A", "B", "C", "D", "E", "F"].prefix(choices.count)),
+        guard !prompt.isEmpty, choices.map(\.id) == Array(["A", "B", "C", "D", "E", "F", "G", "H"].prefix(choices.count)),
               back.count > 3, back.dropFirst().hasPrefix(") "), let correct = back.first.map(String.init),
               choices.contains(where: { $0.id == correct }) else { return nil }
         return Self(prompt: prompt, choices: choices, correctID: correct, explanation: back)
@@ -64,7 +64,7 @@ public struct MultipleChoiceQuestion: Codable, Equatable, Sendable {
         // Negation and unclear multi-choice utterances require clarification.
         guard !words.contains(where: { ["not", "never", "neither", "except"].contains($0) }) else { return nil }
         let corrected = text.components(separatedBy: "actually ").last ?? text
-        let aliases = ["a": "A", "ay": "A", "alpha": "A", "b": "B", "bee": "B", "bravo": "B", "c": "C", "see": "C", "charlie": "C", "d": "D", "dee": "D", "delta": "D", "e": "E", "echo": "E", "f": "F", "foxtrot": "F"]
+        let aliases = ["a": "A", "ay": "A", "alpha": "A", "b": "B", "bee": "B", "bravo": "B", "c": "C", "see": "C", "charlie": "C", "d": "D", "dee": "D", "delta": "D", "e": "E", "echo": "E", "f": "F", "foxtrot": "F", "g": "G", "gee": "G", "golf": "G", "h": "H", "aitch": "H", "hotel": "H"]
         let selection = corrected.replacingOccurrences(of: "option ", with: "").replacingOccurrences(of: "answer ", with: "").replacingOccurrences(of: "choice ", with: "")
         if let letter = aliases[selection], choices.contains(where: { $0.id == letter }) { return letter }
         let exact = choices.filter { Self.normalize($0.text) == corrected }

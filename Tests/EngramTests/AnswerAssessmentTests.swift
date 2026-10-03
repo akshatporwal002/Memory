@@ -7,6 +7,21 @@ import SchedulingAdapters
 final class AnswerAssessmentTests: XCTestCase {
     let front = "Which stores objects? A) EC2; B) Amazon S3; C) RDS; D) Lambda"
     let back = "B) Amazon S3. Object storage."
+    func testEightChoicesRetainCanonicalSpokenMapping() throws {
+        let options = (0..<8).map { String(UnicodeScalar(65 + $0)!) + ") Choice \($0 + 1)" }.joined(separator: "\n")
+        let question = try XCTUnwrap(MultipleChoiceQuestion.parse(front: "Choose one.\n" + options, back: "H) Choice 8. Supported explanation."))
+        XCTAssertEqual(question.choices.count, 8)
+        XCTAssertEqual(question.resolve("hotel"), "H")
+        XCTAssertEqual(question.resolve("golf"), "G")
+        for id in ["portrait", "landscape", "resumed"] {
+            let presented = question.ordered(for: id)
+            for choice in question.choices {
+                XCTAssertEqual(presented.resolvePresented(presented.displayLetter(for: choice.id)), choice.id)
+            }
+            XCTAssertEqual(presented.correctID, "H")
+        }
+        XCTAssertNil(MultipleChoiceQuestion.parse(front: "Choose one.\n" + options + "\nI) Ninth choice", back: "H) Choice 8"))
+    }
     func testChoiceRecognitionAndAmbiguity() throws {
         let question = try XCTUnwrap(MultipleChoiceQuestion.parse(front: front, back: back))
         XCTAssertEqual(question.choices.count, 4)

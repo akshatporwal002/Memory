@@ -96,6 +96,7 @@ private struct ApplicationRoot: View {
         #if DEBUG
         .transformEnvironment(\.dynamicTypeSize) { size in
             if ProcessInfo.processInfo.arguments.contains("--ui-testing") && ProcessInfo.processInfo.arguments.contains("--ui-large-text") { size = .accessibility3 }
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing") && ProcessInfo.processInfo.arguments.contains("--ui-largest-text") { size = .accessibility5 }
         }
         #endif
         .onChange(of: scenePhase) { _, phase in if phase == .background { screenshots.cancel() } }
@@ -118,6 +119,7 @@ private struct ApplicationRoot: View {
                 defaults.removePersistentDomain(forName: "engram.ui-tests")
                 if ProcessInfo.processInfo.arguments.contains("--ui-dark") { defaults.set("dark", forKey: "engram.appearance.v1") }
                 if ProcessInfo.processInfo.arguments.contains("--ui-neutral") { defaults.set("neutral", forKey: "engram.theme.v1") }
+                if ProcessInfo.processInfo.arguments.contains("--ui-monochrome") { defaults.set("monochrome", forKey: "engram.theme.v1") }
                 let scheduler = FSRSScheduler(), now = Date()
                 var snapshot = LibrarySnapshot()
                 snapshot.decks = [Deck(id: "ui-deck", name: "AWS Cloud Practitioner")]
@@ -138,6 +140,9 @@ private struct ApplicationRoot: View {
                     var state = LearningAssistantState()
                     state.conversations = [conversation]
                     snapshot.assistantState = state
+                }
+                if ProcessInfo.processInfo.arguments.contains("--ui-rich-theme-fixture") {
+                    snapshot.decks[0].notebookBlocks = [NotebookBlock(id:"ui-rich",text:"# Theme rendering\nReadable **bold** and *italic* notes.\n\n> A quotation uses the shared theme.\n\n```swift\nlet recall = 0.9\n```\n\n$$R(t) = e^{-t/S}$$\n\n```mermaid\ngraph LR\n  Learn --> Review\n  Review --> Remember\n```")]
                 }
                 #if os(iOS)
                 if ProcessInfo.processInfo.arguments.contains("--ui-image-fixture") {
@@ -178,6 +183,20 @@ private struct ApplicationRoot: View {
                     snapshot.notes = Array(snapshot.notes.prefix(1))
                     snapshot.cards = Array(snapshot.cards.prefix(1))
                     snapshot.reviews = snapshot.reviews.filter { $0.cardID == "ui-card-0" }
+                    let arguments = ProcessInfo.processInfo.arguments
+                    if arguments.contains("--ui-long-mcq") || arguments.contains("--ui-two-choices") || arguments.contains("--ui-eight-choices") {
+                        let count = arguments.contains("--ui-two-choices") ? 2 : arguments.contains("--ui-eight-choices") ? 8 : 4
+                        let long = arguments.contains("--ui-long-mcq")
+                        let prompt = long ? "A research team publishes reports worldwide from an Amazon S3 origin. Readers in several countries experience slow page loads, especially when opening reports containing detailed images. The team wants to reduce delivery latency and repeated requests to the origin without changing its application, database, or access policies. Cached content must be delivered from locations near readers. Which approach best meets these requirements? Consider content delivery separately from compute capacity, auditing, and long-term archival storage." : "Which service delivers cached content close to users?"
+                        let options = (0..<count).map { index -> String in
+                            let letter = String(UnicodeScalar(65 + index)!)
+                            let text = index == 1 ? "Amazon CloudFront" : index == 7 ? "AverylongunbrokentermusedtotestwrappingwithoutclippingΩ_日本語_é" : "Alternative service \(index + 1)"
+                            let detail = !long ? "" : index == 1 ? " caches frequently requested reports and images at edge locations near readers, while retaining the existing S3 origin and application." : " handles a different workload. Infrastructure, archival storage, and auditing do not by themselves deliver cached website content from edge locations."
+                            return letter + ") " + text + detail
+                        }.joined(separator: "\n")
+                        let explanation = "B) Amazon CloudFront. CloudFront delivers cached objects from edge locations close to readers, reducing round trips to the origin. The S3 bucket remains the origin. Compute scaling and audit logging solve different problems.\n\nThis explanation deliberately spans multiple lines to exercise scrolling and wrapping; it should remain attached to the correct answer after rotation."
+                        snapshot.notes[0] = Note(id:"ui-card-0",deckID:"ui-deck",kind:.basic,front:prompt + "\n" + options,back:explanation)
+                    }
                 }
                 model = EngramModel(service: StudyService(repository: MemoryRepository(initial: snapshot), scheduler: scheduler), defaults: defaults)
                 return

@@ -27,12 +27,17 @@ struct ReviewView: View {
                        let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) {
                         VStack(spacing: 0) {
                             GeometryReader { viewport in
+                                if let question = note.mcq {
+                                    MultipleChoiceReviewView(model: model, question: question, item: item, viewportSize: viewport.size)
+                                        .id(item.presentationID)
+                                } else {
                                 ScrollView {
                                     reviewContent(note: note, item: item,
                                         minimumHeight: max(160, viewport.size.height - 2 * EngramSpacing.regular - 2 * EngramSpacing.section))
                                         .id(item.presentationID)
                                         .frame(maxWidth: EngramShape.readingWidth)
                                         .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
+                                }
                                 }
                             }
                             if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil && (note.mcq == nil || item.assessment != nil) {
@@ -47,19 +52,22 @@ struct ReviewView: View {
             .navigationTitle(reviewTitle)
             .engramInlineTitle().engramHideStudyTabs()
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 6) {
+                        Text(reviewTitle).font(.subheadline).italic().lineLimit(1)
+                        if model.voice.enabled {
+                            Image(systemName: "mic.fill").font(.caption).accessibilityLabel("Voice mode active")
+                                .accessibilityAction(named: Text("Stop voice mode")) { model.voice.enabled = false }
+                        }
+                    }
+                    .foregroundStyle(theme.palette(for: scheme).secondaryText)
+                    .accessibilityIdentifier("review-deck-title")
+                }
                 if !embedded {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(action: leaveReview) { Label("Back", systemImage: "chevron.left") }
                             .labelStyle(.iconOnly).keyboardShortcut(.escape, modifiers: []).disabled(model.busy)
                     }
-                }
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        if model.voice.ready { model.voice.enabled.toggle() }
-                        else { optionsPresented = true }
-                    } label: {
-                        Label(model.voice.enabled ? "Stop voice mode" : "Start voice mode", systemImage: model.voice.enabled ? "mic.fill" : "mic")
-                    }.accessibilityIdentifier("review-voice-mode")
                 }
                 ToolbarItem(placement: .automatic) {
                     Button { optionsPresented = true } label: { Label("Review options", systemImage: "ellipsis") }
@@ -91,9 +99,6 @@ struct ReviewView: View {
         .onChange(of: model.library.session?.current?.revealedAt) { _, _ in model.voice.present(model: model) }
     }
     @ViewBuilder private func reviewContent(note: Note, item: ReviewPresentation, minimumHeight: CGFloat) -> some View {
-        if let question = note.mcq {
-            MultipleChoiceReviewView(model: model, question: question, item: item, minimumHeight: minimumHeight)
-        } else {
         let rendered = Result { try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil) }
         switch rendered {
         case .success(let card):
@@ -124,7 +129,6 @@ struct ReviewView: View {
             .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.revealedAt)
         case .failure(let error): EngramInlineError(message: error.localizedDescription)
         }
-        }
     }
     private var reviewTitle: String {
         guard let item = model.library.session?.current else { return "Review complete" }
@@ -148,10 +152,10 @@ struct ReviewView: View {
                 Section("Appearance") {
                     Picker("Theme", selection: model.themeSelection) {
                         ForEach(EngramTheme.allCases) { Text($0.title).tag($0) }
-                    }
+                    }.accessibilityIdentifier("review-theme-picker")
                     Picker("Appearance", selection: model.appearanceSelection) {
                         ForEach(EngramAppearance.allCases) { Text($0.title).tag($0) }
-                    }
+                    }.accessibilityIdentifier("review-appearance-picker")
                 }
             }
             .navigationTitle("Review options").engramInlineTitle()

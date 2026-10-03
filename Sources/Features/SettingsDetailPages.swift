@@ -84,6 +84,8 @@ private struct DailyLimitPage: View {
 
 private struct TimeZonePage: View {
     @Bindable var model: EngramModel
+    @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
     @State private var search = ""
     var body: some View {
         List {
@@ -93,7 +95,7 @@ private struct TimeZonePage: View {
             EngramListSection {
                 ForEach(TimeZone.knownTimeZoneIdentifiers.filter { search.isEmpty || $0.replacingOccurrences(of: "_", with: " ").localizedCaseInsensitiveContains(search) }, id: \.self) { identifier in
                     Button { save(identifier) } label: {
-                        HStack { Text(identifier.replacingOccurrences(of: "_", with: " ")).foregroundStyle(.primary); Spacer(); if model.library.settings.timeZoneID == identifier { Image(systemName: "checkmark").accessibilityLabel("Selected") } }
+                        HStack { Text(identifier.replacingOccurrences(of: "_", with: " ")).foregroundStyle(theme.palette(for: scheme).primaryText); Spacer(); if model.library.settings.timeZoneID == identifier { Image(systemName: "checkmark").foregroundStyle(theme.palette(for: scheme).answerSelectionInk).accessibilityLabel("Selected") } }
                     }
                 }
             }

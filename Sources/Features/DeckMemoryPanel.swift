@@ -17,7 +17,7 @@ struct DeckMemoryPanel: View {
     @State private var target = 0.9
 
     private var palette: EngramPalette { theme.palette(for: scheme) }
-    private var curveColor: Color { scheme == .dark ? palette.easyInk : palette.anchor }
+    private var curveColor: Color { palette.curveInk }
     private var selected: MemoryCardEstimate? { outlook?.cards.first { $0.id == selectedCardID } }
     private var values: [Double] { selected?.probabilities ?? outlook?.average ?? [] }
     private var plannedDay: Double? {

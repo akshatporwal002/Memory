@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Engram · Memory growth study</title>
+<style>
+  :root{--canvas:#f7f3e8;--ink:#25281f;--muted:#666650;--line:#dedacd;--green:#176b36;--orange:#80500d;--soft:#e0e6d2}
+  [data-theme=white]{--canvas:#fff;--ink:#171717;--muted:#555;--line:#d0d0d0;--green:#176b36;--orange:#9a4e00;--soft:#f5f5f5}
+  [data-theme=black]{--canvas:#000;--ink:#f5f5f5;--muted:#b8b8b8;--line:#555;--green:#64e58e;--orange:#ffb65c;--soft:#101010}
+  *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:background .2s,color .2s}
+  main{max-width:1040px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:minmax(280px,440px) 1fr;gap:72px}
+  .deck{padding:16px 12px}.metadata{font-size:13px;font-style:italic;color:var(--muted)}h1{font:36px/1.16 Georgia,serif;font-weight:normal;margin:20px 0 8px}p{line-height:1.6;color:var(--muted)}
+  .art{height:290px;position:relative;margin:22px 0 12px}.art[hidden]{display:none}.art svg{width:100%;height:100%;overflow:visible}
+  .outline{fill:none;stroke:var(--line);stroke-width:1.2}.stem{fill:none;stroke:var(--green);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke-dashoffset .8s cubic-bezier(.2,.7,.2,1)}
+  .leaf{fill:var(--green);opacity:0;transition:opacity .5s}.summary{display:flex;justify-content:space-between;align-items:baseline;padding:18px 0;border-top:1px solid var(--line)}.summary strong{font:28px Georgia,serif;font-weight:normal}.summary span{font-size:13px;color:var(--muted)}
+  .progress{height:3px;background:var(--line)}.progress div{height:100%;background:var(--green);width:0;transition:width .8s}.caption{font-size:12px;margin:10px 0 28px}.review{border:0;background:none;color:var(--orange);font-family:inherit;font-size:15px;font-weight:600;padding:12px 0;cursor:pointer}
+  aside{padding-top:32px}h2{font:24px Georgia,serif;font-weight:normal}label{display:flex;justify-content:space-between;align-items:center;margin:24px 0 10px;gap:16px}select,button{font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-height:44px}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}input[type=range]{width:100%;accent-color:var(--green)}input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}.demo-note{font-size:13px}.controls{border-top:1px solid var(--line);margin-top:26px;padding-top:6px}.no-motion .stem,.no-motion .leaf,.no-motion .progress div{transition:none}
+  @media(max-width:720px){main{grid-template-columns:1fr;gap:24px;max-width:460px;padding-top:20px}aside{padding:0 12px}}
+  @media(prefers-reduced-motion:reduce){.stem,.leaf,.progress div,body{transition:none}}
+</style>
+<body><main>
+  <section class="deck" aria-label="Deck appearance prototype">
+    <div class="metadata">Notebook · 48 questions</div>
+    <h1>AWS Cloud<br>Practitioner</h1>
+    <p>Small reviews.<br>Stronger connections.</p>
+    <div class="art" id="art">
+      <svg viewBox="0 0 400 360" role="img" aria-labelledby="artTitle artDescription">
+        <title id="artTitle">A brain traced by growing vines</title>
+        <desc id="artDescription">Decorative memory-strength illustration. Growth is an illustrative prototype value.</desc>
+        <defs><clipPath id="brainClip"><path d="M200 58 C180 34 145 39 134 66 C108 54 80 74 79 101 C46 110 41 142 57 163 C33 189 48 222 70 230 C63 260 86 283 111 281 C120 310 155 322 178 303 L200 334 L222 303 C245 322 280 310 289 281 C314 283 337 260 330 230 C352 222 367 189 343 163 C359 142 354 110 321 101 C320 74 292 54 266 66 C255 39 220 34 200 58 Z"/></clipPath></defs>
+        <path class="outline" d="M200 58 C180 34 145 39 134 66 C108 54 80 74 79 101 C46 110 41 142 57 163 C33 189 48 222 70 230 C63 260 86 283 111 281 C120 310 155 322 178 303 L200 334 L222 303 C245 322 280 310 289 281 C314 283 337 260 330 230 C352 222 367 189 343 163 C359 142 354 110 321 101 C320 74 292 54 266 66 C255 39 220 34 200 58 Z"/>
+        <g clip-path="url(#brainClip)" id="vines"></g>
+      </svg>
+    </div>
+    <div class="summary"><strong id="strength">45%</strong><span>Illustrative memory strength</span></div>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <p class="caption">Visual study only · not a measured retention score</p>
+    <button class="review" id="complete">Preview session growth →</button>
+  </section>
+  <aside>
+    <h2>A quieter reward</h2>
+    <p>A few new branches appear when a study session strengthens your memory. The final illustration rests on the deck page, leaving questions clear while you learn.</p>
+    <p class="demo-note">This offline prototype explores the artwork and timing. It uses a slider, not your learning data. The production metric still needs review.</p>
+    <div class="controls">
+      <label for="theme">Appearance <select id="theme"><option value="warm">Warm</option><option value="white">White</option><option value="black">Black</option></select></label>
+      <label for="enabled">Show memory artwork <input type="checkbox" id="enabled" checked></label>
+      <label for="motion">Animate growth <input type="checkbox" id="motion" checked></label>
+      <label for="amount">Illustrative growth <output id="value">45%</output></label>
+      <input type="range" id="amount" min="0" max="100" value="45">
+      <p class="demo-note">System Reduce Motion is respected. There is no loop, and the artwork can be hidden completely.</p>
+    </div>
+  </aside>
+</main>
+<script>
+  const ns='http://www.w3.org/2000/svg',container=document.getElementById('vines');
+  const paths=[];
+  function stem(d,start,span){const p=document.createElementNS(ns,'path');p.setAttribute('d',d);p.setAttribute('class','stem');container.append(p);const length=p.getTotalLength();p.style.strokeDasharray=length;p.style.strokeDashoffset=length;paths.push({p,length,start,span});}
+  function leaf(x,y,angle,threshold){const p=document.createElementNS(ns,'path');p.setAttribute('d','M0 0 C-2 -12 7 -20 13 -23 C15 -12 10 -3 0 0Z');p.setAttribute('transform',`translate(${x},${y}) rotate(${angle})`);p.setAttribute('class','leaf');container.append(p);p.dataset.threshold=threshold;}
+  stem('M200 334 C188 282 212 250 200 211 C189 177 210 136 200 63',0,.75);
+  const branches=[
+    {d:'M197 292 C174 291 151 303 126 281 C105 262 108 239 86 232',x:86,y:232,a:-75,t:.12},
+    {d:'M202 262 C166 263 144 247 143 223 C142 206 117 202 95 209 C75 215 60 194 67 179',x:67,y:179,a:-45,t:.22},
+    {d:'M201 230 C171 223 180 193 153 181 C123 167 96 184 85 162 C77 145 80 126 65 124',x:65,y:124,a:-100,t:.33},
+    {d:'M198 199 C178 181 192 161 165 152 C142 145 138 126 111 130 C93 135 85 116 98 99',x:98,y:99,a:-15,t:.44},
+    {d:'M200 165 C171 158 176 131 158 112 C145 97 128 112 119 97 C108 83 121 73 134 80',x:134,y:80,a:50,t:.55},
+    {d:'M200 128 C183 114 188 91 170 84 C153 77 161 58 176 62',x:176,y:62,a:10,t:.66},
+    {d:'M195 295 C180 279 183 250 165 239',x:165,y:239,a:-20,t:.73}
+  ];
+  branches.forEach((b,i)=>{stem(b.d,b.t,.20);leaf(b.x,b.y,b.a,Math.min(.99,b.t+.18));const g=document.createElementNS(ns,'g');g.setAttribute('transform','translate(400 0) scale(-1 1)');container.append(g);const p=document.createElementNS(ns,'path');p.setAttribute('d',b.d);p.setAttribute('class','stem');g.append(p);const length=p.getTotalLength();p.style.strokeDasharray=length;p.style.strokeDashoffset=length;paths.push({p,length,start:b.t+.025,span:.20});const l=document.createElementNS(ns,'path');l.setAttribute('d','M0 0 C-2 -12 7 -20 13 -23 C15 -12 10 -3 0 0Z');l.setAttribute('transform',`translate(${b.x},${b.y}) rotate(${b.a})`);l.setAttribute('class','leaf');l.dataset.threshold=Math.min(.99,b.t+.205);g.append(l);});
+  const amount=document.getElementById('amount');
+  function render(){const v=Number(amount.value)/100;paths.forEach(({p,length,start,span})=>p.style.strokeDashoffset=length*(1-Math.max(0,Math.min(1,(v-start)/span))));container.querySelectorAll('.leaf').forEach(p=>p.style.opacity=v>=Number(p.dataset.threshold)?'.6':'0');document.getElementById('bar').style.width=amount.value+'%';document.getElementById('strength').textContent=amount.value+'%';document.getElementById('value').value=amount.value+'%';}
+  amount.addEventListener('input',render);
+  document.getElementById('theme').addEventListener('change',e=>document.body.dataset.theme=e.target.value);
+  document.getElementById('enabled').addEventListener('change',e=>{document.getElementById('art').hidden=!e.target.checked;document.getElementById('complete').disabled=!e.target.checked;});
+  document.getElementById('motion').addEventListener('change',e=>document.body.classList.toggle('no-motion',!e.target.checked));
+  document.getElementById('complete').addEventListener('click',()=>{amount.value=Math.min(100,Number(amount.value)+12);render();});
+  requestAnimationFrame(render);
+</script>
+</body></html>

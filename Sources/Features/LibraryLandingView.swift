@@ -284,6 +284,9 @@ private struct LibraryTreeRow<Row: View>: View {
     let node: LibraryFolder
     @Binding var expanded: Set<String>
     let searching: Bool
+    @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
+    private var palette: EngramPalette { theme.palette(for: scheme) }
     @ViewBuilder let row: (LibraryDeckSummary) -> Row
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -295,7 +298,7 @@ private struct LibraryTreeRow<Row: View>: View {
                         Image(systemName: expanded.contains(node.path) || searching ? "chevron.down" : "chevron.right").font(.caption)
                         Text(node.title)
                         Spacer(minLength: 4)
-                        Text("\(node.deckCount)").font(.caption).foregroundStyle(.secondary)
+                        Text("\(node.deckCount)").font(.caption).foregroundStyle(palette.secondaryText)
                     }.font(.subheadline.weight(.semibold)).frame(minHeight: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityValue(expanded.contains(node.path) || searching ? "Expanded" : "Collapsed")
                 if expanded.contains(node.path) || searching {
@@ -330,7 +333,7 @@ private struct DeckCoverView: View {
                     (dark ? palette.anchor : palette.selection)
                     Rectangle().fill(palette.accent.opacity(0.25)).frame(width: 6).frame(maxWidth: .infinity, alignment: .leading)
                     HStack {
-                        Text(letters).font(.system(size: 30, weight: .medium, design: theme == .warm ? .serif : .rounded))
+                        Text(letters).font(.system(size: 30, weight: .medium, design: theme == .neutral ? .default : .serif))
                             .lineLimit(1).minimumScaleFactor(0.5)
                         Spacer(minLength: 44)
                     }.padding(.horizontal, 14).padding(.vertical, 12).foregroundStyle(dark ? palette.onAnchor : palette.primaryText)

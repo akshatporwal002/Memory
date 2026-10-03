@@ -6,39 +6,71 @@ struct MultipleChoiceReviewView: View {
     @Bindable var model: EngramModel
     let originalQuestion: MultipleChoiceQuestion
     let item: ReviewPresentation
-    let minimumHeight: CGFloat
-    @State private var selected: String?
+    let viewportSize: CGSize
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var textSize
 
-    init(model: EngramModel, question: MultipleChoiceQuestion, item: ReviewPresentation, minimumHeight: CGFloat) {
-        self.model = model; self.originalQuestion = question; self.item = item; self.minimumHeight = minimumHeight
+    init(model: EngramModel, question: MultipleChoiceQuestion, item: ReviewPresentation, viewportSize: CGSize) {
+        self.model = model; self.originalQuestion = question; self.item = item; self.viewportSize = viewportSize
     }
     private var question: MultipleChoiceQuestion { originalQuestion.ordered(for: item.presentationID) }
     private var palette: EngramPalette { theme.palette(for: scheme) }
-    private var correctInk: Color { scheme == .dark ? Color(red:0.65,green:0.88,blue:0.69) : Color(red:0.17,green:0.43,blue:0.27) }
+    private var selected: String? {
+        get { model.reviewChoiceSelection?.presentationID == item.presentationID ? model.reviewChoiceSelection?.choiceID : nil }
+        nonmutating set { model.reviewChoiceSelection = newValue.map { (item.presentationID, $0) } }
+    }
+    private var splitLayout: Bool { viewportSize.width >= 600 && viewportSize.width > viewportSize.height * 1.15 && !textSize.isAccessibilitySize }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(question.prompt)
-                .font(theme.font(.prompt)).fontWeight(.medium)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.top, max(22, minimumHeight * 0.28))
-                .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(question.choices) { choice in choiceRow(choice) }
+        Group {
+            if splitLayout {
+                HStack(spacing: 40) {
+                    ScrollView {
+                        prompt.frame(maxWidth: .infinity, minHeight: max(120, viewportSize.height - 32))
+                            .padding(.vertical, 16)
+                    }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-question-pane")
+                    ScrollView {
+                        choices.frame(maxWidth: .infinity, minHeight: max(120, viewportSize.height - 32))
+                            .padding(.vertical, 16)
+                    }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-options-pane")
+                }
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 1100).frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    VStack(spacing: 36) {
+                        prompt.frame(maxWidth: 560)
+                        choices.frame(maxWidth: 500)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: max(160, viewportSize.height - 32))
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, textSize.isAccessibilitySize ? 20 : 36)
+                }.scrollBounceBehavior(.basedOnSize)
+                    .accessibilityIdentifier("review-mcq-stacked")
             }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 14)
         }
-        .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .bottom)
         .animation(reduceMotion ? nil : .spring(response: 0.36, dampingFraction: 0.84), value: item.assessment != nil)
         .sensoryFeedback(.selection, trigger: selected)
         .sensoryFeedback(.success, trigger: item.assessment?.outcome == .correct)
-        .onChange(of: item.presentationID) { _, _ in selected = nil }
+    }
+
+    private var prompt: some View {
+        Text(question.prompt)
+            .font(theme.font(question.prompt.count < 160 ? .prompt : .body))
+            .fontWeight(question.prompt.count < 160 ? .medium : .regular)
+            .foregroundStyle(palette.primaryText)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("review-question")
+    }
+
+    private var choices: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(question.choices) { choice in choiceRow(choice) }
+        }
     }
 
     private func choiceRow(_ choice: MultipleChoiceQuestion.Choice) -> some View {
@@ -46,7 +78,7 @@ struct MultipleChoiceReviewView: View {
         let correct = item.assessment != nil && choice.id == question.correctID
         let wrong = submitted == choice.id && !correct
         let active = item.assessment == nil && selected == choice.id
-        let ink = correct ? correctInk : wrong ? palette.againInk : active ? palette.accentInk : palette.primaryText
+        let ink = correct ? palette.successInk : wrong ? palette.againInk : active ? palette.answerSelectionInk : palette.primaryText
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 guard item.assessment == nil, item.revealedAt == nil, !model.busy, !model.markingAnswer else { return }
@@ -69,11 +101,12 @@ struct MultipleChoiceReviewView: View {
             .accessibilityIdentifier("review-option-" + choice.id)
             .accessibilityLabel("Option \(question.displayLetter(for: choice.id)), \(choice.text)")
             .accessibilityValue(correct ? "Correct answer" : wrong ? "Your answer, incorrect" : active ? "Selected" : "Not selected")
+            .accessibilityHint(item.assessment == nil ? "Select an answer, then confirm the selected answer." : "")
             .accessibilityAction(named: Text("Confirm answer")) { if item.assessment == nil { confirm(choice.id) } }
             if correct {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.assessment?.outcome == .correct ? "Correct" : "Correct answer")
-                        .font(.caption.weight(.semibold)).foregroundStyle(correctInk)
+                        .font(.caption.weight(.semibold)).foregroundStyle(palette.successInk)
                     Text(explanationDetail)
                         .font(.subheadline).foregroundStyle(palette.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)

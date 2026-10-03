@@ -242,7 +242,7 @@ struct QuestionReadingView: View {
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     private var palette: EngramPalette { theme.palette(for: scheme) }
-    private var correctInk: Color { scheme == .dark ? Color(red: 0.72, green: 0.87, blue: 0.66) : Color(red: 0.20, green: 0.36, blue: 0.22) }
+    private var correctInk: Color { palette.successInk }
     private var prefix: String { number.map { "\($0). " } ?? "" }
 
     var body: some View {

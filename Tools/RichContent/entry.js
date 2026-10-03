@@ -2,13 +2,13 @@ import mermaid from 'mermaid';
 import katex from 'katex';
 mermaid.initialize({startOnLoad: false, securityLevel: 'strict', suppressErrorRendering: true,
   maxTextSize: 30000, flowchart: {htmlLabels: false}});
-window.engramRender = async (kind, source, dark, fontSize = 17) => {
+window.engramRender = async (kind, source, dark, fontSize = 17, themeVariables = {}) => {
   const root = document.getElementById('content');
   try {
     if (kind === 'mermaid') {
       if (/%%\s*\{|^\s*click\s/im.test(source)) throw new Error('Active diagram directives are disabled');
-      mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:dark?'dark':'neutral',
-        suppressErrorRendering:true,maxTextSize:30000,themeVariables:{fontSize:`${Math.min(80,Math.max(12,fontSize))}px`},flowchart:{htmlLabels:false}});
+      mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'base',
+        suppressErrorRendering:true,maxTextSize:30000,themeVariables:{darkMode:dark,...themeVariables,fontSize:`${Math.min(80,Math.max(12,fontSize))}px`},flowchart:{htmlLabels:false}});
       const {svg} = await mermaid.render('engram-diagram', source);
       root.innerHTML = svg;
     } else if (kind === 'paragraph' || kind === 'richParagraph') {

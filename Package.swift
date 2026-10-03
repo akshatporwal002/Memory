@@ -17,7 +17,7 @@ var targets: [Target] = [
     .target(name: "AnkiAdapters", dependencies: ["LearningCore", "CSQLite", "CArchive"]),
     .executableTarget(name: "EngramBenchmark", dependencies: ["LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"], path: "Tools/EngramBenchmark"),
     .testTarget(name: "AnkiAdapterTests", dependencies: ["AnkiAdapters", "LearningCore", "SchedulingAdapters"], resources: [.copy("Fixtures")]),
-    .testTarget(name: "EngramTests", dependencies: ["Features", "AIInfrastructure", "LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"])
+    .testTarget(name: "EngramTests", dependencies: ["Features", "DesignSystem", "AIInfrastructure", "LearningCore", "StudyApplication", "PersistenceAdapters", "SchedulingAdapters", "AnkiAdapters"])
 ]
 var products: [Product] = [
     .library(name: "ChatGPTAuth", targets: ["ChatGPTAuth"]),

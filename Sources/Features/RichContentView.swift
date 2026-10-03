@@ -30,6 +30,8 @@ struct RichContentView: View {
 private struct RichMarkdownBlock: View {
     let block: any Markup
     @Environment(\.engramTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
+    private var palette: EngramPalette { theme.palette(for: scheme) }
     @ViewBuilder var body: some View {
         if let heading = block as? Heading {
             inline(heading).font(heading.level <= 2 ? .title2.weight(.semibold) : .headline)
@@ -37,17 +39,17 @@ private struct RichMarkdownBlock: View {
         } else if let code = block as? CodeBlock {
             if code.language == "mermaid" { RichFormulaView(kind: "mermaid", source: code.code) }
             else if code.language == "math" || code.language == "latex" { RichFormulaView(kind: "displayMath", source: code.code) }
-            else { ScrollView(.horizontal) { SwiftUI.Text(verbatim: code.code).font(.system(.body, design: .monospaced)).textSelection(.enabled) }.padding(10).background(.quaternary, in: RoundedRectangle(cornerRadius: 8)) }
+            else { ScrollView(.horizontal) { SwiftUI.Text(verbatim: code.code).font(.system(.body, design: .monospaced)).textSelection(.enabled) }.padding(10).background(palette.elevated, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(palette.hairline)) }
         } else if let list = block as? UnorderedList {
             listItems(list, ordered: false)
         } else if let list = block as? OrderedList {
             listItems(list, ordered: true)
         } else if let quote = block as? BlockQuote {
             HStack(alignment: .top, spacing: 12) {
-                Rectangle().fill(.secondary).frame(width: 2)
+                Rectangle().fill(palette.secondaryText).frame(width: 2)
                 children(quote)
             }.fixedSize(horizontal: false, vertical: true)
-        } else if block is ThematicBreak { Divider() }
+        } else if block is ThematicBreak { Rectangle().fill(palette.hairline).frame(height: 1) }
         else if let table = block as? Markdown.Table {
             ScrollView(.horizontal) { VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 16) { ForEach(Array(table.head.children.enumerated()), id: \.offset) { _, cell in inline(cell).bold().frame(width: 150, alignment: .leading) } }
@@ -109,12 +111,14 @@ private struct RichMarkdownBlock: View {
 private struct RichFormulaView: View {
     let kind: String
     let source: String
+    @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @State private var height: CGFloat = 64
     @ScaledMetric(relativeTo: .body) private var fontSize = 17.0
     var body: some View {
         VStack(alignment:.leading,spacing:8) {
-        FormulaWebView(kind: kind, source: source, dark: scheme == .dark, fontSize: fontSize, height: $height)
+        let tokens = theme.colors(dark: scheme == .dark)
+        FormulaWebView(kind: kind, source: source, dark: scheme == .dark, tokens: tokens, fontSize: fontSize, height: $height)
             .frame(height: height).accessibilityLabel(kind == "mermaid" ? "Diagram: \(source)" : "Mathematical content: \(source)")
         if kind == "mermaid" { DisclosureGroup("Diagram text") { SwiftUI.Text(verbatim:source).font(.body).textSelection(.enabled) }.font(.caption) }
         }
@@ -125,6 +129,7 @@ private struct FormulaWebView {
     let kind: String
     let source: String
     let dark: Bool
+    let tokens: EngramColorTokens
     let fontSize: Double
     @Binding var height: CGFloat
     func makeCoordinator() -> Coordinator { Coordinator(height: $height) }
@@ -140,12 +145,13 @@ private struct FormulaWebView {
         return view
     }
     func update(_ view: WKWebView, coordinator: Coordinator) {
-        let key = "\(kind):\(dark):\(fontSize):\(source)"
+        let key = "\(kind):\(dark):\(fontSize):\(tokens.canvas):\(tokens.surface):\(tokens.elevated):\(tokens.primaryText):\(tokens.secondaryText):\(tokens.accentInk):\(tokens.hairline):\(tokens.controlBorder):\(source)"
         guard key != coordinator.key else { return }; coordinator.key = key
+        func hex(_ value: UInt32) -> String { String(format: "#%06X", value) }
         guard source.utf8.count <= 30_000, let script = Bundle.module.url(forResource: "render", withExtension: "js", subdirectory: "RichContent"),
               let css = Bundle.module.url(forResource: "katex", withExtension: "css", subdirectory: "RichContent"),
               let js = try? String(contentsOf: script, encoding: .utf8), var styles = try? String(contentsOf: css, encoding: .utf8) else {
-            view.loadHTMLString("<pre>\(escape(source))</pre>", baseURL: nil); return
+            view.loadHTMLString("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>body{background:transparent;color:\(hex(tokens.primaryText));font:\(fontSize)px -apple-system}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style><pre>\(escape(source))</pre>", baseURL: nil); return
         }
         if let fonts = try? FileManager.default.contentsOfDirectory(at: script.deletingLastPathComponent().appendingPathComponent("fonts"), includingPropertiesForKeys: nil) {
             for font in fonts where font.pathExtension == "woff2" {
@@ -155,12 +161,24 @@ private struct FormulaWebView {
             }
         }
         let safeScript = js.replacingOccurrences(of: "</script", with: "<\\/script", options: .caseInsensitive)
-        let args = (try? JSONSerialization.data(withJSONObject: [kind,source,dark,fontSize] as [Any])).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        let themeVariables: [String: String] = [
+            "background": hex(tokens.canvas), "fontFamily": "-apple-system, BlinkMacSystemFont, sans-serif",
+            "primaryColor": hex(tokens.surface), "primaryTextColor": hex(tokens.primaryText),
+            "primaryBorderColor": hex(tokens.controlBorder), "lineColor": hex(tokens.accentInk),
+            "secondaryColor": hex(tokens.elevated), "secondaryTextColor": hex(tokens.primaryText), "secondaryBorderColor": hex(tokens.controlBorder),
+            "tertiaryColor": hex(tokens.canvas), "tertiaryTextColor": hex(tokens.primaryText), "tertiaryBorderColor": hex(tokens.controlBorder),
+            "textColor": hex(tokens.primaryText), "mainBkg": hex(tokens.surface),
+            "nodeBorder": hex(tokens.controlBorder), "clusterBkg": hex(tokens.elevated),
+            "clusterBorder": hex(tokens.hairline), "edgeLabelBackground": hex(tokens.canvas),
+            "noteBkgColor": hex(tokens.surface), "noteTextColor": hex(tokens.primaryText), "noteBorderColor": hex(tokens.controlBorder),
+            "fontSize": "\(Int(min(80, max(12, fontSize))))px"
+        ]
+        let args = (try? JSONSerialization.data(withJSONObject: [kind,source,dark,fontSize,themeVariables] as [Any])).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let safeArgs = args.replacingOccurrences(of: "<", with: "\\u003c").replacingOccurrences(of: ">", with: "\\u003e")
         let html = """
         <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'">
-        <style>\(styles) body{margin:0;background:transparent;color:\(dark ? "#eee" : "#222");font:\(fontSize)px -apple-system}#content{padding:8px 0;overflow:auto}pre,.fallback{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}svg{max-width:100%;height:auto}</style>
+        <style>\(styles) body{margin:0;background:transparent;color:\(hex(tokens.primaryText));font:\(fontSize)px -apple-system}#content{padding:8px 0;overflow:auto;color:\(hex(tokens.primaryText))}pre,.fallback{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;color:\(hex(tokens.primaryText))}svg{max-width:100%;height:auto}</style>
         <div id="content"><pre>\(escape(source))</pre></div><script>\(safeScript)</script><script>engramRender(...\(safeArgs));</script>
         """
         view.loadHTMLString(html, baseURL: nil)

@@ -2,6 +2,9 @@ import AIInfrastructure
 import SwiftUI
 import LearningCore
 import DesignSystem
+#if os(iOS)
+import UIKit
+#endif
 
 private struct AssistantPassage: Identifiable, Sendable {
     let id: String
@@ -51,6 +54,13 @@ struct ContextualAssistant: View {
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var open: Bool { stage != .closed }
     private var expanded: Bool { stage == .expanded }
+    private var phoneDock: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
     private var deckID: String? {
         if model.pdfLearningPresented { return nil }
         if model.creationPresented && model.notebookDeckID == nil && model.activeDeckOverviewID == nil && model.activeContentDeckID == nil { return nil }
@@ -140,7 +150,7 @@ struct ContextualAssistant: View {
                 Spacer(minLength: 0)
                 glassContainer {
                     if open { assistantSurface(panel(height: geometry.size.height), open: true) }
-                    else { dock(narrow: geometry.size.width < 600) }
+                    else { dock(narrow: phoneDock || geometry.size.width < 600) }
                 }
                 .background(GeometryReader { dock in
                     Color.clear.preference(key: AssistantDockHeight.self, value: open ? 72 : dock.size.height + 8)

@@ -24,7 +24,7 @@ struct TypedAnswerView: View {
                 if !attempt.additions.isEmpty {
                     Text("Missing information").font(.caption.weight(.semibold))
                     ForEach(Array(attempt.additions.enumerated()),id:\.offset) { _,addition in
-                        AnimatedAddition(text:addition.text).foregroundStyle(palette.hardInk)
+                        AnimatedAddition(text:addition.text).foregroundStyle(palette.missingInk)
                     }
                 }
                 DisclosureGroup("Supporting evidence") {
@@ -106,7 +106,7 @@ private struct AnswerAnnotationView: View {
         for span in attempt.validatedAnnotations(attempt.annotations) {
             if span.startUTF16 > end { result = result + Text(verbatim:source.substring(with:NSRange(location:end,length:span.startUTF16-end))) }
             let segment = Text(verbatim:span.text)
-            if span.kind == "correct" { result = result + segment.foregroundColor(colored ? palette.easyInk : palette.primaryText) }
+            if span.kind == "correct" { result = result + segment.foregroundColor(colored ? palette.successInk : palette.primaryText) }
             else { result = result + segment.strikethrough(colored).foregroundColor(colored ? palette.againInk : palette.primaryText) }
             end = span.startUTF16 + span.lengthUTF16
         }
