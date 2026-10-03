@@ -1,6 +1,20 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testShortChatFitsItsContent() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout:15)); app.buttons["assistant-entry"].tap()
+        let composer = app.textFields["assistant-composer"].firstMatch.exists ? app.textFields["assistant-composer"].firstMatch : app.textViews["assistant-composer"].firstMatch
+        composer.tap(); composer.typeText("Explain briefly")
+        app.buttons["Send message"].tap()
+        XCTAssertTrue(app.staticTexts["CloudFront is AWS’s content delivery network."].waitForExistence(timeout:5))
+        let transcript = app.scrollViews["assistant-transcript"]
+        XCTAssertTrue(transcript.exists)
+        XCTAssertLessThan(transcript.frame.height,220)
+        capture("Assistant-Short-Reply",app)
+        app.buttons["Expand assistant"].tap()
+        XCTAssertGreaterThan(transcript.frame.height,300)
+    }
     @MainActor func testChatTitleSwitchingDeletionAndNewChat() {
         let app = launch(extra:["--ui-history-fixture"])
         XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout:15))
@@ -16,6 +30,7 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout:5)); app.buttons["Delete"].tap()
         XCTAssertFalse(saved.waitForExistence(timeout:2))
         app.otherElements["assistant-drag-handle"].swipeUp()
+        app.buttons["Chat history"].tap()
         app.buttons["New chat"].tap()
         XCTAssertFalse(app.buttons["Chat history"].exists)
         capture("Assistant-New-Chat",app)
@@ -417,6 +432,9 @@ final class MinimalistStudyUITests: XCTestCase {
         app.launch(); return app
     }
     @MainActor private func capture(_ name: String, _ app: XCUIApplication) {
+        let settled = expectation(description:"Surface animation settled")
+        DispatchQueue.main.asyncAfter(deadline:.now() + 0.6) { settled.fulfill() }
+        wait(for:[settled],timeout:2)
         let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         image.name = name; image.lifetime = .keepAlways; add(image)
     }

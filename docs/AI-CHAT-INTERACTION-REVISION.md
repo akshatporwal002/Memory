@@ -29,3 +29,15 @@ Final checks: all 17 focused logic tests passed. Seven distinct simulator scenar
 Device delivery: the SSH build initially failed with `errSecInternalComponent` at code signing. Running the existing build script in the Mac Terminal session succeeded. The updated app was installed and launched on the paired iPhone at 18:44 on 3 October 2026; `/tmp/engram-dev-phone.status` reports `LAUNCHED` and the device log confirms `dev.engram.study`.
 
 Keyboard focus follow-up: expansion/collapse buttons and drag gestures no longer clear composer focus. Only the final drag to closed dismisses the keyboard. The simulator regression passed keyboard return, both resize buttons, upward expansion and downward medium/compact stages with the keyboard still visible (`/tmp/engram-chat-focus.xcresult`). Current/previous stage screenshots were refreshed. Bubble layout and more translucent keyboard styling remain discussion proposals.
+
+## Open conversation and tinted glass composer
+
+The large rounded chat enclosure is replaced by two independent surfaces: a slim native Liquid Glass capsule for input, and a straight-edged reading backdrop with a subtle one-point outline and no gradient cutoff. Mono keeps the opposite colour palette, now with translucent tint rather than a fully solid canvas. Warm uses the existing themed canvas. Reduced Transparency or increased contrast supplies a solid reading backdrop; earlier platforms use system material for the composer.
+
+Medium chat height follows measured transcript content up to a viewport limit. Expanded chat retains a larger scrollable reading area. User messages use quieter italic typography. Model selection moves into the header's small menu, and the new-chat plus appears in the history view. Keyboard focus, source links, offline equation rendering, confirmation and action review remain available.
+
+Initial screenshot inspection revealed that a large native glass background could blur the foreground transcript even though accessibility interactions passed. The reading surface therefore uses a system material behind sharp text, while native interactive glass stays on the composer. Screenshot captures now allow the short surface animation to settle before recording a state. An explicit short-answer scenario checks that medium chat does not reserve an unnecessary fixed-height region.
+
+Visual follow-up: removed the top/bottom fade at the user’s request. The reading surface now has flat boundaries and a restrained outline in every theme, including the accessibility fallback.
+
+Final outline validation: all three simulator checks passed (both Mono themes and short/expanded reply height) in /tmp/engram-chat-flat-outline.xcresult. Earlier checks covered drag/keyboard return, formulas, and history/new/delete. Final screenshots were inspected and saved with one previous capture per view. The signed app installed on the paired iPhone at 19:31 on 3 October 2026; launch was blocked only by the locked phone. No live-model streaming claim is made by these fixture tests.

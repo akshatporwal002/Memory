@@ -2,6 +2,10 @@ import AIInfrastructure
 import SwiftUI
 import LearningCore
 import DesignSystem
+private struct AssistantTranscriptHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 90
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
 #if os(iOS)
 import UIKit
 #endif
@@ -49,6 +53,7 @@ struct ContextualAssistant: View {
     @State private var stage: PanelStage = .closed
     @State private var showingHistory = false
     @State private var selectedHistoryID: String?
+    @State private var transcriptHeight: CGFloat = 90
     @State private var prompt = ""
     @State private var composerEpoch = 0
     @State private var messages: [String: [AssistantMessage]] = [:]
@@ -164,9 +169,8 @@ struct ContextualAssistant: View {
                 Spacer(minLength: 0)
                 glassContainer {
                     if open {
-                        assistantSurface(panel(height: geometry.size.height)
+                        panel(height: geometry.size.height)
                             .foregroundStyle(chatPalette.primaryText).tint(chatPalette.accentInk)
-                            .environment(\.colorScheme, chatScheme), open: true)
                             .environment(\.colorScheme, chatScheme)
                     }
                     else { dock(narrow: phoneDock || geometry.size.width < 600) }
@@ -212,31 +216,40 @@ struct ContextualAssistant: View {
         #endif
     }
     @ViewBuilder private func assistantSurface<Content: View>(_ content: Content, open: Bool) -> some View {
-        if open && theme == .monochrome {
-            invertedChatSurface(content)
-        } else {
         #if os(iOS)
-        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
-            content.glassEffect(.regular.tint(open ? palette.selection : .clear).interactive(), in: .rect(cornerRadius: open ? 24 : 25))
-                .glassEffectID("assistant", in: glassNamespace)
-        } else { fallbackSurface(content, open: open) }
+        if #available(iOS 26.0,*), !reduceTransparency, contrast != .increased {
+            content.glassEffect(.regular.interactive(),in:.capsule)
+                .glassEffectID("assistant",in:glassNamespace)
+        } else { fallbackSurface(content,open:false) }
         #else
-        fallbackSurface(content, open: open)
+        fallbackSurface(content,open:false)
         #endif
-        }
     }
-    @ViewBuilder private func invertedChatSurface<Content: View>(_ content: Content) -> some View {
-        let surface = content.background(chatPalette.canvas, in: RoundedRectangle(cornerRadius: 24))
+    @ViewBuilder private func composerSurface<Content: View>(_ content: Content) -> some View {
         #if os(iOS)
-        if #available(iOS 26.0, *), !reduceTransparency, contrast != .increased {
-            surface.glassEffect(.clear.interactive(), in: .rect(cornerRadius: 24))
-                .glassEffectID("assistant", in: glassNamespace)
-        } else {
-            surface.matchedGeometryEffect(id: reduceMotion ? "panel" : "assistant", in: glassNamespace)
-        }
+        if #available(iOS 26.0,*), !reduceTransparency, contrast != .increased {
+            content.background(chatPalette.canvas.opacity(0.78),in:Capsule())
+                .glassEffect(.clear.tint(chatPalette.canvas.opacity(0.15)).interactive(),in:.capsule)
+                .glassEffectID("assistant",in:glassNamespace)
+        } else { composerFallback(content) }
         #else
-        surface.matchedGeometryEffect(id: reduceMotion ? "panel" : "assistant", in: glassNamespace)
+        composerFallback(content)
         #endif
+    }
+    private func composerFallback<Content: View>(_ content: Content) -> some View {
+        content.background(chatPalette.canvas.opacity(reduceTransparency || contrast == .increased ? 1 : 0.65),in:Capsule())
+            .background(.regularMaterial,in:Capsule())
+    }
+    @ViewBuilder private var readingBackdrop: some View {
+        if !showsTranscript { Color.clear }
+        else if reduceTransparency || contrast == .increased {
+            Rectangle().fill(chatPalette.canvas)
+                .overlay(Rectangle().strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 1))
+        } else {
+            Rectangle().fill(.regularMaterial)
+                .overlay(chatPalette.canvas.opacity(theme == .monochrome ? 0.78 : 0.68))
+                .overlay(Rectangle().strokeBorder(chatPalette.primaryText.opacity(0.18), lineWidth: 1))
+        }
     }
     private func fallbackSurface<Content: View>(_ content: Content, open: Bool) -> some View {
         content.background(open ? palette.selection : palette.surface, in: RoundedRectangle(cornerRadius: open ? 24 : 25))
@@ -297,7 +310,8 @@ struct ContextualAssistant: View {
     private func close() { composerFocused = false; showingHistory = false; withAnimation(motion) { stage = .closed } }
 
     private func panel(height: CGFloat) -> some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
+          VStack(spacing:0) {
           Capsule().fill(chatPalette.secondaryText.opacity(0.5)).frame(width:32,height:4)
             .frame(maxWidth:.infinity,minHeight:24).contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance:8).onEnded { value in changeStage(for:value.translation.height) })
@@ -317,11 +331,22 @@ struct ContextualAssistant: View {
                     }.frame(minHeight:44).contentShape(Rectangle())
                 }.accessibilityLabel("Chat history").disabled(busy)
                 Spacer(minLength:8)
+                if showingHistory {
                 Button(action:newChat) { Image(systemName:"plus").frame(width:44,height:44).contentShape(Rectangle()) }
                     .accessibilityLabel("New chat").disabled(busy)
+                }
                 Button { withAnimation(motion) { stage = expanded ? .medium : .expanded } } label: {
                     Image(systemName:expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right").frame(width:44,height:44).contentShape(Rectangle())
                 }.accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
+                Menu {
+                    ForEach(model.aiMarker.models, id: \.self) { id in
+                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: activeConversationID, model: model) } }
+                    }
+                    if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
+                    Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
+                } label: {
+                    Image(systemName:"ellipsis").font(.caption).frame(width:44,height:44).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Button(action:close) { Image(systemName:"xmark").frame(width:44,height:44).contentShape(Rectangle()) }
                     .accessibilityLabel("Close assistant")
             }.font(.caption).foregroundStyle(chatPalette.secondaryText).buttonStyle(.plain)
@@ -352,7 +377,7 @@ struct ContextualAssistant: View {
                                     RichContentView(source: message.text,
                                         alignment: message.isUser ? .trailing : .leading,
                                         textColor: message.isUser ? chatPalette.secondaryText : chatPalette.primaryText)
-                                        .font(message.isUser ? .subheadline : .body)
+                                        .font(message.isUser ? .subheadline.italic() : .body)
                                         .foregroundStyle(message.isUser ? chatPalette.secondaryText : chatPalette.primaryText)
                                         .multilineTextAlignment(message.isUser ? .trailing : .leading)
                                     if !message.isUser {
@@ -374,9 +399,12 @@ struct ContextualAssistant: View {
                             if busy { ProgressView("Thinking…").font(.caption) }
                             Color.clear.frame(height:1).id("assistant-bottom")
                         }.padding(.vertical, 10)
+                        .background(GeometryReader { content in Color.clear.preference(key:AssistantTranscriptHeight.self,value:content.size.height) })
                     }
+                    .accessibilityIdentifier("assistant-transcript")
                     .scrollDismissesKeyboard(.never)
-                    .frame(height: min(max(90, height * (expanded ? 0.72 : 0.32)), max(90, height - 170)))
+                    .frame(height: expanded ? min(max(90,height * 0.72),max(90,height - 160)) : min(max(80,transcriptHeight),min(max(90,height * 0.45),max(90,height - 160))))
+                    .onPreferenceChange(AssistantTranscriptHeight.self) { transcriptHeight = $0 }
                     .assistantScrollAnchors()
                     .onAppear { scrollChatToBottom(proxy) }
                     .onChange(of: thread.count) { _, _ in scrollChatToBottom(proxy) }
@@ -385,7 +413,7 @@ struct ContextualAssistant: View {
                     .onChange(of: model.assistant.output) { _, _ in scrollChatToBottom(proxy) }
                 }
             } else {
-                Color.clear.frame(height:min(max(90,height * (expanded ? 0.72 : 0.32)),max(90,height - 170)))
+                Color.clear.frame(height:expanded ? min(max(90,height * 0.72),max(90,height - 160)) : 24)
             }
           }
             if showsTranscript, let action = recentSavedAction,let change = action.changes.last(where: { $0.undoneAt == nil }),!showingHistory {
@@ -399,21 +427,8 @@ struct ContextualAssistant: View {
                 Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
                     .font(.caption.weight(.medium)).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
-            if showsTranscript && !showingHistory {
+            if busy || recentSavedAction != nil {
             HStack {
-                Menu {
-                    ForEach(model.aiMarker.models, id: \.self) { id in
-                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: activeConversationID, model: model) } }
-                    }
-                    if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
-                    Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).lineLimit(1)
-                        Image(systemName: "chevron.down").font(.system(size: 9, weight: .medium))
-                    }.foregroundStyle(chatPalette.secondaryText)
-                        .frame(minWidth:44,minHeight:44).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Spacer()
                 if busy { Button("Stop") { model.assistant.cancel() } }
                 if recentSavedAction != nil {
@@ -421,8 +436,10 @@ struct ContextualAssistant: View {
                 }
             }.font(.caption).frame(minHeight: 44)
             }
+          }.padding(.horizontal,16).padding(.bottom,12)
+            .background(readingBackdrop)
             if !showingHistory {
-            HStack(spacing: 10) {
+            composerSurface(HStack(spacing: 10) {
                 if !showsTranscript { Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk) }
                 TextField("", text: $prompt,
                     prompt: Text(model.pdfLearningPresented ? "Ask about this PDF…" : "Ask about your notes…").foregroundStyle(chatPalette.secondaryText), axis: .vertical)
@@ -440,11 +457,7 @@ struct ContextualAssistant: View {
                         .accessibilityLabel("Close assistant")
                 }
             }
-            .padding(.horizontal, 4).padding(.vertical, 2)
-            .padding(.top, showsTranscript ? 4 : 0)
-            .overlay(alignment: .top) {
-                if showsTranscript { Rectangle().fill(chatPalette.hairline).frame(height: 0.5) }
-            }
+            .padding(.horizontal,16).padding(.vertical,4))
             }
             if thread.isEmpty && expanded && !showingHistory {
                 Button(model.reviewPresented ? "Give me a hint" : model.editorPresented || model.creationPresented ? "Suggest a question" : "Explain this simply") {
@@ -455,7 +468,7 @@ struct ContextualAssistant: View {
                 }.font(.caption).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
         }
-        .padding(.horizontal, 18).padding(.bottom, 12)
+        .padding(.bottom,4)
         .frame(maxWidth: 530)
     }
 
@@ -509,7 +522,7 @@ struct ContextualAssistant: View {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-assistant-fixture") {
             messages[activeConversationID, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
-            messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: question.localizedCaseInsensitiveContains("formula") ? #"For a quadratic equation, \(ax^2+bx+c=0\), the roots are:\#n\#n\[x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\]"# : "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
+            messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: question.localizedCaseInsensitiveContains("brief") ? "CloudFront is AWS’s content delivery network." : question.localizedCaseInsensitiveContains("formula") ? #"For a quadratic equation, \(ax^2+bx+c=0\), the roots are:\#n\#n\[x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\]"# : "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
             prompt = ""; composerFocused = false; composerEpoch += 1; return
         }
         #endif
