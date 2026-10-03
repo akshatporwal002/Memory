@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BA1010101010101010101001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA1010101010101010101003 /* Assets.xcassets */; };
+		BA1010101010101010101002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA1010101010101010101003 /* Assets.xcassets */; };
 		099A4853A55C101C5A029EC6 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 12263248BCB8045E00858187 /* DesignSystem */; };
 		0E444A15C9387E7E67C8ED52 /* ScreenshotExportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F979D35A18890ADA94AA908A /* ScreenshotExportModel.swift */; };
 		13C4D006D2A1E8FBB6540011 /* PersistenceAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 9C7BA9F267ED9A16B01FB1F0 /* PersistenceAdapters */; };
@@ -48,6 +50,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BA1010101010101010101003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0ECB2BDA6574B003D0401A32 /* Engram-UITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Engram-UITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		33BF4F0D385C63FFF324BB91 /* ScreenshotExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotExportView.swift; sourceTree = "<group>"; };
 		3C536B402C353E7F776D91A6 /* MinimalistStudyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalistStudyUITests.swift; sourceTree = "<group>"; };
@@ -97,6 +100,7 @@
 		063BB45D072F1B8CBFB1E934 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				BA1010101010101010101003 /* Assets.xcassets */,
 				4B1EA62CEC7F0E0110CF1040 /* Acknowledgements.txt */,
 				CABD5A954A145EA301B22905 /* EngramApp.swift */,
 				5C962FFB8D16C4FC9F242ED9 /* NativeScreenCapture.swift */,
@@ -269,6 +273,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA1010101010101010101002 /* Assets.xcassets in Resources */,
 				A728DA38DE3D22397B25B513 /* Acknowledgements.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -277,6 +282,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA1010101010101010101001 /* Assets.xcassets in Resources */,
 				635EF16A0B5174DEE0B66224 /* Acknowledgements.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
