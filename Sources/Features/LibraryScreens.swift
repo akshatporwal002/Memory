@@ -27,7 +27,7 @@ struct TodayView: View {
                         Text("cards available now").font(theme.font(.section))
                         Text("\(model.due.filter { $0.schedule.phase == .new }.count) new · \(model.due.filter { $0.schedule.phase != .new }.count) due, within daily limits")
                             .font(theme.font(.metadata))
-                        Button { Task { await model.beginReview() } } label: {
+                        Button { Task { if model.library.session?.current != nil { await model.resumeReview() } else { await model.beginReview() } } } label: {
                             HStack(spacing:8) {
                                 Text(model.due.isEmpty ? "Check study queue" : "Start review")
                                 Image(systemName:"arrow.up.right").font(.caption)
@@ -37,19 +37,6 @@ struct TodayView: View {
                     .frame(maxWidth: .infinity, alignment: .leading).padding(EngramSpacing.section)
                     .foregroundStyle(theme.palette(for: scheme).onAnchor)
                     .background(theme.palette(for: scheme).anchor, in: RoundedRectangle(cornerRadius: EngramShape.study, style: .continuous))
-                    if model.library.session?.current != nil {
-                        Button { Task { await model.resumeReview() } } label: {
-                            Label("Resume saved session", systemImage: "arrow.uturn.forward")
-                                .font(.subheadline.weight(.medium)).frame(minHeight:44)
-                        }.buttonStyle(.plain).disabled(model.busy)
-                    }
-                    Text("Your notebooks").font(theme.font(.section))
-                    LazyVStack(spacing: 0) {
-                        ForEach(model.library.liveDecks.prefix(6)) { deck in
-                            Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: { DeckRow(model: model, deck: deck) }.buttonStyle(.plain)
-                            Divider()
-                        }
-                    }
                     Text("\(model.todaysReviews.count) reviews saved today").font(theme.font(.body))
                         .engramNumericTransition(value: model.todaysReviews.count)
                 }
@@ -113,6 +100,13 @@ struct LibraryView: View {
                         } else {
                             ForEach(decks) { deck in
                                 Button { model.selectedDeckID = deck.id } label: { directoryRow(deck) }.buttonStyle(.plain)
+                                    .contextMenu {
+                                        Button("Open notebook") { model.selectedDeckID = deck.id }
+                                        Button(deck.studySuspended == true ? "Resume deck" : "Suspend deck") {
+                                            Task { _ = await model.perform { try await $0.setDeckSuspended(id: deck.id, suspended: deck.studySuspended != true) } }
+                                        }
+                                        Button("Delete deck", role: .destructive) { model.deleteDeck = deck }
+                                    }
                                 Divider()
                             }
                             if decks.isEmpty { Text("No matching decks").foregroundStyle(palette.secondaryText) }

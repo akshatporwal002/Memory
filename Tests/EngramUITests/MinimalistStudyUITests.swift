@@ -1,6 +1,35 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testLibrarySuspendAndContextMenus() {
+        let app = launch(extra: ["--ui-image-fixture"])
+        XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["Your notebooks"].exists)
+        XCTAssertFalse(app.buttons["Resume saved session"].exists)
+        capture("Today-Simplified", app)
+        app.buttons["tab-library"].tap()
+        let deck = app.buttons["library-deck-ui-deck"]
+        XCTAssertTrue(deck.waitForExistence(timeout: 5))
+        deck.swipeLeft()
+        XCTAssertTrue(app.buttons["Suspend deck"].waitForExistence(timeout: 5))
+        capture("Library-Swipe-Suspend", app)
+        app.buttons["Suspend deck"].tap()
+        deck.swipeLeft()
+        XCTAssertTrue(app.buttons["Resume deck"].waitForExistence(timeout: 5))
+        app.buttons["Resume deck"].tap()
+        deck.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Delete deck"].waitForExistence(timeout: 5))
+        capture("Library-Deck-Context", app)
+        app.buttons["Delete deck"].tap()
+        XCTAssertTrue(app.buttons["Delete “AWS Cloud Practitioner”"].waitForExistence(timeout: 5))
+        if app.buttons["Cancel"].exists { app.buttons["Cancel"].tap() }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.25)).tap() }
+        let file = app.buttons["library-file-9E2B947C-DBFC-4DF4-A15E-921021983344"]
+        XCTAssertTrue(file.waitForExistence(timeout: 5))
+        file.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["Delete file"].waitForExistence(timeout: 5))
+        capture("Library-File-Context", app)
+    }
     @MainActor func testLibraryAndSettingsUtilityRoutes() {
         let app = launch()
         XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout: 15))

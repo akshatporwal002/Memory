@@ -402,6 +402,14 @@ public actor StudyService {
         for i in library.cards.indices where library.cards[i].noteID == id { library.cards[i].retired = true; library.cards[i].version += 1 }
         invalidateSessionIfNeeded(&library); try await save(library)
     }
+    public func setDeckSuspended(id: String, suspended: Bool) async throws {
+        var library = try await repository.read()
+        guard let index = library.decks.firstIndex(where: { $0.id == id && !$0.deleted }) else { throw EngramError.missing("deck") }
+        library.decks[index].studySuspended = suspended ? true : nil
+        library.decks[index].modifiedAt = Date()
+        invalidateSessionIfNeeded(&library)
+        try await save(library)
+    }
     public func setSuspended(cardID: String, suspended: Bool) async throws {
         var library = try await repository.read()
         guard let index = library.cards.firstIndex(where: { $0.id == cardID && !$0.retired }) else { throw EngramError.missing("card") }
@@ -435,7 +443,7 @@ public actor StudyService {
     public func startSession(deckID: String?, now: Date) async throws -> StudySession {
         var library = try await repository.read()
         if let existing = library.session, existing.deckID == deckID, let current = existing.current,
-           (current.assessment != nil || library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended })) {
+           (current.assessment != nil || library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) })) {
             return existing
         }
         let queue = QueuePolicy.dueCards(in: library, deckID: deckID, now: now)
@@ -448,7 +456,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard var session = library.session else { return nil }
         if let item = session.current,
-           (item.assessment != nil || library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended })) { return session }
+           (item.assessment != nil || library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) })) { return session }
         refresh(&session, in: library, now: now); library.session = session
         try await save(library); return session
     }
@@ -456,7 +464,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard var session = library.session, session.id == sessionID,
               var item = session.current, item.presentationID == presentationID else { throw EngramError.conflict }
-        guard library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended }) else { throw EngramError.conflict }
+        guard library.cards.contains(where: { $0.id == item.card.id && $0.version == item.card.version && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) }) else { throw EngramError.conflict }
         if item.revealedAt != nil { return item }
         let history = library.activeReviews.filter { $0.cardID == item.card.id }
         var schedulingSettings = library.settings
@@ -478,7 +486,7 @@ public actor StudyService {
               let item = session.current, item.presentationID == presentationID,
               let revealedAt = item.revealedAt, now >= revealedAt,
               let outcome = item.outcomes[rating],
-              let index = library.cards.firstIndex(where: { $0.id == item.card.id && !$0.retired && !$0.suspended }),
+              let index = library.cards.firstIndex(where: { $0.id == item.card.id && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) }),
               library.cards[index].version == item.card.version,
               outcome.settingsVersion == library.settings.version else { throw EngramError.conflict }
         library.cards[index].schedule = outcome; library.cards[index].version += 1
@@ -493,7 +501,7 @@ public actor StudyService {
         var library = try await repository.read()
         guard var session = library.session, session.id == sessionID,
               let event = library.activeReviews.last(where: { $0.sessionID == sessionID }),
-              let index = library.cards.firstIndex(where: { $0.id == event.cardID && !$0.retired && !$0.suspended }),
+              let index = library.cards.firstIndex(where: { $0.id == event.cardID && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) }),
               library.cards[index].schedule == event.after else { throw EngramError.invalid("There is no unchanged review in this session to undo.") }
         library.cards[index].schedule = event.before; library.cards[index].version += 1
         library.corrections.append(ReviewCorrection(reviewID: event.id, createdAt: now))
@@ -536,7 +544,7 @@ public actor StudyService {
     }
     private func invalidateSessionIfNeeded(_ library: inout LibrarySnapshot) {
         guard let current = library.session?.current else { return }
-        if !library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended }) {
+        if !library.cards.contains(where: { $0.id == current.card.id && $0.version == current.card.version && !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) }) {
             library.session?.current = nil
         }
     }

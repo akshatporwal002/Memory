@@ -47,6 +47,59 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
     }
 
+    func testHistoryBeginsWithRecordedEvidence() throws {
+        let now = Date()
+        let created = now.addingTimeInterval(-30 * 86_400)
+        let reviewedAt = now.addingTimeInterval(-10 * 86_400)
+        let deck = Deck(id: "d", name: "History", createdAt: created)
+        var library = LibrarySnapshot(); library.decks = [deck]
+        library.notes = [Note(id: "n", deckID: deck.id, kind: .basic, front: "Q", back: "A")]
+        var state = try FSRSScheduler().initialState(now: reviewedAt, settings: library.settings)
+        state.phase = .review
+        library.cards = [StudyCard(id: "c", noteID: "n", deckID: deck.id, schedule: state)]
+        library.reviews = [ReviewEvent(id: "r", cardID: "c", deckID: deck.id, sessionID: "s", rating: .good, reviewedAt: reviewedAt, committedAt: reviewedAt, before: state, after: state)]
+        let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: ConstantEstimator())
+        XCTAssertEqual(outlook.startDate, created)
+        XCTAssertEqual(outlook.history.map(\.date), [reviewedAt])
+        XCTAssertEqual(outlook.cards.first?.history.first?.date, reviewedAt)
+        XCTAssertEqual(outlook.sampleDates.first, now)
+    }
+    func testRollingYearAndCreationStart() throws {
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = .gmt
+        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 3))!
+        XCTAssertEqual(DeckMemoryOutlook.forecastEnd(examDate: nil, now: now, calendar: calendar), calendar.date(from: DateComponents(year: 2027, month: 10, day: 3)))
+        var deck = Deck(id: "d", name: "Created", createdAt: now.addingTimeInterval(-30 * 86_400))
+        var library = LibrarySnapshot(); library.decks = [deck]
+        let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: ConstantEstimator())
+        XCTAssertEqual(outlook.startDate, deck.createdAt)
+        XCTAssertTrue(outlook.history.isEmpty)
+        deck.createdAt = nil
+        XCTAssertEqual(DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: nil).startDate, now)
+    }
+    func testDeckSuspensionPreservesCardsAndDescendants() async throws {
+        let now = Date()
+        let repository = MemoryRepository()
+        let app = StudyService(repository: repository, scheduler: FSRSScheduler())
+        let parent = try await app.createDeck(name: "Cloud")
+        let child = try await app.createDeck(name: "Cloud::AWS")
+        var library = try await app.snapshot()
+        let note = Note(id: "n", deckID: child.id, kind: .basic, front: "Question", back: "Answer")
+        library.notes = [note]
+        let state = try FSRSScheduler().initialState(now: now, settings: library.settings)
+        library.cards = [StudyCard(id: "active", noteID: note.id, deckID: child.id, schedule: state), StudyCard(id: "paused", noteID: note.id, deckID: child.id, schedule: state, suspended: true)]
+        try await repository.commit(library, expectedRevision: library.revision)
+        _ = try await app.startSession(deckID: nil, now: now)
+        try await app.setDeckSuspended(id: parent.id, suspended: true)
+        var snapshot = try await app.snapshot()
+        XCTAssertTrue(QueuePolicy.dueCards(in: snapshot, deckID: nil, now: now).isEmpty)
+        XCTAssertNil(snapshot.session?.current)
+        XCTAssertEqual(snapshot.cards, library.cards)
+        try await app.setDeckSuspended(id: parent.id, suspended: false)
+        snapshot = try await app.snapshot()
+        XCTAssertEqual(QueuePolicy.dueCards(in: snapshot, deckID: nil, now: now).map(\.id), ["active"])
+        XCTAssertTrue(snapshot.cards.first(where: { $0.id == "paused" })!.suspended)
+    }
+
     func testExamDateHorizonAndPersistence() async throws {
         let now = Date(timeIntervalSince1970: 1_788_393_600)
         let future = now.addingTimeInterval(120 * 86_400)

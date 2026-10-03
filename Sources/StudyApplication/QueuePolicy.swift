@@ -40,7 +40,7 @@ public enum QueuePolicy {
         let selectedName = library.decks.first { $0.id == deckID && !$0.deleted }?.name
         let selectedDecks = Set(library.liveDecks.filter { $0.id == deckID || (selectedName != nil && $0.name.hasPrefix(selectedName! + "::")) }.map(\.id))
         return library.cards.filter {
-            !$0.retired && !$0.suspended && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
+            !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
             (deckID == nil || selectedDecks.contains($0.deckID))
         }
     }

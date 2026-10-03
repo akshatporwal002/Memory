@@ -18,9 +18,9 @@ public enum CloudProjection {
             result.append(CloudProjectionEntity(kind:"private",id:prefix + category + ":" + id,deckID:nil,payload:.object(["category":.string(category),"id":.string(id),"deckID":deckID.map(JSONValue.string) ?? .null,"value":try JSONValue.encode(value)]),deleted:false))
         }
         for deck in library.decks {
-            var shared = deck; shared.pdfLearning = nil; shared.documents = nil; shared.coverMediaName = nil; shared.desiredRetention = nil; shared.examDate = nil
+            var shared = deck; shared.pdfLearning = nil; shared.documents = nil; shared.coverMediaName = nil; shared.desiredRetention = nil; shared.examDate = nil; shared.studySuspended = nil
             result.append(CloudProjectionEntity(kind:"deck",id:deck.id,deckID:deck.id,payload:try .encode(shared),deleted:deck.deleted))
-            var extras: [String:JSONValue] = ["desiredRetention":deck.desiredRetention.map(JSONValue.number) ?? .null,"examDate":deck.examDate.map { .number($0.timeIntervalSince1970) } ?? .null,"coverMediaName":deck.coverMediaName.map(JSONValue.string) ?? .null]
+            var extras: [String:JSONValue] = ["desiredRetention":deck.desiredRetention.map(JSONValue.number) ?? .null,"studySuspended":.bool(deck.studySuspended == true),"examDate":deck.examDate.map { .number($0.timeIntervalSince1970) } ?? .null,"coverMediaName":deck.coverMediaName.map(JSONValue.string) ?? .null]
             if ownedDecks.contains(deck.id),let pdf = deck.pdfLearning { extras["pdfLearningBlob"] = .string(PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(pdf),userID:userID)) }
             if ownedDecks.contains(deck.id),let documents = deck.documents,!documents.isEmpty { extras["libraryDocumentsBlob"] = .string(PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(documents),userID:userID)) }
             try personal("deckExtras",deck.id,extras,deckID:deck.id)
@@ -67,7 +67,7 @@ public enum CloudProjection {
     public static func apply(_ entity: CloudProjectionEntity,to library: inout LibrarySnapshot) throws {
         if entity.kind == "deck" {
             var deck = try entity.payload.decode(Deck.self)
-            if let previous = library.decks.first(where: { $0.id == deck.id }) { deck.pdfLearning = previous.pdfLearning; deck.documents = previous.documents; deck.desiredRetention = previous.desiredRetention; deck.examDate = previous.examDate; deck.coverMediaName = previous.coverMediaName }
+            if let previous = library.decks.first(where: { $0.id == deck.id }) { deck.pdfLearning = previous.pdfLearning; deck.documents = previous.documents; deck.desiredRetention = previous.desiredRetention; deck.examDate = previous.examDate; deck.studySuspended = previous.studySuspended; deck.coverMediaName = previous.coverMediaName }
             replace(deck,in:&library.decks); return
         }
         if entity.kind == "note" {
@@ -97,6 +97,7 @@ public enum CloudProjection {
         switch category {
         case "deckExtras":
             guard let index = library.decks.firstIndex(where: { $0.id == id }),case .object(let extras) = value else { return }
+            if case .bool(let suspended) = extras["studySuspended"] { library.decks[index].studySuspended = suspended ? true : nil } else { library.decks[index].studySuspended = nil }
             if case .number(let date) = extras["examDate"], date.isFinite { library.decks[index].examDate = Date(timeIntervalSince1970: date) } else { library.decks[index].examDate = nil }
             if case .number(let retention) = extras["desiredRetention"] { library.decks[index].desiredRetention = retention } else { library.decks[index].desiredRetention = nil }
             if case .string(let cover) = extras["coverMediaName"] { library.decks[index].coverMediaName = cover } else { library.decks[index].coverMediaName = nil }

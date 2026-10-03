@@ -50,6 +50,8 @@ public struct Deck: Codable, Identifiable, Equatable, Sendable {
     public var desiredRetention: Double?
     /// Optional learning deadline used for the deck forecast.
     public var examDate: Date?
+    /// Learner-specific pause; individual card suspension is preserved.
+    public var studySuspended: Bool?
     /// Missing means the original arrow-only document format.
     public var documentFormatVersion: Int?
     public init(id: String = UUID().uuidString, name: String, deleted: Bool = false,
@@ -219,5 +221,9 @@ public struct LibrarySnapshot: Codable, Equatable, Sendable {
     }
     public var liveDecks: [Deck] { decks.filter { !$0.deleted }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending } }
     public var liveNotes: [Note] { notes.filter { !$0.deleted } }
+    public func isDeckSuspended(_ id: String) -> Bool {
+        guard let deck = liveDecks.first(where: { $0.id == id }) else { return false }
+        return liveDecks.contains { $0.studySuspended == true && ($0.id == id || deck.name.hasPrefix($0.name + "::")) }
+    }
     public var liveCards: [StudyCard] { cards.filter { !$0.retired } }
 }

@@ -97,6 +97,8 @@ struct LibraryExplorerView: View {
                                                 newNotebook:newNotebook,newFolder:beginFolder,
                                                 importFile:beginImport,importPhoto:beginPhoto,
                                                 importFolderFile:beginFolderImport,importFolderPhoto:beginFolderPhoto,
+                                                suspendDeck:{ id, suspended in Task { _ = await model.perform { try await $0.setDeckSuspended(id:id,suspended:suspended) } } },
+                                                deleteDeck:{ model.deleteDeck = $0 },
                                                 removeFolder:{ deleteFolderPath = $0 },
                                                 removeFile:{ deckID,document in deleteDocument = (deckID,document) },
                                                 move:handleDrop)
@@ -255,7 +257,7 @@ struct LibraryExplorerView: View {
         }
         .buttonStyle(.plain).accessibilityIdentifier("library-file-" + item.id)
         .draggable("engram-file:" + item.id)
-        .contextMenu { Button("Remove file",role:.destructive) { deleteDocument = (nil,item.document) } }
+        .contextMenu { Button("Open file") { openDocument(item.document) }; Button("Delete file",role:.destructive) { deleteDocument = (nil,item.document) } }
     }
 }
 
@@ -274,6 +276,8 @@ private struct LibraryExplorerNode: View {
     let importPhoto: (String) -> Void
     let importFolderFile: (String) -> Void
     let importFolderPhoto: (String) -> Void
+    let suspendDeck: (String, Bool) -> Void
+    let deleteDeck: (Deck) -> Void
     let removeFolder: (String) -> Void
     let removeFile: (String?,LibraryDocument) -> Void
     let move: (String?,StudyService.DocumentDestination) -> Bool
@@ -301,7 +305,8 @@ private struct LibraryExplorerNode: View {
                             .font(.system(size:15)).foregroundStyle(palette.secondaryText).frame(width:20)
                         Text(node.title).font(.subheadline.weight(node.deck == nil ? .medium : .regular))
                             .lineLimit(1).frame(maxWidth:.infinity,alignment:.leading)
-                        if node.dueCount > 0 { Text("\(node.dueCount) due").font(.caption2).foregroundStyle(palette.accentInk) }
+                        if node.deck?.deck.studySuspended == true { Image(systemName:"pause.circle").foregroundStyle(palette.secondaryText).accessibilityLabel("Suspended") }
+                        else if node.dueCount > 0 { Text("\(node.dueCount) due").font(.caption2).foregroundStyle(palette.accentInk) }
                     }.frame(minHeight:44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityIdentifier(node.deck.map { "library-deck-" + $0.id } ?? "library-folder-" + node.path)
             }
@@ -313,7 +318,11 @@ private struct LibraryExplorerNode: View {
             } isTargeted: { dropTargeted = $0 }
             .contextMenu {
                 if let deck = node.deck { Button("Open notebook") { openDeck(deck.id) }; Button("Add PDF or Markdown") { importFile(deck.id) } }
-                if let deck = node.deck { Button("Add image from Photos") { importPhoto(deck.id) } }
+                if let deck = node.deck {
+                    Button("Add image from Photos") { importPhoto(deck.id) }
+                    Button(deck.deck.studySuspended == true ? "Resume deck" : "Suspend deck",systemImage:deck.deck.studySuspended == true ? "play" : "pause") { suspendDeck(deck.id,deck.deck.studySuspended != true) }
+                    Button("Delete deck",role:.destructive) { deleteDeck(deck.deck) }
+                }
                 if node.deck == nil {
                     Button("Add source file") { importFolderFile(node.path) }
                     Button("Add image from Photos") { importFolderPhoto(node.path) }
@@ -324,6 +333,9 @@ private struct LibraryExplorerNode: View {
                     Button("Delete empty folder",role:.destructive) { removeFolder(node.path) }
                 }
             }
+            .modifier(DeckSuspendSwipe(enabled:node.deck != nil,suspended:node.deck?.deck.studySuspended == true,palette:palette) {
+                if let deck = node.deck { suspendDeck(deck.id,deck.deck.studySuspended != true) }
+            })
             if isExpanded {
                 ForEach(folderDocuments) { item in
                     Button { openDocument(item.document) } label: {
@@ -335,7 +347,7 @@ private struct LibraryExplorerNode: View {
                     }.buttonStyle(.plain).padding(.leading,CGFloat((depth + 1) * 16 + 18))
                         .accessibilityIdentifier("library-file-" + item.id)
                         .draggable("engram-file:" + item.id)
-                        .contextMenu { Button("Remove file",role:.destructive) { removeFile(nil,item.document) } }
+                        .contextMenu { Button("Open file") { openDocument(item.document) }; Button("Delete file",role:.destructive) { removeFile(nil,item.document) } }
                 }
                 if let deck = node.deck {
                     ForEach(documents) { document in
@@ -350,7 +362,7 @@ private struct LibraryExplorerNode: View {
                         }.buttonStyle(.plain).padding(.leading,CGFloat((depth + 1) * 16 + 18))
                             .accessibilityIdentifier("library-file-" + document.id)
                             .draggable("engram-file:" + document.id)
-                            .contextMenu { Button("Remove file",role:.destructive) { removeFile(deck.id,document) } }
+                            .contextMenu { Button("Open file") { openDocument(document) }; Button("Delete file",role:.destructive) { removeFile(deck.id,document) } }
                     }
                 }
                 ForEach(node.children) { child in
@@ -359,13 +371,47 @@ private struct LibraryExplorerNode: View {
                                         openDeck:openDeck,openDocument:openDocument,newNotebook:newNotebook,
                                         newFolder:newFolder,importFile:importFile,importPhoto:importPhoto,
                                         importFolderFile:importFolderFile,importFolderPhoto:importFolderPhoto,
-                                        removeFolder:removeFolder,removeFile:removeFile,move:move)
+                                        suspendDeck:suspendDeck,deleteDeck:deleteDeck,removeFolder:removeFolder,removeFile:removeFile,move:move)
                 }
             }
         }
     }
     private func toggle() {
         if expanded.contains(node.path) { expanded.remove(node.path) } else { expanded.insert(node.path) }
+    }
+}
+/// The explorer is a recursive scroll view, so it needs its own horizontal action reveal.
+private struct DeckSuspendSwipe: ViewModifier {
+    let enabled: Bool
+    let suspended: Bool
+    let palette: EngramPalette
+    let action: () -> Void
+    @State private var revealed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func body(content: Content) -> some View {
+        if enabled {
+            ZStack(alignment: .trailing) {
+                if revealed {
+                    Button {
+                        revealed = false
+                        action()
+                    } label: {
+                        Label(suspended ? "Resume" : "Suspend", systemImage: suspended ? "play" : "pause")
+                            .font(.caption).labelStyle(.titleAndIcon).frame(width: 100).frame(minHeight: 44)
+                            .foregroundStyle(palette.primaryText).background(palette.selection)
+                    }.buttonStyle(.plain).accessibilityLabel(suspended ? "Resume deck" : "Suspend deck")
+                }
+                content.background(palette.canvas).offset(x: revealed ? -104 : 0)
+            }
+            .clipped()
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: revealed)
+            .highPriorityGesture(DragGesture(minimumDistance: 30).onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) * 1.7 else { return }
+                if value.translation.width < -40 { revealed = true }
+                else if value.translation.width > 40 { revealed = false }
+            })
+            .onChange(of: suspended) { _, _ in revealed = false }
+        } else { content }
     }
 }
 #endif

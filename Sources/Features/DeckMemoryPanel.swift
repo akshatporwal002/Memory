@@ -62,6 +62,11 @@ struct DeckMemoryPanel: View {
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
                     Chart {
+                        ForEach(selected?.history ?? outlook.history) { point in
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
+                                .foregroundStyle(curveColor).lineStyle(StrokeStyle(lineWidth: 1.6))
+                        }
+
                         RuleMark(y: .value("Target", outlook.target * 100))
                             .foregroundStyle(palette.accentInk.opacity(0.7))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
@@ -71,7 +76,7 @@ struct DeckMemoryPanel: View {
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
                         }
                         ForEach(values.enumerated().map { Point(id: $0.offset, date: outlook.sampleDates[$0.offset], probability: $0.element) }) { point in
-                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100))
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Forecast"))
                                 .foregroundStyle(curveColor)
                                 .lineStyle(StrokeStyle(lineWidth: 1.6, dash: [4, 4]))
                                 .interpolationMethod(.monotone)
@@ -80,13 +85,13 @@ struct DeckMemoryPanel: View {
                             .foregroundStyle(curveColor).symbolSize(64)
                     }
                     .chartYScale(domain: 0.0...100.0)
-                    .chartXScale(domain: model.now...(outlook.sampleDates.last ?? model.now.addingTimeInterval(1)))
+                    .chartXScale(domain: outlook.startDate...(outlook.sampleDates.last ?? model.now.addingTimeInterval(1)))
                     .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks(position: .leading, values: [0, 50, 100]) }
                     .frame(height: 150)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
                     .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; dotted curve assumes no reviews until the displayed end date")
-                    HStack { Text("Today"); Spacer(); Text(outlook.sampleDates.last ?? model.now, format: .dateTime.month(.abbreviated).day()) }
+                    HStack { Text(outlook.startDate, format: .dateTime.month(.abbreviated).day().year()); Spacer(); Text(outlook.sampleDates.last ?? model.now, format: .dateTime.month(.abbreviated).day().year()) }
                         .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
                     if selected == nil,let next = outlook.nextPlannedReview {
                         HStack(alignment:.firstTextBaseline) {
@@ -124,7 +129,7 @@ struct DeckMemoryPanel: View {
                     Text(selected?.prompt ?? "").font(.subheadline).lineLimit(2)
                     Button("All cards") { selectedCardID = nil }.frame(minHeight: 44)
                 }
-                Text("Dotted line: recall if no reviews happen. The review marker shows a scheduled date, not a predicted increase. New and unsupported cards are excluded from the average.")
+                Text("Solid line: available review history. Dotted line: recall from today if no reviews happen. The review marker shows a scheduled date, not a predicted increase. New and unsupported cards are excluded from the average.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
             .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {
@@ -137,7 +142,7 @@ struct DeckMemoryPanel: View {
                         if useExamDate {
                             DatePicker("Date", selection: $examDate, in: model.now..., displayedComponents: .date)
                         }
-                        Text("Without a future target date, the graph runs to the end of this year. This changes the graph’s horizon, not your review schedule.")
+                        Text("Without a future target date, the graph runs from deck creation to one year from today. This changes the graph’s horizon, not your review schedule.")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
                     .navigationTitle("Memory outlook")
