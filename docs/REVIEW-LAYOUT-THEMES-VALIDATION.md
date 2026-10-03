@@ -40,3 +40,9 @@ The assistant header now uses a single quiet context label; in expanded chat, th
 Modern scroll alignment keeps short transcripts near the top without discarding bottom anchoring when content or keyboard size changes. The initial top-only alignment failed the keyboard-return visibility assertion and was corrected before final delivery. Older OS versions retain bottom anchoring. Rich Markdown now accepts optional alignment/text colour, with unchanged defaults for notes and other readers.
 
 All five focused UI tests passed: keyboard return/drag stages, saved history, keyboard/send/expansion, and both Mono screen/chat flows (`/tmp/engram-clean-chat-final.xcresult`). Current/previous chat screenshots were updated and inspected. The signed build was installed and launched on the paired iPhone.
+
+## Side-profile growth prototype
+
+The offline artwork now follows a side-profile brain silhouette. The first 35% traces its perimeter; curved interior branches follow, then fine tendrils and small leaves. Replay demonstrates the complete sequence once over nine seconds; this is demonstration timing, not the proposed production transition. Slider interaction, hiding artwork and backgrounding stop playback. Reduced Motion or disabled animation renders the complete state immediately when replay is requested.
+
+JavaScript syntax and a lightweight control harness passed staging, replay completion, reduced-motion and visibility-toggle checks. Headless Chrome rendered the 30%, 65% and 100% stages; all three screenshots were visually inspected and saved under `current_ui/Prototype/Memory-Growth`. This remains illustrative artwork, with no app or retention-data integration.
