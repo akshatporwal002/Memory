@@ -41,3 +41,8 @@ Latest preference: restore true calendar-time spacing and default to one month, 
 
 All ten focused tests passed, including the one-month duration, full horizon, short horizon and safe bounds. Native default-range, scroll and full-horizon checks passed in /tmp/engram-month-timeline.xcresult. Initial and scrolled screenshots were inspected and rotated in current_ui.
 Signed app installed and launched on the paired iPhone at 22:46 on 3 October 2026.
+
+Dynamic visible-window scaling now supersedes the fixed Y-axis. The no-review probability is interpolated at the visible right edge and the lower bound is (endpointPercent − 10) / 0.9, leaving 10% of the plot height below that endpoint with 100% at the top. Bounds clamp to 0–100% with a minimum 10-percentage-point span near full recall; those safeguards can alter the exact margin. The same domain applies to both curves and individual-card views. Scale changes ease over 120ms, or update instantly with Reduce Motion; axis labels remain readable whole percentages and accessibility reports the visible range.
+
+Eleven focused tests passed, including endpoint interpolation, 10%-of-height margins at different recall levels, minimum span and invalid-input fallbacks. Native scrolling/range selection passed in /tmp/engram-dynamic-visible-axis.xcresult. Initial/scrolled screenshots were inspected and rotated in current_ui.
+Signed app installed and launched on the paired iPhone at 23:06 on 3 October 2026.

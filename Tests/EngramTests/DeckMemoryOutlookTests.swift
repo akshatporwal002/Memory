@@ -58,12 +58,24 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertGreaterThan(RetentionTimeline.duration(months: 1, now: now, start: now, end: now), 0)
     }
 
-    func testPlateauAxisZoomAndSafeFallback() {
-        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 0.95), 85...100)
-        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 1), 90...100)
-        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 0.05), 0...100)
-        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: .nan), 0...100)
-        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: nil), 0...100)
+    func testVisibleEndpointAxisHasTenPercentBottomMargin() {
+        for endpoint in [0.8, 0.6, 0.4] {
+            let axis = DeckMemoryOutlook.recallAxisDomain(endpoint: endpoint)
+            XCTAssertEqual((endpoint * 100 - axis.lowerBound) / (100 - axis.lowerBound), 0.1, accuracy: 0.00001)
+        }
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(endpoint: 0.99), 90...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(endpoint: 0), 0...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(endpoint: .nan), 0...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(endpoint: nil), 0...100)
+    }
+    func testVisibleEndpointInterpolationAndBounds() {
+        let start = Date(timeIntervalSince1970: 1000)
+        let end = start.addingTimeInterval(100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAt(start.addingTimeInterval(50), dates: [start, end], probabilities: [1, 0.6])!, 0.8, accuracy: 0.00001)
+        XCTAssertEqual(DeckMemoryOutlook.recallAt(start.addingTimeInterval(-1), dates: [start, end], probabilities: [1, 0.6]), 1)
+        XCTAssertEqual(DeckMemoryOutlook.recallAt(end.addingTimeInterval(1), dates: [start, end], probabilities: [1, 0.6]), 0.6)
+        XCTAssertNil(DeckMemoryOutlook.recallAt(start, dates: [start, end], probabilities: [1]))
+        XCTAssertNil(DeckMemoryOutlook.recallAt(start, dates: [start], probabilities: [.nan]))
     }
 
     func testPlannedReviewsRaiseRecallWithoutChangingStoredSchedule() throws {

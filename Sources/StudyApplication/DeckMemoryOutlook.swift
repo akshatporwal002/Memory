@@ -112,10 +112,25 @@ public struct DeckMemoryOutlook: Sendable {
                     nextPlannedReview: scheduled.min(),
                     scheduledWithinWeek: scheduled.filter { $0 <= now.addingTimeInterval(7 * 86_400) }.count)
     }
-    /// Zoom ten percentage points below the no-more-reviews endpoint.
-    public static func recallAxisDomain(plateau: Double?) -> ClosedRange<Double> {
-        guard let plateau, plateau.isFinite, (0...1).contains(plateau) else { return 0...100 }
-        return max(0, (plateau * 100).rounded() - 10)...100
+    /// Put the visible orange endpoint 10% above the plot bottom, with a 10-point minimum span.
+    public static func recallAxisDomain(endpoint: Double?) -> ClosedRange<Double> {
+        guard let endpoint, endpoint.isFinite, (0...1).contains(endpoint) else { return 0...100 }
+        let lower = max(0, min(90, (endpoint * 100 - 10) / 0.9))
+        return lower...100
+    }
+
+    public static func recallAt(_ date: Date, dates: [Date], probabilities: [Double]) -> Double? {
+        guard dates.count == probabilities.count, let first = dates.first, let last = dates.last,
+              date.timeIntervalSince1970.isFinite,
+              probabilities.allSatisfy({ $0.isFinite && (0...1).contains($0) }) else { return nil }
+        if date <= first { return probabilities.first }
+        if date >= last { return probabilities.last }
+        guard let upper = dates.firstIndex(where: { $0 >= date }), upper > 0 else { return nil }
+        let lower = upper - 1
+        let interval = dates[upper].timeIntervalSince(dates[lower])
+        guard interval > 0 else { return nil }
+        let fraction = date.timeIntervalSince(dates[lower]) / interval
+        return probabilities[lower] + (probabilities[upper] - probabilities[lower]) * fraction
     }
 
     public static func forecastEnd(examDate: Date?, now: Date, calendar: Calendar = .current) -> Date {

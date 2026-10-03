@@ -69,7 +69,8 @@ struct DeckMemoryPanel: View {
                         Text(selected == nil ? "average estimated recall now" : "estimated recall now")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
-                    let axis = DeckMemoryOutlook.recallAxisDomain(plateau: values.last)
+                    let endpoint = DeckMemoryOutlook.recallAt(window.end, dates: outlook.sampleDates, probabilities: values)
+                    let axis = DeckMemoryOutlook.recallAxisDomain(endpoint: endpoint)
                     Chart {
                         ForEach(selected?.history ?? outlook.history) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
@@ -104,6 +105,7 @@ struct DeckMemoryPanel: View {
                             .foregroundStyle(curveColor).symbolSize(64)
                     }
                     .chartYScale(domain: axis)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: axis.lowerBound)
                     .chartPlotStyle { plot in plot.clipped() }
                     .chartXScale(domain: outlook.startDate...horizon)
                     .chartScrollableAxes(.horizontal)
@@ -114,13 +116,20 @@ struct DeckMemoryPanel: View {
                     .onChange(of: selectedCardID) { _, _ in timelineScroll = min(model.now, latestStart); inspectedDate = nil }
                     .onAppear { timelineScroll = min(model.now, latestStart) }
                     .chartXAxis(.hidden)
-                    .chartYAxis { AxisMarks(position: .leading, values: [axis.lowerBound, ((axis.lowerBound + 100) / 2).rounded(), 100]) }
+                    .chartYAxis {
+                        AxisMarks(position: .leading, values: [axis.lowerBound, (axis.lowerBound + 100) / 2, 100]) { value in
+                            AxisGridLine()
+                            AxisValueLabel {
+                                if let percent = value.as(Double.self) { Text(percent, format: .number.precision(.fractionLength(0))) }
+                            }
+                        }
+                    }
                     .frame(height: 180)
                     .accessibilityIdentifier("deck-retention-chart")
                     .accessibilityAction(named: "Next window") { timelineScroll = min(latestStart, timelineScroll.addingTimeInterval(visibleDuration)) }
                     .accessibilityAction(named: "Previous window") { timelineScroll = max(outlook.startDate, timelineScroll.addingTimeInterval(-visibleDuration)) }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
-                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; forecast assumes Good at each planned review")
+                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; visible scale \(Int(axis.lowerBound.rounded())) to 100 percent; forecast assumes Good at each planned review")
                     HStack(spacing: 16) {
                         Label("Planned reviews", systemImage: "line.diagonal").foregroundStyle(curveColor)
                         Label("No more reviews", systemImage: "line.diagonal").foregroundStyle(palette.answerSelectionInk)
