@@ -41,7 +41,7 @@ private enum AssistantRetrieval {
     }
 }
 struct ContextualAssistant: View {
-    private enum PanelStage { case closed, compact, expanded }
+    private enum PanelStage { case closed, compact, medium, expanded }
     @Bindable var model: EngramModel
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -66,6 +66,8 @@ struct ContextualAssistant: View {
     private var chatPalette: EngramPalette { theme.palette(for: chatScheme) }
     private var open: Bool { stage != .closed }
     private var expanded: Bool { stage == .expanded }
+    private var showsTranscript: Bool { stage == .medium || expanded }
+    private var chatTitle: String { thread.first(where: { $0.isUser })?.text ?? "New chat" }
     private var phoneDock: Bool {
         #if os(iOS)
         UIDevice.current.userInterfaceIdiom == .phone
@@ -175,6 +177,7 @@ struct ContextualAssistant: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             .padding(.horizontal, 16)
+            .padding(.bottom, open ? 8 : 0)
         }
         .confirmationDialog("Confirm the assistant's requested change", isPresented: Binding(get: { model.assistant.pendingConfirmation != nil }, set: { if !$0 { Task { await model.assistant.reject(model: model) } } })) {
             Button("Confirm change") { Task { await model.assistant.confirm(model: model) } }
@@ -185,6 +188,9 @@ struct ContextualAssistant: View {
         .animation(motion, value: stage)
         .animation(motion, value: thread.count)
         .onChange(of: context) { _, _ in prompt = ""; error = nil; showingHistory = false; selectedHistoryID = nil; close() }
+        .onChange(of: prompt) { _, value in
+            if stage == .compact && !value.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty { withAnimation(motion) { stage = .medium } }
+        }
         .onChange(of: model.selectedDeckID) { _, _ in selectedDeckID = nil }
         .sheet(isPresented: Binding(get: { pdfSource != nil }, set: { if !$0 { pdfSource = nil } })) {
             if let pdfSource { PDFSourcePagesView(source: pdfSource) }
@@ -241,7 +247,8 @@ struct ContextualAssistant: View {
             if showsNavigation && narrow { navigationDock }
             else { Spacer(minLength: 0) }
             Button {
-                withAnimation(motion) { stage = .compact }
+                if !busy { selectedHistoryID = UUID().uuidString; prompt = ""; error = nil }
+                withAnimation(motion) { stage = busy ? .medium : .compact }
                 composerFocused = true
             } label: {
                 assistantSurface(Image(systemName: "sparkle").font(.system(size: 17, weight: .medium))
@@ -292,75 +299,50 @@ struct ContextualAssistant: View {
     private func panel(height: CGFloat) -> some View {
         VStack(spacing: 0) {
           Capsule().fill(chatPalette.secondaryText.opacity(0.5)).frame(width:32,height:4)
-            .frame(maxWidth:.infinity,minHeight:44).contentShape(Rectangle())
+            .frame(maxWidth:.infinity,minHeight:24).contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance:8).onEnded { value in changeStage(for:value.translation.height) })
             .accessibilityLabel("Drag up to expand chat or down to collapse")
             .accessibilityIdentifier("assistant-drag-handle")
             .accessibilityAction(named:Text("Expand chat")) { changeStage(for:-100) }
             .accessibilityAction(named:Text("Collapse chat")) { changeStage(for:100) }
-          if !thread.isEmpty || !recentConversations.isEmpty {
-            HStack(spacing: 8) {
-                if !showingHistory && !model.library.liveDecks.isEmpty && !model.creationPresented && expanded {
-                    Menu {
-                        ForEach(model.library.liveDecks) { deck in
-                            Button(deck.name) { selectedDeckID = deck.id; prompt = "" }
-                        }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Text(deckName).lineLimit(1)
-                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .medium))
-                        }.frame(minHeight: 44)
-                    }.accessibilityLabel("Sources: " + deckName)
-                } else {
-                    Text(showingHistory ? "Previous chats" : deckName).lineLimit(1)
-                }
-                Spacer(minLength: 8)
+          if showsTranscript {
+            HStack(spacing: 0) {
                 Button {
                     composerFocused = false
-                    withAnimation(motion) { stage = .expanded; showingHistory.toggle() }
-                } label: { Image(systemName:showingHistory ? "chevron.left" : "clock.arrow.circlepath").frame(width:44,height:44).contentShape(Rectangle()) }
-                    .accessibilityLabel(showingHistory ? "Back to chat" : "Chat history")
-                if !thread.isEmpty {
-                    Button { composerFocused = false; withAnimation(motion) { stage = expanded ? .compact : .expanded } } label: {
-                        Image(systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-                            .frame(width: 44, height: 44).contentShape(Rectangle())
-                    }
-                        .accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
-                }
-                Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle()) }
+                    withAnimation(motion) { showingHistory.toggle() }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(showingHistory ? "Chats" : chatTitle).lineLimit(1)
+                        Image(systemName:"chevron.down").font(.system(size:9))
+                    }.frame(minHeight:44).contentShape(Rectangle())
+                }.accessibilityLabel("Chat history").disabled(busy)
+                Spacer(minLength:8)
+                Button(action:newChat) { Image(systemName:"plus").frame(width:44,height:44).contentShape(Rectangle()) }
+                    .accessibilityLabel("New chat").disabled(busy)
+                Button { composerFocused = false; withAnimation(motion) { stage = expanded ? .medium : .expanded } } label: {
+                    Image(systemName:expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right").frame(width:44,height:44).contentShape(Rectangle())
+                }.accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
+                Button(action:close) { Image(systemName:"xmark").frame(width:44,height:44).contentShape(Rectangle()) }
                     .accessibilityLabel("Close assistant")
-            }
-            .font(.system(.caption, weight: .medium))
-            .foregroundStyle(chatPalette.secondaryText)
-            .buttonStyle(.plain).frame(minHeight: 44)
+            }.font(.caption).foregroundStyle(chatPalette.secondaryText).buttonStyle(.plain)
             if showingHistory {
-                ScrollView {
-                    LazyVStack(alignment:.leading,spacing:0) {
+                List {
+                    ForEach(recentConversations) { conversation in
                         Button {
-                            selectedHistoryID = nil
+                            selectedHistoryID = conversation.id
                             showingHistory = false
                         } label: {
-                            Label("Return to this screen's chat",systemImage:"arrow.uturn.backward")
-                                .font(.subheadline.weight(.medium)).frame(maxWidth:.infinity,minHeight:48,alignment:.leading)
-                        }.buttonStyle(.plain)
-                        Divider()
-                        ForEach(recentConversations) { conversation in
-                            Button {
-                                selectedHistoryID = conversation.id
-                                showingHistory = false
-                            } label: {
-                                VStack(alignment:.leading,spacing:4) {
-                                    Text(conversation.messages.first(where:{ $0.role == "user" })?.text ?? conversation.id)
-                                        .font(.subheadline.weight(.medium)).lineLimit(1)
-                                    Text(conversation.messages.last?.text ?? "")
-                                        .font(.caption).foregroundStyle(chatPalette.secondaryText).lineLimit(2)
-                                }.frame(maxWidth:.infinity,minHeight:58,alignment:.leading)
-                            }.buttonStyle(.plain)
-                            Divider()
-                        }
+                            VStack(alignment:.leading,spacing:4) {
+                                Text(conversation.messages.first(where: { $0.role == "user" })?.text ?? "New chat")
+                                    .font(.subheadline).lineLimit(1)
+                                Text(conversation.messages.last?.text ?? "")
+                                    .font(.caption).foregroundStyle(chatPalette.secondaryText).lineLimit(1)
+                            }.frame(maxWidth:.infinity,minHeight:44,alignment:.leading)
+                        }.buttonStyle(.plain).listRowBackground(Color.clear)
+                        .swipeActions { Button("Delete",role:.destructive) { deleteChat(conversation.id) } }
                     }
-                }
-                .frame(height:min(max(150,height * 0.53),max(150,height - 170)))
+                }.listStyle(.plain).scrollContentBackground(.hidden)
+                .frame(height:min(max(100,height * (expanded ? 0.82 : 0.43)),max(100,height - 90)))
             } else if !thread.isEmpty {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -394,16 +376,19 @@ struct ContextualAssistant: View {
                         }.padding(.vertical, 10)
                     }
                     .scrollDismissesKeyboard(.never)
-                    .frame(height: min(max(90, height * (expanded ? 0.60 : 0.32)), max(90, height - 170)))
+                    .frame(height: min(max(90, height * (expanded ? 0.72 : 0.32)), max(90, height - 170)))
                     .assistantScrollAnchors()
                     .onAppear { scrollChatToBottom(proxy) }
                     .onChange(of: thread.count) { _, _ in scrollChatToBottom(proxy) }
                     .onChange(of: expanded) { _, _ in scrollChatToBottom(proxy) }
                     .onChange(of: height) { _, _ in scrollChatToBottom(proxy) }
+                    .onChange(of: model.assistant.output) { _, _ in scrollChatToBottom(proxy) }
                 }
+            } else {
+                Color.clear.frame(height:min(max(90,height * (expanded ? 0.72 : 0.32)),max(90,height - 170)))
             }
           }
-            if let action = recentSavedAction,let change = action.changes.last(where: { $0.undoneAt == nil }),!showingHistory {
+            if showsTranscript, let action = recentSavedAction,let change = action.changes.last(where: { $0.undoneAt == nil }),!showingHistory {
                 Button { openSavedChange(change) } label: {
                     Label(change.afterNote != nil ? "Question saved · Open Questions" : "Notes saved · Open notebook",systemImage:"checkmark.circle")
                         .font(.caption.weight(.medium)).frame(maxWidth:.infinity,minHeight:38,alignment:.leading)
@@ -414,6 +399,7 @@ struct ContextualAssistant: View {
                 Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
                     .font(.caption.weight(.medium)).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
+            if showsTranscript && !showingHistory {
             HStack {
                 Menu {
                     ForEach(model.aiMarker.models, id: \.self) { id in
@@ -434,8 +420,10 @@ struct ContextualAssistant: View {
                     Button("Review changes") { model.actionReviewPresented = true }
                 }
             }.font(.caption).frame(minHeight: 44)
+            }
+            if !showingHistory {
             HStack(spacing: 10) {
-                if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk) }
+                if !showsTranscript { Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk) }
                 TextField("", text: $prompt,
                     prompt: Text(model.pdfLearningPresented ? "Ask about this PDF…" : "Ask about your notes…").foregroundStyle(chatPalette.secondaryText), axis: .vertical)
                     .lineLimit(1...3).focused($composerFocused)
@@ -447,17 +435,18 @@ struct ContextualAssistant: View {
                 Button(action: send) { Image(systemName: "arrow.up").font(.headline).frame(width: 44, height: 44).contentShape(Rectangle()) }
                     .disabled(busy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityLabel("Send message")
-                if thread.isEmpty {
+                if !showsTranscript {
                     Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle()) }
                         .accessibilityLabel("Close assistant")
                 }
             }
             .padding(.horizontal, 4).padding(.vertical, 2)
-            .padding(.top, thread.isEmpty ? 0 : 10)
+            .padding(.top, showsTranscript ? 4 : 0)
             .overlay(alignment: .top) {
-                if !thread.isEmpty { Rectangle().fill(chatPalette.hairline).frame(height: 0.5) }
+                if showsTranscript { Rectangle().fill(chatPalette.hairline).frame(height: 0.5) }
             }
-            if thread.isEmpty && expanded {
+            }
+            if thread.isEmpty && expanded && !showingHistory {
                 Button(model.reviewPresented ? "Give me a hint" : model.editorPresented || model.creationPresented ? "Suggest a question" : "Explain this simply") {
                     prompt = model.reviewPresented ? "Give me a hint without revealing the answer" :
                         model.editorPresented || model.creationPresented ? "Draft one question and answer from these notes" :
@@ -471,12 +460,28 @@ struct ContextualAssistant: View {
     }
 
     private func changeStage(for translation: CGFloat) {
-        guard abs(translation) > 18 else { return }
+        guard abs(translation) > 10 else { return }
         composerFocused = false
         withAnimation(motion) {
-            if translation < 0 { stage = .expanded }
+            if translation < 0 { stage = stage == .compact ? .medium : .expanded }
             else if showingHistory { showingHistory = false; stage = .compact }
-            else { stage = expanded ? .compact : .closed }
+            else { stage = expanded ? .medium : stage == .medium ? .compact : .closed }
+        }
+    }
+    private func newChat() {
+        selectedHistoryID = UUID().uuidString
+        prompt = ""; error = nil; showingHistory = false
+        withAnimation(motion) { stage = .compact }
+        composerFocused = true
+    }
+    private func deleteChat(_ id: String) {
+        guard !busy else { return }
+        Task {
+            let deleted = await model.perform { try await $0.deleteConversation(id) }
+            if deleted {
+                messages.removeValue(forKey:id)
+                if activeConversationID == id { newChat() }
+            }
         }
     }
     private func scrollChatToBottom(_ proxy: ScrollViewProxy) {
@@ -500,10 +505,11 @@ struct ContextualAssistant: View {
     private func preparedSend() {
         let question = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty, !busy else { return }
+        withAnimation(motion) { if stage == .compact { stage = .medium } }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing"), ProcessInfo.processInfo.arguments.contains("--ui-assistant-fixture") {
             messages[activeConversationID, default: []].append(AssistantMessage(isUser: true, text: question, sources: []))
-            messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
+            messages[activeConversationID, default: []].append(AssistantMessage(isUser: false, text: question.localizedCaseInsensitiveContains("formula") ? #"For a quadratic equation, \(ax^2+bx+c=0\), the roots are:\#n\#n\[x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\]"# : "CloudFront caches content at edge locations near your users. This reduces latency and the load on the origin. Use it for fast delivery of websites, images and video.\n\nUI review fixture — no live AI request was made.", sources: []))
             prompt = ""; composerFocused = false; composerEpoch += 1; return
         }
         #endif

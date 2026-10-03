@@ -7,6 +7,32 @@ import AIInfrastructure
 @testable import Features
 
 final class UnifiedAITests: XCTestCase {
+    func testStreamingHoldsToolPayloadAcrossEveryChunkBoundary() {
+        let payload = #"{"arguments":{"operation":"save_note"}}"#
+        for end in payload.indices {
+            XCTAssertEqual(AssistantOutputPresentation.streamingReply(String(payload[...end])), "")
+        }
+        XCTAssertEqual(AssistantOutputPresentation.streamingReply("I’ll check your notes."), "I’ll check your notes.")
+        XCTAssertEqual(AssistantOutputPresentation.streamingReply("Checking… " + payload), "Checking… ")
+        XCTAssertEqual(AssistantOutputPresentation.streamingReply("[" + payload), "")
+    }
+    func testMathSurvivesMarkdownEscapingAndCodeRemainsLiteral() {
+        XCTAssertEqual(MathMarkdown.protect(#"Use \(\frac{a}{b}\) here."#), #"Use `ENGRAM_MATH:\frac{a}{b}` here."#)
+        XCTAssertTrue(MathMarkdown.protect(#"\[x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\]"#).contains("```math"))
+        XCTAssertEqual(MathMarkdown.protect(#"`\(literal\)`"#), #"`\(literal\)`"#)
+        XCTAssertEqual(MathMarkdown.protect("```swift\nlet x = \"$abc$\"\n```"), "```swift\nlet x = \"$abc$\"\n```")
+        XCTAssertEqual(MathMarkdown.protect(#"Unfinished \(x"#), #"Unfinished \(x"#)
+    }
+    func testDeletingChatPreservesOtherChatsAndActionHistory() async throws {
+        let app = StudyService(repository:MemoryRepository(),scheduler:FSRSScheduler())
+        try await app.saveConversation(LearningConversation(id:"one"))
+        try await app.saveConversation(LearningConversation(id:"two"))
+        try await app.recordAIAction(runID:"run",conversationID:"one",record:AIActionRecord(id:"call",name:"inspect",arguments:"{}",status:"completed",summary:"Read notes"))
+        try await app.deleteConversation("one")
+        let snapshot = try await app.snapshot()
+        XCTAssertEqual(snapshot.assistantState?.conversations.map(\.id), ["two"])
+        XCTAssertEqual(snapshot.assistantState?.runs.first?.id,"run")
+    }
     let now = Date(timeIntervalSince1970: 1_788_393_600)
     func testAssistantToolPayloadIsNeverShownAsReply() {
         let call = AIToolCall(id:"call",name:"engram.edit",arguments:#"{"operation":"rename_deck","id":"deck-1"}"#)

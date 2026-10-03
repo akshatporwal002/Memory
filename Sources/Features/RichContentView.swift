@@ -21,7 +21,7 @@ struct RichContentView: View {
 }
 
 @MainActor private enum MarkdownCache {
-    private final class Box: NSObject { let document: Document; init(_ source: String) { document = Document(parsing:source) } }
+    private final class Box: NSObject { let document: Document; init(_ source: String) { document = Document(parsing:MathMarkdown.protect(source)) } }
     private static let cache: NSCache<NSString,Box> = { let cache = NSCache<NSString,Box>(); cache.countLimit = 128; cache.totalCostLimit = 2_000_000; return cache }()
     static func document(_ source: String) -> Document {
         if let value = cache.object(forKey:source as NSString) { return value.document }
@@ -64,7 +64,7 @@ private struct RichMarkdownBlock: View {
             let raw = paragraph.format().trimmingCharacters(in: .whitespacesAndNewlines)
             if raw.hasPrefix("$$"), raw.hasSuffix("$$"), raw.count >= 4 {
                 RichFormulaView(kind: "displayMath", source: String(raw.dropFirst(2).dropLast(2)))
-            } else if raw.contains("\\(") || raw.contains("$") {
+            } else if raw.contains("ENGRAM_MATH:") || raw.contains("$") {
                 // Math-bearing paragraphs use the same bounded offline renderer.
                 RichFormulaView(kind: "richParagraph", source: safeInlineHTML(paragraph))
             } else { inline(paragraph).lineSpacing(4).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
@@ -82,7 +82,12 @@ private struct RichMarkdownBlock: View {
     }
     private func inline(_ markup: any Markup) -> SwiftUI.Text {
         if let text = markup as? Markdown.Text { return SwiftUI.Text(verbatim: text.string) }
-        if let code = markup as? InlineCode { return SwiftUI.Text(verbatim: code.code).monospaced() }
+        if let code = markup as? InlineCode {
+            if code.code.hasPrefix("ENGRAM_MATH:") {
+                return SwiftUI.Text(verbatim:"\\(" + String(code.code.dropFirst(12)) + "\\)")
+            }
+            return SwiftUI.Text(verbatim: code.code).monospaced()
+        }
         if markup is SoftBreak { return SwiftUI.Text(" ") }
         if markup is LineBreak { return SwiftUI.Text("\n") }
         let result = markup.children.reduce(SwiftUI.Text("")) { $0 + inline($1) }
@@ -100,7 +105,10 @@ private struct RichMarkdownBlock: View {
     private func safeInlineHTML(_ markup: any Markup) -> String {
         func escape(_ text: String) -> String { text.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;") }
         if let text = markup as? Markdown.Text { return escape(text.string) }
-        if let code = markup as? InlineCode { return "<code>" + escape(code.code) + "</code>" }
+        if let code = markup as? InlineCode {
+            if code.code.hasPrefix("ENGRAM_MATH:") { return "\\(" + escape(String(code.code.dropFirst(12))) + "\\)" }
+            return "<code>" + escape(code.code) + "</code>"
+        }
         if markup is SoftBreak { return " " }; if markup is LineBreak { return "<br>" }
         let children = markup.children.map { safeInlineHTML($0) }.joined()
         if markup is Strong { return "<strong>" + children + "</strong>" }

@@ -1,6 +1,36 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testChatTitleSwitchingDeletionAndNewChat() {
+        let app = launch(extra:["--ui-history-fixture"])
+        XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout:15))
+        app.buttons["assistant-entry"].tap()
+        XCTAssertFalse(app.buttons["Chat history"].exists)
+        app.otherElements["assistant-drag-handle"].swipeUp()
+        app.buttons["Chat history"].tap()
+        let saved = app.buttons.containing(.staticText,identifier:"Explain AWS CloudFront").firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout:5)); saved.tap()
+        XCTAssertTrue(app.staticTexts["CloudFront caches content near readers at edge locations."].waitForExistence(timeout:5))
+        app.buttons["Chat history"].tap()
+        saved.swipeLeft()
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout:5)); app.buttons["Delete"].tap()
+        XCTAssertFalse(saved.waitForExistence(timeout:2))
+        app.otherElements["assistant-drag-handle"].swipeUp()
+        app.buttons["New chat"].tap()
+        XCTAssertFalse(app.buttons["Chat history"].exists)
+        capture("Assistant-New-Chat",app)
+    }
+    @MainActor func testChatFormulaRendering() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout:15)); app.buttons["assistant-entry"].tap()
+        let composer = app.textFields["assistant-composer"].firstMatch.exists ? app.textFields["assistant-composer"].firstMatch : app.textViews["assistant-composer"].firstMatch
+        composer.tap(); composer.typeText("Show the quadratic formula")
+        app.buttons["Send message"].tap()
+        app.buttons["Expand assistant"].tap()
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout:10))
+        XCTAssertTrue(app.webViews.firstMatch.staticTexts["For a quadratic equation, "].exists || app.webViews.count >= 2)
+        capture("Assistant-Formula",app)
+    }
     @MainActor func testLandscapeLongAnswersScrollIndependently() {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
@@ -279,12 +309,18 @@ final class MinimalistStudyUITests: XCTestCase {
         let app = launch(extra:["--ui-history-fixture"])
         let entry = app.buttons["assistant-entry"]
         XCTAssertTrue(entry.waitForExistence(timeout:15)); entry.tap()
+        XCTAssertFalse(app.staticTexts["CloudFront caches content near readers at edge locations."].exists)
+        app.otherElements["assistant-drag-handle"].swipeUp()
+        XCTAssertFalse(app.staticTexts["CloudFront caches content near readers at edge locations."].exists)
+        app.buttons["Chat history"].tap()
+        app.buttons.containing(.staticText,identifier:"Explain AWS CloudFront").firstMatch.tap()
         XCTAssertTrue(app.staticTexts["CloudFront caches content near readers at edge locations."].waitForExistence(timeout:5))
         app.buttons["Close assistant"].tap()
         entry.tap()
+        app.otherElements["assistant-drag-handle"].swipeUp()
         app.buttons["Chat history"].tap()
-        XCTAssertTrue(app.staticTexts["Previous chats"].waitForExistence(timeout:5))
-        XCTAssertTrue(app.buttons["Return to this screen's chat"].exists)
+        XCTAssertTrue(app.staticTexts["Chats"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.buttons["New chat"].exists)
         capture("Assistant-History",app)
     }
     @MainActor func testMCQTextChoicesAndInlineExplanation() {
@@ -345,6 +381,9 @@ final class MinimalistStudyUITests: XCTestCase {
         capture("Assistant-Expanded-Swipe",app)
         handle.swipeDown()
         XCTAssertTrue(app.buttons["Expand assistant"].waitForExistence(timeout:5))
+        capture("Assistant-Medium-Swipe",app)
+        handle.swipeDown()
+        XCTAssertFalse(app.buttons["Chat history"].exists)
         capture("Assistant-Compact-Swipe",app)
         handle.swipeDown()
         XCTAssertTrue(entry.waitForExistence(timeout:5))

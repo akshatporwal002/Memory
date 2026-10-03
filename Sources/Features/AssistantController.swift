@@ -33,6 +33,16 @@ enum AssistantOutputPresentation {
         return trimmed
     }
 
+    static func streamingReply(_ text: String) -> String {
+        // Typed tool events are separate. Buffer potential textual JSON payloads
+        // from the opening brace so arguments cannot flash during streaming.
+        if text.trimmingCharacters(in:.whitespacesAndNewlines).hasPrefix("[") { return "" }
+        let prefix = text.prefix { $0 != "{" }
+        let lower = prefix.lowercased()
+        guard !lower.contains("function_call"), !lower.contains("```json") else { return "" }
+        return String(prefix)
+    }
+
     static func actionLabel(_ call: AIToolCall) -> String {
         let name = call.name.components(separatedBy: ".").last ?? call.name
         let args = (try? JSONSerialization.jsonObject(with: Data(call.arguments.utf8))) as? [String: String] ?? [:]
@@ -119,9 +129,8 @@ enum AssistantOutputPresentation {
                         switch event {
                         case .textDelta(let delta):
                             response.text += delta
-                            // Tool-capable rounds may include a textual JSON call before
-                            // the completed function-call event arrives. Never stream it.
-                            if !descriptor.supportsTools { output += delta }
+                            // Stream prose while buffering potential protocol text.
+                            output = AssistantOutputPresentation.streamingReply(response.text)
                         case .toolCall(let call):
                             guard response.calls.count < 12 else { throw AIProviderError.exceededLimit }
                             if !response.calls.contains(where: { $0.id == call.id }) { response.calls.append(call); response.context.append(.call(call)) }

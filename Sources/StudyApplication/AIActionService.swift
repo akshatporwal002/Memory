@@ -19,6 +19,14 @@ extension StudyService {
         library.assistantState = state
         try await repository.commit(library,expectedRevision:library.revision)
     }
+    public func deleteConversation(_ id: String) async throws {
+        var library = try await repository.read()
+        guard var state = library.assistantState else { return }
+        state.conversations.removeAll { $0.id == id }
+        // Preserve action history and undo evidence independently of chat history.
+        library.assistantState = state
+        try await repository.commit(library,expectedRevision:library.revision)
+    }
     public func recordAIAction(runID: String, conversationID: String, record: AIActionRecord) async throws {
         var library = try await repository.read()
         Self.appendAIRecord(record,runID:runID,conversationID:conversationID,to:&library)
