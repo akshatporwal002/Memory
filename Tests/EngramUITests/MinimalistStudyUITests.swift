@@ -527,6 +527,8 @@ final class MinimalistStudyUITests: XCTestCase {
     }
 
     @MainActor func testIPadScreenCaptures() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
         let app = launch()
         XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15))
         capture("iPad-Today", app)
@@ -551,6 +553,36 @@ final class MinimalistStudyUITests: XCTestCase {
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         capture("iPad-Settings", app)
+    }
+    @MainActor func testIPadLandscapeReviewAndChatCaptures() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch(extra: ["--ui-review-mcq-fixture"])
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15))
+        app.buttons["Start review"].tap()
+        let correct = app.buttons["review-option-B"]
+        XCTAssertTrue(correct.waitForExistence(timeout: 5))
+        capture("iPad-Review-MCQ", app)
+        correct.tap()
+        capture("iPad-Review-Selected", app)
+        correct.tap()
+        XCTAssertTrue(app.staticTexts["review-explanation"].waitForExistence(timeout: 5))
+        capture("iPad-Review-Feedback", app)
+        app.terminate()
+        let chatApp = launch()
+        XCTAssertTrue(chatApp.buttons["assistant-entry"].waitForExistence(timeout: 15))
+        chatApp.buttons["assistant-entry"].tap()
+        let composer = chatApp.textFields["assistant-composer"].firstMatch.exists ? chatApp.textFields["assistant-composer"].firstMatch : chatApp.textViews["assistant-composer"].firstMatch
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap()
+        composer.typeText("Explain CloudFront")
+        capture("iPad-Chat-Keyboard", chatApp)
+        chatApp.buttons["Send message"].tap()
+        XCTAssertTrue(chatApp.buttons["Expand assistant"].waitForExistence(timeout: 5))
+        capture("iPad-Chat-Response", chatApp)
+        chatApp.buttons["Expand assistant"].tap()
+        XCTAssertTrue(chatApp.buttons["Collapse assistant"].waitForExistence(timeout: 5))
+        capture("iPad-Chat-Expanded", chatApp)
     }
     @MainActor private func launch(extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
