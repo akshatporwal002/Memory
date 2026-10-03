@@ -10,7 +10,7 @@ public enum EngramTheme: String, CaseIterable, Codable, Sendable, Identifiable {
     public var title: String {
         switch self { case .warm: return "Engram Warm"; case .neutral: return "Engram Neutral"; case .monochrome: return "Engram Mono" }
     }
-    public static let definitionVersion = 2
+    public static let definitionVersion = 3
 
     /// Raw sRGB values are shared by native rendering and reproducible contrast checks.
     public func colors(dark: Bool) -> EngramColorTokens {
@@ -50,16 +50,16 @@ public enum EngramTheme: String, CaseIterable, Codable, Sendable, Identifiable {
         case (.monochrome, false):
             return EngramColorTokens(canvas: 0xFFFFFF, surface: 0xF5F5F5, elevated: 0xFFFFFF,
                 primaryText: 0x171717, secondaryText: 0x555555, anchor: 0x1B1B1B, onAnchor: 0xFFFFFF,
-                accent: 0xE3A24B, accentInk: 0x80500D, hairline: 0xD0D0D0, controlBorder: 0x666666,
-                selection: 0xF2E6D6, answerSelectionInk: 0x9A4E00, successInk: 0x176B36, curveInk: 0x176B36, missingInk: 0x795000,
+                accent: 0x000000, accentInk: 0x000000, hairline: 0xD0D0D0, controlBorder: 0x666666,
+                selection: 0xE8E8E8, answerSelectionInk: 0x9A4E00, successInk: 0x176B36, curveInk: 0x176B36, missingInk: 0x795000,
                 againFill: 0xF3DDDA, againInk: 0x7D302D,
                 hardFill: 0xEEE3CE, hardInk: 0x725015, goodFill: 0x1B1B1B, goodInk: 0xFFFFFF,
                 easyFill: 0xE0E6D2, easyInk: 0x35452E)
         case (.monochrome, true):
             return EngramColorTokens(canvas: 0x000000, surface: 0x101010, elevated: 0x202020,
                 primaryText: 0xF5F5F5, secondaryText: 0xB8B8B8, anchor: 0xE5E5E5, onAnchor: 0x111111,
-                accent: 0xF0B45F, accentInk: 0xFFD18A, hairline: 0x555555, controlBorder: 0xA0A0A0,
-                selection: 0x302317, answerSelectionInk: 0xFFB65C, successInk: 0x64E58E, curveInk: 0x64E58E, missingInk: 0xFFD479,
+                accent: 0xFFFFFF, accentInk: 0xFFFFFF, hairline: 0x555555, controlBorder: 0xA0A0A0,
+                selection: 0x252525, answerSelectionInk: 0xFFB65C, successInk: 0x64E58E, curveInk: 0x64E58E, missingInk: 0xFFD479,
                 againFill: 0x4B302E, againInk: 0xFFC1B8,
                 hardFill: 0x493C25, hardInk: 0xF5D294, goodFill: 0xE5E5E5, goodInk: 0x111111,
                 easyFill: 0x30372A, easyInk: 0xDCEBCF)

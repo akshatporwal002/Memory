@@ -26,3 +26,9 @@ Screenshots are stored by view/state beneath `current_ui`, retaining only curren
 ## Mono chat follow-up
 
 The open assistant now uses the opposite Monochrome palette: black/white text above white pages, white/dark text above black pages. Its composer placeholder, controls, history and rich-content renderer use that panel palette; the closed dock keeps the page palette. A solid opposite canvas preserves contrast beneath the clear glass edge. Reduced-transparency and older-platform fallbacks keep the same canvas. Both white/black simulator flows passed typing, keyboard clearance, send, expand, close and the remaining themed screens (`/tmp/engram-mono-chat-final.xcresult`). The final app build was installed and launched on the paired phone. Captures live under `current_ui/Themes/Monochrome-{White,Black}/Chat-{Keyboard,Expanded}`. Fixtures do not make live AI requests.
+
+## Mono accent follow-up
+
+General accents now use black on white/light surfaces and white on black/dark surfaces. This also applies inside the inverted chat, because it inherits the panel palette. Navigation selection surfaces use neutral greys. Learning feedback keeps its semantic colours, including selected/correct/incorrect answers and missing concepts. The offline growth preview uses the same black/white general accents. Theme definition version is now 3.
+
+Both theme contrast tests and both simulator screen/chat flows passed (`/tmp/engram-mono-contrast-accents.xcresult`). The updated app was installed and launched on the paired iPhone; current/previous themed screenshots were refreshed.
