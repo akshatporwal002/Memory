@@ -32,3 +32,11 @@ The open assistant now uses the opposite Monochrome palette: black/white text ab
 General accents now use black on white/light surfaces and white on black/dark surfaces. This also applies inside the inverted chat, because it inherits the panel palette. Navigation selection surfaces use neutral greys. Learning feedback keeps its semantic colours, including selected/correct/incorrect answers and missing concepts. The offline growth preview uses the same black/white general accents. Theme definition version is now 3.
 
 Both theme contrast tests and both simulator screen/chat flows passed (`/tmp/engram-mono-contrast-accents.xcresult`). The updated app was installed and launched on the paired iPhone; current/previous themed screenshots were refreshed.
+
+## Assistant visual polish
+
+The assistant header now uses a single quiet context label; in expanded chat, that label opens the source-deck picker. Duplicate source and sender-label rows were removed. User messages align right with secondary text, while assistant responses use the full reading column. Roles remain available to accessibility. Header icons are smaller within their existing 44-point controls. The model selector is quieter, and Review changes appears only after a completed content edit. A fine divider separates the composer from the transcript.
+
+Modern scroll alignment keeps short transcripts near the top without discarding bottom anchoring when content or keyboard size changes. The initial top-only alignment failed the keyboard-return visibility assertion and was corrected before final delivery. Older OS versions retain bottom anchoring. Rich Markdown now accepts optional alignment/text colour, with unchanged defaults for notes and other readers.
+
+All five focused UI tests passed: keyboard return/drag stages, saved history, keyboard/send/expansion, and both Mono screen/chat flows (`/tmp/engram-clean-chat-final.xcresult`). Current/previous chat screenshots were updated and inspected. The signed build was installed and launched on the paired iPhone.

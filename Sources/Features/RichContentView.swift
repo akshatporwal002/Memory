@@ -6,15 +6,17 @@ import WebKit
 /// Shared reading surface. Source remains Markdown; raw HTML is never executed.
 struct RichContentView: View {
     let source: String
+    var alignment: HorizontalAlignment = .leading
+    var textColor: Color? = nil
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: alignment, spacing: 12) {
             ForEach(Array(MarkdownCache.document(source).children.enumerated()), id: \.offset) { _, block in
                 RichMarkdownBlock(block: block)
             }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(theme.palette(for: scheme).primaryText)
+        }.frame(maxWidth: .infinity, alignment: alignment == .trailing ? .trailing : .leading)
+            .foregroundStyle(textColor ?? theme.palette(for: scheme).primaryText)
     }
 }
 

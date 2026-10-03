@@ -6,6 +6,16 @@ import DesignSystem
 import UIKit
 #endif
 
+private extension View {
+    @ViewBuilder func assistantScrollAnchors() -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            defaultScrollAnchor(.bottom).defaultScrollAnchor(.top, for: .alignment)
+        } else {
+            defaultScrollAnchor(.bottom)
+        }
+    }
+}
+
 private struct AssistantPassage: Identifiable, Sendable {
     let id: String
     let deckID: String
@@ -290,8 +300,20 @@ struct ContextualAssistant: View {
             .accessibilityAction(named:Text("Collapse chat")) { changeStage(for:100) }
           if !thread.isEmpty || !recentConversations.isEmpty {
             HStack(spacing: 8) {
-                Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk)
-                Text(showingHistory ? "Previous chats" : deckName).font(.subheadline.weight(.semibold)).lineLimit(1)
+                if !showingHistory && !model.library.liveDecks.isEmpty && !model.creationPresented && expanded {
+                    Menu {
+                        ForEach(model.library.liveDecks) { deck in
+                            Button(deck.name) { selectedDeckID = deck.id; prompt = "" }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(deckName).lineLimit(1)
+                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .medium))
+                        }.frame(minHeight: 44)
+                    }.accessibilityLabel("Sources: " + deckName)
+                } else {
+                    Text(showingHistory ? "Previous chats" : deckName).lineLimit(1)
+                }
                 Spacer(minLength: 8)
                 Button {
                     composerFocused = false
@@ -308,16 +330,9 @@ struct ContextualAssistant: View {
                 Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle()) }
                     .accessibilityLabel("Close assistant")
             }
+            .font(.system(.caption, weight: .medium))
+            .foregroundStyle(chatPalette.secondaryText)
             .buttonStyle(.plain).frame(minHeight: 44)
-            if !model.library.liveDecks.isEmpty && !model.creationPresented && expanded {
-                Menu {
-                    ForEach(model.library.liveDecks) { deck in
-                        Button(deck.name) { selectedDeckID = deck.id; prompt = "" }
-                    }
-                } label: { Label("Sources: \(deckName)", systemImage: "book.closed").lineLimit(1) }
-                    .font(.caption).foregroundStyle(chatPalette.secondaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading).frame(minHeight: 28)
-            }
             if showingHistory {
                 ScrollView {
                     LazyVStack(alignment:.leading,spacing:0) {
@@ -349,11 +364,15 @@ struct ContextualAssistant: View {
             } else if !thread.isEmpty {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 14) {
+                        LazyVStack(alignment: .leading, spacing: 24) {
                             ForEach(thread) { message in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(message.isUser ? "You" : "Assistant").font(.caption.weight(.semibold)).foregroundStyle(chatPalette.secondaryText)
-                                    RichContentView(source: message.text).font(.subheadline)
+                                    RichContentView(source: message.text,
+                                        alignment: message.isUser ? .trailing : .leading,
+                                        textColor: message.isUser ? chatPalette.secondaryText : chatPalette.primaryText)
+                                        .font(message.isUser ? .subheadline : .body)
+                                        .foregroundStyle(message.isUser ? chatPalette.secondaryText : chatPalette.primaryText)
+                                        .multilineTextAlignment(message.isUser ? .trailing : .leading)
                                     if !message.isUser {
                                         ForEach(message.sources) { source in
                                             Button { openSource(source) } label: {
@@ -362,8 +381,11 @@ struct ContextualAssistant: View {
                                         }
                                     }
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, message.isUser ? 28 : 0)
+                                .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                                 .padding(.vertical, 4)
+                                .accessibilityElement(children: .contain)
+                                .accessibilityLabel(message.isUser ? "Your message" : "Assistant response")
                                 .id(message.id)
                             }
                             if busy, !model.assistant.output.isEmpty { RichContentView(source: model.assistant.output) }
@@ -373,10 +395,11 @@ struct ContextualAssistant: View {
                     }
                     .scrollDismissesKeyboard(.never)
                     .frame(height: min(max(90, height * (expanded ? 0.60 : 0.32)), max(90, height - 170)))
-                    .defaultScrollAnchor(.bottom)
+                    .assistantScrollAnchors()
                     .onAppear { scrollChatToBottom(proxy) }
                     .onChange(of: thread.count) { _, _ in scrollChatToBottom(proxy) }
                     .onChange(of: expanded) { _, _ in scrollChatToBottom(proxy) }
+                    .onChange(of: height) { _, _ in scrollChatToBottom(proxy) }
                 }
             }
           }
@@ -399,12 +422,17 @@ struct ContextualAssistant: View {
                     if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
                     Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
                 } label: {
-                    Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).font(.caption).lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).lineLimit(1)
+                        Image(systemName: "chevron.down").font(.system(size: 9, weight: .medium))
+                    }.foregroundStyle(chatPalette.secondaryText)
                         .frame(minWidth:44,minHeight:44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel("AI model: " + model.aiMarker.title(for:model.library.assistantState?.conversations.first(where: { $0.id == activeConversationID })?.modelID ?? model.aiMarker.chatModel)).disabled(busy)
                 Spacer()
                 if busy { Button("Stop") { model.assistant.cancel() } }
-                Button("Review changes") { model.actionReviewPresented = true }
+                if recentSavedAction != nil {
+                    Button("Review changes") { model.actionReviewPresented = true }
+                }
             }.font(.caption).frame(minHeight: 44)
             HStack(spacing: 10) {
                 if thread.isEmpty { Image(systemName: "sparkle").foregroundStyle(chatPalette.accentInk) }
@@ -425,6 +453,10 @@ struct ContextualAssistant: View {
                 }
             }
             .padding(.horizontal, 4).padding(.vertical, 2)
+            .padding(.top, thread.isEmpty ? 0 : 10)
+            .overlay(alignment: .top) {
+                if !thread.isEmpty { Rectangle().fill(chatPalette.hairline).frame(height: 0.5) }
+            }
             if thread.isEmpty && expanded {
                 Button(model.reviewPresented ? "Give me a hint" : model.editorPresented || model.creationPresented ? "Suggest a question" : "Explain this simply") {
                     prompt = model.reviewPresented ? "Give me a hint without revealing the answer" :
@@ -434,7 +466,7 @@ struct ContextualAssistant: View {
                 }.font(.caption).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
         }
-        .padding(12)
+        .padding(.horizontal, 18).padding(.bottom, 12)
         .frame(maxWidth: 530)
     }
 
