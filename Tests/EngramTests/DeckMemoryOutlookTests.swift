@@ -47,22 +47,27 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
     }
 
-    func testCalendarMonthWindowsAndBoundaries() {
-        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = .gmt
-        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 3))!
-        let start = calendar.date(byAdding: .month, value: -1, to: now)!
-        let end = calendar.date(byAdding: .year, value: 1, to: now)!
-        let first = MemoryGraphWindow.interval(anchor: now, months: 2, start: start, end: end, calendar: calendar)
-        XCTAssertEqual(first.start, now)
-        XCTAssertEqual(first.end, calendar.date(from: DateComponents(year: 2026, month: 12, day: 3)))
-        let next = MemoryGraphWindow.interval(anchor: first.end, months: 2, start: start, end: end, calendar: calendar)
-        XCTAssertEqual(next.start, first.end)
-        XCTAssertEqual(next.end, calendar.date(from: DateComponents(year: 2027, month: 2, day: 3)))
-        let last = MemoryGraphWindow.interval(anchor: end, months: 2, start: start, end: end, calendar: calendar)
-        XCTAssertEqual(last.end, end)
-        XCTAssertLessThan(last.start, last.end)
-        XCTAssertEqual(MemoryGraphWindow.interval(anchor: start.addingTimeInterval(-100), months: 2, start: start, end: end, calendar: calendar).start, start)
-        XCTAssertEqual(MemoryGraphWindow.interval(anchor: now, months: 0, start: start, end: end, calendar: calendar), DateInterval(start: start, end: end))
+    func testReviewStepsAreEqualDespiteDifferentTimeIntervals() {
+        let start = Date(timeIntervalSince1970: 0)
+        let first = start.addingTimeInterval(86_400)
+        let second = start.addingTimeInterval(10 * 86_400)
+        let third = start.addingTimeInterval(100 * 86_400)
+        let end = start.addingTimeInterval(365 * 86_400)
+        let scale = ReviewStepScale(start: start, now: start, end: end, reviews: [third, first, second, first])
+        XCTAssertEqual(scale.position(first), 1)
+        XCTAssertEqual(scale.position(second), 2)
+        XCTAssertEqual(scale.position(third), 3)
+        let middle = first.addingTimeInterval(second.timeIntervalSince(first) / 2)
+        XCTAssertEqual(scale.position(middle), 1.5, accuracy: 0.001)
+        XCTAssertEqual(scale.date(at: 1.5), middle)
+        XCTAssertEqual(scale.date(at: -1), start)
+        XCTAssertEqual(scale.date(at: 100), end)
+        XCTAssertEqual(scale.visibleSteps(months: 0, now: start), scale.maximum)
+        XCTAssertGreaterThan(scale.visibleSteps(months: 2, now: start), 2)
+        XCTAssertLessThan(scale.visibleSteps(months: 2, now: start), 3)
+        let empty = ReviewStepScale(start: start, now: start, end: start, reviews: [])
+        XCTAssertGreaterThan(empty.maximum, 0)
+        XCTAssertGreaterThan(empty.date(at: empty.maximum), start)
     }
 
     func testPlateauAxisZoomAndSafeFallback() {
