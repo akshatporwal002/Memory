@@ -526,6 +526,32 @@ final class MinimalistStudyUITests: XCTestCase {
         capture("Questions-Dark-Large", app)
     }
 
+    @MainActor func testIPadScreenCaptures() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15))
+        capture("iPad-Today", app)
+        let sidebar = app.collectionViews["Sidebar"]
+        XCTAssertTrue(sidebar.exists)
+        sidebar.staticTexts["Library"].tap()
+        XCTAssertTrue(app.buttons["library-deck-ui-deck"].waitForExistence(timeout: 5))
+        capture("iPad-Library", app)
+        app.buttons["library-deck-ui-deck"].tap()
+        XCTAssertTrue(app.buttons["deck-notes"].waitForExistence(timeout: 5))
+        capture("iPad-Deck", app)
+        app.buttons["deck-questions"].tap()
+        XCTAssertTrue(app.navigationBars["Questions"].waitForExistence(timeout: 5))
+        capture("iPad-Questions", app)
+        app.navigationBars["Questions"].buttons.firstMatch.tap()
+        app.buttons["deck-notes"].tap()
+        XCTAssertTrue(app.navigationBars["Notes"].waitForExistence(timeout: 5))
+        capture("iPad-Notes", app)
+        app.navigationBars["Notes"].buttons.firstMatch.tap()
+        sidebar.staticTexts["Activity"].tap()
+        capture("iPad-Activity", app)
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        capture("iPad-Settings", app)
+    }
     @MainActor private func launch(extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-minimalist", "--ui-assistant-fixture"] + extra
