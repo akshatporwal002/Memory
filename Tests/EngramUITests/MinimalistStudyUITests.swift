@@ -539,6 +539,11 @@ final class MinimalistStudyUITests: XCTestCase {
         capture("iPad-Library", app)
         app.buttons["library-deck-ui-deck"].tap()
         XCTAssertTrue(app.buttons["deck-notes"].waitForExistence(timeout: 5))
+        let chart = app.descendants(matching: .any)["deck-retention-chart"].firstMatch
+        let study = app.buttons["deck-study"]
+        XCTAssertTrue(chart.exists)
+        XCTAssertTrue(study.isHittable)
+        XCTAssertLessThanOrEqual(chart.frame.maxX, study.frame.minX + 2)
         capture("iPad-Deck", app)
         app.buttons["deck-questions"].tap()
         XCTAssertTrue(app.navigationBars["Questions"].waitForExistence(timeout: 5))

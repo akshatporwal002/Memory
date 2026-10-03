@@ -8,6 +8,7 @@ import PhotosUI
 struct DeckOverviewView: View {
     @Bindable var model: EngramModel
     let deckID: String
+    @Environment(\.engramWorkspaceLayout) private var workspace
     private enum ContentRoute: String, Identifiable { case questions, notes; var id: String { rawValue } }
     @State private var contentRoute: ContentRoute?
     @State private var showPDFSource = false
@@ -34,38 +35,47 @@ struct DeckOverviewView: View {
                             Text("\(cardCount) \(cardCount == 1 ? "card" : "cards") · \(model.due(in: deck).count) ready")
                                 .font(.subheadline).foregroundStyle(palette.secondaryText)
                         }
-                        DeckMemoryPanel(model: model, deck: deck)
-                        Button { Task { await model.beginReview(deckID: deck.id) } } label: {
-                            HStack { Text("Study notebook"); Spacer(); Image(systemName: "arrow.up.right") }
-                                .font(.subheadline.weight(.semibold)).frame(minHeight:44)
-                                .contentShape(Rectangle())
-                        }.buttonStyle(.plain).disabled(model.busy)
-                            .accessibilityIdentifier("deck-study")
-                        Divider()
-                        if textSize.isAccessibilitySize {
-                            VStack(spacing: 12) { contentLinks }
+                        if workspace && !textSize.isAccessibilitySize {
+                            HStack(alignment: .top, spacing: 24) {
+                                DeckMemoryPanel(model: model, deck: deck).frame(maxWidth: .infinity)
+                                Divider()
+                                studyActions(deck).frame(width: 190)
+                            }
                         } else {
-                            HStack(alignment: .top, spacing: 20) { contentLinks }
-                        }
-                        if let documents = deck.documents,!documents.isEmpty {
-                            VStack(alignment:.leading,spacing:4) {
-                                Text("Source files").font(theme.font(.section))
-                                ForEach(documents) { document in
-                                    Button { openedDocument = document } label: {
-                                        HStack(spacing:10) {
-                                            Image(systemName:document.kind == .pdf ? "doc.richtext" : document.kind == .image ? "photo" : "doc.text")
-                                                .frame(width:20)
-                                            Text(document.name).lineLimit(1)
-                                            Spacer(minLength:8)
-                                            Image(systemName:"arrow.up.right").font(.caption)
-                                        }.font(.subheadline).frame(minHeight:44).contentShape(Rectangle())
-                                    }.buttonStyle(.plain)
+                            DeckMemoryPanel(model: model, deck: deck)
+                            Button { Task { await model.beginReview(deckID: deck.id) } } label: {
+                                HStack { Text("Study notebook"); Spacer(); Image(systemName: "arrow.up.right") }
+                                    .font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                                    .contentShape(Rectangle())
+                            }.buttonStyle(.plain).disabled(model.busy)
+                                .accessibilityIdentifier("deck-study")
+                            Divider()
+                            if textSize.isAccessibilitySize {
+                                VStack(spacing: 12) { contentLinks }
+                            } else {
+                                HStack(alignment: .top, spacing: 20) { contentLinks }
+                            }
+                            if let documents = deck.documents,!documents.isEmpty {
+                                VStack(alignment:.leading,spacing:4) {
+                                    Text("Source files").font(theme.font(.section))
+                                    ForEach(documents) { document in
+                                        Button { openedDocument = document } label: {
+                                            HStack(spacing:10) {
+                                                Image(systemName:document.kind == .pdf ? "doc.richtext" : document.kind == .image ? "photo" : "doc.text")
+                                                    .frame(width:20)
+                                                Text(document.name).lineLimit(1)
+                                                Spacer(minLength:8)
+                                                Image(systemName:"arrow.up.right").font(.caption)
+                                            }.font(.subheadline).frame(minHeight:44).contentShape(Rectangle())
+                                        }.buttonStyle(.plain)
+                                    }
                                 }
                             }
                         }
+
                     }
                     .padding(EngramSpacing.section).padding(.bottom, 12)
-                    .frame(maxWidth: 720).frame(maxWidth: .infinity)
+                    .frame(maxWidth: workspace ? 1040 : 720).frame(maxWidth: .infinity)
                 }
                 .engramAssistantClearance()
                 .toolbar {
@@ -128,6 +138,39 @@ struct DeckOverviewView: View {
         }
         .onAppear { model.selectedDeckID = deckID; model.activeDeckOverviewID = deckID }
         .onDisappear { if model.activeDeckOverviewID == deckID { model.activeDeckOverviewID = nil } }
+    }
+
+    private func studyActions(_ deck: Deck) -> some View {
+        VStack(alignment: .leading, spacing: 28) {
+            Button { Task { await model.beginReview(deckID: deck.id) } } label: {
+                HStack { Text("Study notebook"); Spacer(); Image(systemName: "arrow.up.right") }
+                    .font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                    .contentShape(Rectangle())
+            }.buttonStyle(.plain).disabled(model.busy)
+                .accessibilityIdentifier("deck-study")
+            Divider()
+            if textSize.isAccessibilitySize || workspace {
+                VStack(spacing: 12) { contentLinks }
+            } else {
+                HStack(alignment: .top, spacing: 20) { contentLinks }
+            }
+            if let documents = deck.documents,!documents.isEmpty {
+                VStack(alignment:.leading,spacing:4) {
+                    Text("Source files").font(theme.font(.section))
+                    ForEach(documents) { document in
+                        Button { openedDocument = document } label: {
+                            HStack(spacing:10) {
+                                Image(systemName:document.kind == .pdf ? "doc.richtext" : document.kind == .image ? "photo" : "doc.text")
+                                    .frame(width:20)
+                                Text(document.name).lineLimit(1)
+                                Spacer(minLength:8)
+                                Image(systemName:"arrow.up.right").font(.caption)
+                            }.font(.subheadline).frame(minHeight:44).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                    }
+                }
+            }
+        }
     }
 
     private var contentLinks: some View {

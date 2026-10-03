@@ -44,18 +44,13 @@ public struct EngramRootView: View {
                             Section("Engram") {
                                 ForEach(EngramDestination.allCases) { item in Label(item.title, systemImage: item.symbol).tag(item) }
                             }
-                            Section("On this device") {
-                                ForEach(model.library.liveDecks) { deck in
-                                    Button { model.selectedDeckID = deck.id; model.libraryDeckRequest = deck.id; model.destination = .library } label: {
-                                        Label(deck.name, systemImage: "rectangle.stack")
-                                    }.buttonStyle(.plain)
-                                }
-                            }
+
                         }
                         .navigationTitle("Engram").navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 280)
                     } detail: { NavigationStack { page(model.destination) } }
                 }
             }
+            .environment(\.engramWorkspaceLayout, !usesPhoneTodayTitle && geometry.size.width >= 1100)
             .overlay { if !model.loaded && model.error == nil { ProgressView("Opening your library…").padding().engramSurface() } }
         }
         .engramCanvas()

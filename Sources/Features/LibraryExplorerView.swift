@@ -10,6 +10,7 @@ import DesignSystem
 struct LibraryExplorerView: View {
     @Bindable var model: EngramModel
     var importAction: (() -> Void)?
+    @Environment(\.engramWorkspaceLayout) private var workspace
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @State private var query = ""
@@ -48,75 +49,26 @@ struct LibraryExplorerView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Library").font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                    Spacer()
-                    addMenu
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)
-                        Spacer()
-                        Text("Drop here to move to Library root").font(.caption2).foregroundStyle(palette.secondaryText).opacity(rootDropTargeted ? 1 : 0)
-                    }
-                    .frame(minHeight:32)
-                    .contentShape(Rectangle())
-                    .background(rootDropTargeted ? palette.selection : .clear)
-                    .dropDestination(for:String.self) { items,_ in handleDrop(items.first,to:.folder("")) } isTargeted: { rootDropTargeted = $0 }
-                    HStack(spacing: 9) {
-                        Image(systemName:"magnifyingglass").foregroundStyle(palette.secondaryText)
-                        TextField("Find a notebook or file",text:$query)
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        if !query.isEmpty { Button { query = "" } label: { Image(systemName:"xmark.circle.fill") }.accessibilityLabel("Clear search") }
-                    }.font(.subheadline).frame(minHeight:44)
+        Group {
+            if workspace {
+                HStack(alignment: .top, spacing: 0) {
+                    explorerContent.frame(width: 280)
                     Divider()
-                }
-                if model.library.liveDecks.isEmpty && nodes.isEmpty && (model.library.folderDocuments ?? []).isEmpty {
-                    VStack(alignment:.leading,spacing:10) {
-                        Image(systemName:"folder").font(.title2).foregroundStyle(palette.secondaryText)
-                        Text("A place for what you learn").font(theme.font(.section))
-                        Text("Create a folder or notebook, then add questions, PDFs, Markdown or images.")
-                            .font(.subheadline).foregroundStyle(palette.secondaryText)
-                        Button("Create notebook",action:newNotebook).font(.subheadline.weight(.semibold)).frame(minHeight:44)
-                        Button("Create folder") { beginFolder(in:"") }.font(.subheadline).frame(minHeight:44)
-                    }.padding(.top,30)
-                } else if nodes.isEmpty && rootDocuments.isEmpty {
-                    Text("No matching notebooks or files").foregroundStyle(palette.secondaryText).padding(.top,30)
-                } else {
-                    LazyVStack(alignment:.leading,spacing:0) {
-                        ForEach(rootDocuments) { item in
-                            folderFileRow(item,depth:0)
+                    Group {
+                        if let id = openedDeck {
+                            DeckOverviewView(model: model, deckID: id)
+                                .id(id)
+                        } else {
+                            ContentUnavailableView("Choose a notebook", systemImage: "book.closed",
+                                description: Text("Your files stay alongside your notes and review outlook."))
                         }
-                        ForEach(nodes) { node in
-                            LibraryExplorerNode(node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
-                                                folderDocuments:folderDocuments(for:node.path),
-                                                filesInFolder:folderDocuments,
-                                                openDeck:openDeck,openDocument:openDocument,
-                                                newNotebook:newNotebook,newFolder:beginFolder,
-                                                importFile:beginImport,importPhoto:beginPhoto,
-                                                importFolderFile:beginFolderImport,importFolderPhoto:beginFolderPhoto,
-                                                suspendDeck:{ id, suspended in Task { _ = await model.perform { try await $0.setDeckSuspended(id:id,suspended:suspended) } } },
-                                                deleteDeck:{ model.deleteDeck = $0 },
-                                                removeFolder:{ deleteFolderPath = $0 },
-                                                removeFile:{ deckID,document in deleteDocument = (deckID,document) },
-                                                move:handleDrop)
-                        }
-                    }
-                }
-                if let importAction {
-                    Button("Import or export library",action:importAction)
-                        .font(.caption).foregroundStyle(palette.secondaryText).frame(minHeight:44)
-                        .accessibilityIdentifier("library-import-export")
-                }
-            }
-            .padding(.horizontal,20).padding(.top,8).padding(.bottom,28)
-            .frame(maxWidth:760).frame(maxWidth:.infinity)
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                }.accessibilityIdentifier("workspace-library")
+            } else { explorerContent }
         }
         .scrollDismissesKeyboard(.interactively)
         .refreshable { await model.refresh() }
-        .navigationDestination(item:$openedDeck) { id in LibraryDeckDestination(model:model,deckID:id) }
+        .navigationDestination(item:Binding(get:{ workspace ? nil : openedDeck },set:{ openedDeck = $0 })) { id in LibraryDeckDestination(model:model,deckID:id) }
         .sheet(item:$openedDocument,onDismiss:{ model.visibleLibraryDocumentID = nil }) { document in LibraryDocumentReader(document:document) }
         .fileImporter(isPresented:$importing,
                       allowedContentTypes:[.pdf, UTType(filenameExtension:"md") ?? .plainText,.image],
@@ -177,6 +129,75 @@ struct LibraryExplorerView: View {
             if let id = model.libraryDeckRequest { openDeck(id); model.libraryDeckRequest = nil }
         }
         .onChange(of:model.libraryDeckRequest) { _,id in if let id { openDeck(id); model.libraryDeckRequest = nil } }
+    }
+
+    private var explorerContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(workspace ? "Files" : "Library").font(workspace ? .headline : .largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    addMenu
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(workspace ? "" : "FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)
+                        Spacer()
+                        Text("Drop here to move to Library root").font(.caption2).foregroundStyle(palette.secondaryText).opacity(rootDropTargeted ? 1 : 0)
+                    }
+                    .frame(minHeight:32)
+                    .contentShape(Rectangle())
+                    .background(rootDropTargeted ? palette.selection : .clear)
+                    .dropDestination(for:String.self) { items,_ in handleDrop(items.first,to:.folder("")) } isTargeted: { rootDropTargeted = $0 }
+                    HStack(spacing: 9) {
+                        Image(systemName:"magnifyingglass").foregroundStyle(palette.secondaryText)
+                        TextField("Find a notebook or file",text:$query)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        if !query.isEmpty { Button { query = "" } label: { Image(systemName:"xmark.circle.fill") }.accessibilityLabel("Clear search") }
+                    }.font(.subheadline).frame(minHeight:44)
+                    Divider()
+                }
+                if model.library.liveDecks.isEmpty && nodes.isEmpty && (model.library.folderDocuments ?? []).isEmpty {
+                    VStack(alignment:.leading,spacing:10) {
+                        Image(systemName:"folder").font(.title2).foregroundStyle(palette.secondaryText)
+                        Text("A place for what you learn").font(theme.font(.section))
+                        Text("Create a folder or notebook, then add questions, PDFs, Markdown or images.")
+                            .font(.subheadline).foregroundStyle(palette.secondaryText)
+                        Button("Create notebook",action:newNotebook).font(.subheadline.weight(.semibold)).frame(minHeight:44)
+                        Button("Create folder") { beginFolder(in:"") }.font(.subheadline).frame(minHeight:44)
+                    }.padding(.top,30)
+                } else if nodes.isEmpty && rootDocuments.isEmpty {
+                    Text("No matching notebooks or files").foregroundStyle(palette.secondaryText).padding(.top,30)
+                } else {
+                    LazyVStack(alignment:.leading,spacing:0) {
+                        ForEach(rootDocuments) { item in
+                            folderFileRow(item,depth:0)
+                        }
+                        ForEach(nodes) { node in
+                            LibraryExplorerNode(node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
+                                                folderDocuments:folderDocuments(for:node.path),
+                                                filesInFolder:folderDocuments,
+                                                openDeck:openDeck,openDocument:openDocument,
+                                                newNotebook:newNotebook,newFolder:beginFolder,
+                                                importFile:beginImport,importPhoto:beginPhoto,
+                                                importFolderFile:beginFolderImport,importFolderPhoto:beginFolderPhoto,
+                                                suspendDeck:{ id, suspended in Task { _ = await model.perform { try await $0.setDeckSuspended(id:id,suspended:suspended) } } },
+                                                deleteDeck:{ model.deleteDeck = $0 },
+                                                removeFolder:{ deleteFolderPath = $0 },
+                                                removeFile:{ deckID,document in deleteDocument = (deckID,document) },
+                                                move:handleDrop)
+                        }
+                    }
+                }
+                if let importAction {
+                    Button("Import or export library",action:importAction)
+                        .font(.caption).foregroundStyle(palette.secondaryText).frame(minHeight:44)
+                        .accessibilityIdentifier("library-import-export")
+                }
+            }
+            .padding(.horizontal,20).padding(.top,8).padding(.bottom,28)
+            .frame(maxWidth: workspace ? .infinity : 760).frame(maxWidth:.infinity)
+        }
     }
 
     private var addMenu: some View {

@@ -7,6 +7,8 @@ import DesignSystem
 struct DeckMemoryPanel: View {
     let model: EngramModel
     let deck: Deck
+    @Environment(\.engramWorkspaceLayout) private var workspace
+    private var chartHeight: CGFloat { workspace ? 260 : 180 }
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -140,7 +142,7 @@ struct DeckMemoryPanel: View {
                             }
                         }
                     }
-                    .frame(height: 180)
+                    .frame(height: chartHeight)
                     .accessibilityIdentifier("deck-retention-chart")
                     .accessibilityAction(named: "Next window") { timelineScroll = min(latestStart, timelineScroll.addingTimeInterval(visibleDuration)) }
                     .accessibilityAction(named: "Previous window") { timelineScroll = max(outlook.startDate, timelineScroll.addingTimeInterval(-visibleDuration)) }
@@ -157,7 +159,7 @@ struct DeckMemoryPanel: View {
                                 .accessibilityIdentifier("deck-curve-label-" + label.name)
                                 .position(x: geometry.size.width / 2, y: label.y)
                         }
-                    }.frame(width: 46, height: 180).allowsHitTesting(false)
+                    }.frame(width: 46, height: chartHeight).allowsHitTesting(false)
                     }
                     HStack(spacing: 16) {
                         Label("Planned reviews", systemImage: "line.diagonal").foregroundStyle(curveColor)

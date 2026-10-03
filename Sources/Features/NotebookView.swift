@@ -14,6 +14,7 @@ struct NotebookView: View {
     @Bindable var model: EngramModel
     let deckID: String
     var writingOnly = false
+    @Environment(\.engramWorkspaceLayout) private var workspace
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     @State private var draft: NotebookEditingDraft?
@@ -74,7 +75,7 @@ struct NotebookView: View {
                     notebookActions.id("notebook-end")
                 }
                 .padding(EngramSpacing.section)
-                .frame(maxWidth: 760).frame(maxWidth: .infinity)
+                .frame(maxWidth: workspace ? 620 : 760).frame(maxWidth: .infinity)
                 .disabled(model.busy)
             }
             .coordinateSpace(name: "notebook-scroll")

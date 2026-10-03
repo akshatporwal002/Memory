@@ -9,3 +9,5 @@ Captured 4 October 2026 on iPad Pro 13-inch (M5), iOS 26.0.1 simulator, from the
 Both testIPadScreenCaptures and testIPadLandscapeReviewAndChatCaptures passed. These tests verify navigation and capture availability, not every visual or accessibility edge case. Rotation is restored after each test.
 
 Each screen uses current.png and at most one previous.png on refresh.
+
+The first workspace pass on akshat/ipad-support replaces the Library's wide list with a persistent file pane and selected deck detail. Deck study actions sit beside the taller chart; notes use a narrower reading column. Current captures reflect this pass, and previous.png retains the pre-change capture. The landscape geometry/navigation test passed. iPhone before/after evidence is in ../../iPad-Support-iPhone-Comparison (see its README); phone layouts are unchanged.

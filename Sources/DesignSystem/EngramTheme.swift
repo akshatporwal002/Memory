@@ -136,3 +136,14 @@ public extension EngramAppearance {
     }
 }
 #endif
+
+#if canImport(SwiftUI)
+private struct EngramWorkspaceLayoutKey: EnvironmentKey { static let defaultValue = false }
+public extension EnvironmentValues {
+    /// Opt-in at the app shell. Never enabled for iPhone, including landscape.
+    var engramWorkspaceLayout: Bool {
+        get { self[EngramWorkspaceLayoutKey.self] }
+        set { self[EngramWorkspaceLayoutKey.self] = newValue }
+    }
+}
+#endif
