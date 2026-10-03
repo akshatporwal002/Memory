@@ -30,6 +30,16 @@ struct StudyPreferencesPage: View {
                     NavigationLink { TimeZonePage(model: model) } label: { LabeledContent("Time zone", value: settings.timeZoneID.replacingOccurrences(of: "_", with: " ")) }
                 } header: { Text("Study day") } footer: { Text("Your saved time zone stays fixed while travelling. The day boundary controls when daily limits reset.") }
             }
+            if !scheduling {
+                EngramListSection {
+                    Toggle("Daily review reminder", isOn: Binding(get: { model.reminders.enabled }, set: { model.reminders.enabled = $0 }))
+                        .accessibilityIdentifier("daily-review-reminder")
+                    if model.reminders.enabled {
+                        DatePicker("Reminder time", selection: Binding(get: { model.reminders.time }, set: { model.reminders.time = $0 }), displayedComponents: .hourAndMinute)
+                        if let status = model.reminders.status { Text(status).font(.caption).engramSecondaryText() }
+                    }
+                } header: { Text("Reminders") } footer: { Text("At most one notification per day, at this device’s local time. This is a daily invitation to study, even if no cards are due. Turning it off cancels future reminders.") }
+            }
             if let error = model.error { EngramListSection { Text(error).engramErrorText() } }
             if model.busy { EngramListSection { ProgressView("Saving…") } }
         }.modifier(UtilityListStyle()).navigationTitle(scheduling ? "Scheduling" : "Study")

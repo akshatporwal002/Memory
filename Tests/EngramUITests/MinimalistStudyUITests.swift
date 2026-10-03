@@ -1,6 +1,20 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testDailyReminderControls() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "Study").firstMatch.tap()
+        let toggle = app.switches["daily-review-reminder"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        for _ in 0..<4 where !toggle.isHittable { app.swipeUp() }
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertTrue(app.datePickers.firstMatch.waitForExistence(timeout: 5))
+        capture("Settings-Daily-Reminder", app)
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertFalse(app.datePickers.firstMatch.exists)
+    }
     @MainActor func testLibrarySuspendAndContextMenus() {
         let app = launch(extra: ["--ui-image-fixture"])
         XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout: 15))

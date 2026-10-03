@@ -12,6 +12,7 @@ struct DeckMemoryPanel: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var outlook: DeckMemoryOutlook?
     @State private var selectedCardID: String?
+    @State private var inspectedDate: Date?
     @State private var editingTarget = false
     @State private var useCustomTarget = false
     @State private var target = 0.9
@@ -61,6 +62,7 @@ struct DeckMemoryPanel: View {
                         Text(selected == nil ? "average estimated recall now" : "estimated recall now")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
+                    let axis = DeckMemoryOutlook.recallAxisDomain(plateau: (selected?.projection ?? outlook.projection).last?.probability)
                     Chart {
                         ForEach(selected?.history ?? outlook.history) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
@@ -77,20 +79,36 @@ struct DeckMemoryPanel: View {
                         }
                         ForEach(values.enumerated().map { Point(id: $0.offset, date: outlook.sampleDates[$0.offset], probability: $0.element) }) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Forecast"))
-                                .foregroundStyle(curveColor)
-                                .lineStyle(StrokeStyle(lineWidth: 1.6, dash: [4, 4]))
+                                .foregroundStyle(palette.answerSelectionInk)
+                                .lineStyle(StrokeStyle(lineWidth: 1.3, dash: [2, 4]))
                                 .interpolationMethod(.monotone)
+                        }
+                        ForEach(selected?.projection ?? outlook.projection) { point in
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Planned reviews"))
+                                .foregroundStyle(curveColor).lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+                                .interpolationMethod(.linear)
+                        }
+                        if let inspectedDate, let date = (selected?.reviewDates ?? outlook.reviewDates).min(by: { abs($0.timeIntervalSince(inspectedDate)) < abs($1.timeIntervalSince(inspectedDate)) }) {
+                            RuleMark(x: .value("Selected review", date))
+                                .foregroundStyle(palette.accentInk)
+                                .annotation(position: .top) { Text(date, format: .dateTime.month(.abbreviated).day()).font(.caption2).foregroundStyle(palette.primaryText) }
                         }
                         PointMark(x:.value("Today",model.now),y:.value("Recall today",(values.first ?? 0) * 100))
                             .foregroundStyle(curveColor).symbolSize(64)
                     }
-                    .chartYScale(domain: 0.0...100.0)
+                    .chartYScale(domain: axis)
+                    .chartPlotStyle { plot in plot.clipped() }
                     .chartXScale(domain: outlook.startDate...(outlook.sampleDates.last ?? model.now.addingTimeInterval(1)))
+                    .chartXSelection(value: $inspectedDate)
                     .chartXAxis(.hidden)
-                    .chartYAxis { AxisMarks(position: .leading, values: [0, 50, 100]) }
+                    .chartYAxis { AxisMarks(position: .leading, values: [axis.lowerBound, ((axis.lowerBound + 100) / 2).rounded(), 100]) }
                     .frame(height: 150)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
-                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; dotted curve assumes no reviews until the displayed end date")
+                    .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; forecast assumes Good at each planned review")
+                    HStack(spacing: 16) {
+                        Label("Planned reviews", systemImage: "line.diagonal").foregroundStyle(curveColor)
+                        Label("No more reviews", systemImage: "line.diagonal").foregroundStyle(palette.answerSelectionInk)
+                    }.font(.caption)
                     HStack { Text(outlook.startDate, format: .dateTime.month(.abbreviated).day().year()); Spacer(); Text(outlook.sampleDates.last ?? model.now, format: .dateTime.month(.abbreviated).day().year()) }
                         .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
                     if selected == nil,let next = outlook.nextPlannedReview {
@@ -129,7 +147,11 @@ struct DeckMemoryPanel: View {
                     Text(selected?.prompt ?? "").font(.subheadline).lineLimit(2)
                     Button("All cards") { selectedCardID = nil }.frame(minHeight: 44)
                 }
-                Text("Solid line: available review history. Dotted line: recall from today if no reviews happen. The review marker shows a scheduled date, not a predicted increase. New and unsupported cards are excluded from the average.")
+                if !(selected?.reviewDates ?? outlook.reviewDates).isEmpty {
+                    Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
+                        .font(.caption).foregroundStyle(palette.secondaryText)
+                }
+                Text("Solid line: review history. Dotted forecast assumes Good at due dates; actual answers and daily limits can change it. Scale starts 10 points below the forecast plateau; lower recall falls outside this zoom. New and unsupported cards are excluded.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
             .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {

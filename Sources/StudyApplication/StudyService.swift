@@ -11,7 +11,7 @@ public actor StudyService {
         ActivitySummary.make(in: library, period: period, now: now, estimator: scheduler as? any MemoryEstimating, interval: interval)
     }
     public func memoryOutlook(for deck: Deck, in library: LibrarySnapshot, now: Date) -> DeckMemoryOutlook {
-        DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: scheduler as? any MemoryEstimating)
+        DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: scheduler as? any MemoryEstimating, scheduler: scheduler)
     }
     public func snapshot() async throws -> LibrarySnapshot { try await repository.read() }
 

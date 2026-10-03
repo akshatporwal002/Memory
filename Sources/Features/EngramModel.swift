@@ -20,6 +20,7 @@ public struct DeckForm: Identifiable {
 
 /// Own once in the composition root. Theme, selection and sheets never own learning data.
 @MainActor @Observable public final class EngramModel {
+    public let reminders: ReviewReminderController
     let voice = VoiceStudyController()
     let aiMarker = AIAnswerMarker()
     let pdfLearning = PDFLearningController()
@@ -95,6 +96,7 @@ public struct DeckForm: Identifiable {
 
     public init(service: StudyService, defaults: UserDefaults = .standard, repository: SQLiteLibraryRepository? = nil) {
         self.service = service; self.defaults = defaults
+        reminders = ReviewReminderController(defaults: defaults)
         cloud = CloudAccountController(repository:repository)
         lastBackupExport = defaults.object(forKey: "engram.lastBackupExport.v1") as? Date
         deckCreationDraft = defaults.data(forKey: "engram.deckCreationDraft.v1")

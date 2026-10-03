@@ -99,7 +99,10 @@ private struct ApplicationRoot: View {
             if ProcessInfo.processInfo.arguments.contains("--ui-testing") && ProcessInfo.processInfo.arguments.contains("--ui-largest-text") { size = .accessibility5 }
         }
         #endif
-        .onChange(of: scenePhase) { _, phase in if phase == .background { screenshots.cancel() } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { screenshots.cancel() }
+            if phase == .active { model?.reminders.reconcile() }
+        }
     }
     private func canCapture(_ model: EngramModel) -> Bool {
         model.loaded && !model.busy && !screenshots.running && !screenshots.presented &&
@@ -206,6 +209,7 @@ private struct ApplicationRoot: View {
             let repository = try await Task.detached(priority: .userInitiated) { try SQLiteLibraryRepository(url: location.deletingLastPathComponent().appendingPathComponent("library.sqlite"), migrating: location) }.value
             let opened = EngramModel(service: StudyService(repository: repository, scheduler: FSRSScheduler()), repository: repository)
             model = opened
+            opened.reminders.reconcile()
             transfer = PortabilityModel(model: opened, backupDirectory: location.deletingLastPathComponent().appendingPathComponent("Backups", isDirectory: true))
             failure = nil
         } catch { failure = error.localizedDescription }

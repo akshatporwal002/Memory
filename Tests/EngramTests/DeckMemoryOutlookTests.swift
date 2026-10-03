@@ -47,6 +47,37 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
     }
 
+    func testPlateauAxisZoomAndSafeFallback() {
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 0.95), 85...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 1), 90...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 0.05), 0...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: .nan), 0...100)
+        XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: nil), 0...100)
+    }
+
+    func testPlannedReviewsRaiseRecallWithoutChangingStoredSchedule() throws {
+        let now = Date()
+        let scheduler = FSRSScheduler()
+        var library = LibrarySnapshot()
+        let deck = Deck(id: "d", name: "Forecast")
+        library.decks = [deck]
+        library.notes = [Note(id: "n", deckID: "d", kind: .basic, front: "Question", back: "Answer")]
+        let initial = try scheduler.initialState(now: now.addingTimeInterval(-10 * 86_400), settings: library.settings)
+        let state = try XCTUnwrap(scheduler.outcomes(state: initial, history: [], now: now.addingTimeInterval(-10 * 86_400), settings: library.settings)[.easy])
+        library.cards = [StudyCard(id: "c", noteID: "n", deckID: "d", schedule: state)]
+        let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: scheduler, scheduler: scheduler)
+        let date = try XCTUnwrap(outlook.reviewDates.first)
+        let before = try XCTUnwrap(outlook.projection.last { $0.date < date })
+        let after = try XCTUnwrap(outlook.projection.first { $0.date == date })
+        XCTAssertGreaterThan(after.probability, before.probability)
+        XCTAssertEqual(after.probability, 1, accuracy: 0.001)
+        XCTAssertEqual(library.cards[0].schedule, state)
+        XCTAssertTrue(library.reviews.isEmpty)
+        library.decks[0].studySuspended = true
+        let paused = DeckMemoryOutlook.make(deck: library.decks[0], library: library, now: now, estimator: scheduler, scheduler: scheduler)
+        XCTAssertTrue(paused.reviewDates.isEmpty)
+    }
+
     func testHistoryBeginsWithRecordedEvidence() throws {
         let now = Date()
         let created = now.addingTimeInterval(-30 * 86_400)
