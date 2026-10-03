@@ -12,9 +12,9 @@ struct DeckMemoryPanel: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var outlook: DeckMemoryOutlook?
     @State private var selectedCardID: String?
-    @State private var inspectedStep: Double?
-    @State private var reviewScroll = 0.0
-    @State private var windowMonths = 2
+    @State private var inspectedDate: Date?
+    @State private var timelineScroll = Date()
+    @State private var windowMonths = 1
     @State private var editingTarget = false
     @State private var useCustomTarget = false
     @State private var target = 0.9
@@ -34,9 +34,11 @@ struct DeckMemoryPanel: View {
 
     var body: some View {
         if let outlook {
-            let scale = ReviewStepScale(start: outlook.startDate, now: model.now, end: outlook.sampleDates.last ?? model.now.addingTimeInterval(1), reviews: (selected?.history ?? outlook.history).map(\.date) + (selected?.reviewDates ?? outlook.reviewDates))
-            let visibleSteps = scale.visibleSteps(months: windowMonths, now: model.now)
-            let window = DateInterval(start: scale.date(at: reviewScroll), end: scale.date(at: min(scale.maximum, reviewScroll + visibleSteps)))
+            let horizon = outlook.sampleDates.last ?? model.now.addingTimeInterval(1)
+            let visibleDuration = RetentionTimeline.duration(months: windowMonths, now: model.now, start: outlook.startDate, end: horizon)
+            let latestStart = max(outlook.startDate, horizon.addingTimeInterval(-visibleDuration))
+            let windowStart = min(max(timelineScroll, outlook.startDate), latestStart)
+            let window = DateInterval(start: windowStart, end: min(horizon, windowStart.addingTimeInterval(visibleDuration)))
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("Memory outlook").font(theme.font(.section))
@@ -70,7 +72,7 @@ struct DeckMemoryPanel: View {
                     let axis = DeckMemoryOutlook.recallAxisDomain(plateau: values.last)
                     Chart {
                         ForEach(selected?.history ?? outlook.history) { point in
-                            LineMark(x: .value("Review step", scale.position(point.date)), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
                                 .foregroundStyle(curveColor).lineStyle(StrokeStyle(lineWidth: 1.6))
                         }
 
@@ -78,45 +80,45 @@ struct DeckMemoryPanel: View {
                             .foregroundStyle(palette.accentInk.opacity(0.7))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                         if let plannedDate {
-                            RuleMark(x: .value("Planned review", scale.position(plannedDate)))
+                            RuleMark(x: .value("Planned review", plannedDate))
                                 .foregroundStyle(palette.accentInk.opacity(0.65))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
                         }
                         ForEach(values.enumerated().map { Point(id: $0.offset, date: outlook.sampleDates[$0.offset], probability: $0.element) }) { point in
-                            LineMark(x: .value("Review step", scale.position(point.date)), y: .value("Recall", point.probability * 100), series: .value("Period", "Forecast"))
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Forecast"))
                                 .foregroundStyle(palette.answerSelectionInk)
                                 .lineStyle(StrokeStyle(lineWidth: 1.3, dash: [2, 4]))
                                 .interpolationMethod(.monotone)
                         }
                         ForEach(selected?.projection ?? outlook.projection) { point in
-                            LineMark(x: .value("Review step", scale.position(point.date)), y: .value("Recall", point.probability * 100), series: .value("Period", "Planned reviews"))
+                            LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Planned reviews"))
                                 .foregroundStyle(curveColor).lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
                                 .interpolationMethod(.linear)
                         }
-                        if let inspectedStep, let date = (selected?.reviewDates ?? outlook.reviewDates).min(by: { abs($0.timeIntervalSince(scale.date(at: inspectedStep))) < abs($1.timeIntervalSince(scale.date(at: inspectedStep))) }) {
-                            RuleMark(x: .value("Selected review", scale.position(date)))
+                        if let inspectedDate, let date = (selected?.reviewDates ?? outlook.reviewDates).min(by: { abs($0.timeIntervalSince(inspectedDate)) < abs($1.timeIntervalSince(inspectedDate)) }) {
+                            RuleMark(x: .value("Selected review", date))
                                 .foregroundStyle(palette.accentInk)
                                 .annotation(position: .top) { Text(date, format: .dateTime.month(.abbreviated).day()).font(.caption2).foregroundStyle(palette.primaryText) }
                         }
-                        PointMark(x:.value("Today",scale.position(model.now)),y:.value("Recall today",(values.first ?? 0) * 100))
+                        PointMark(x:.value("Today",model.now),y:.value("Recall today",(values.first ?? 0) * 100))
                             .foregroundStyle(curveColor).symbolSize(64)
                     }
                     .chartYScale(domain: axis)
                     .chartPlotStyle { plot in plot.clipped() }
-                    .chartXScale(domain: 0...scale.maximum)
+                    .chartXScale(domain: outlook.startDate...horizon)
                     .chartScrollableAxes(.horizontal)
-                    .chartXVisibleDomain(length: visibleSteps)
-                    .chartScrollPosition(x: $reviewScroll)
-                    .chartXSelection(value: $inspectedStep)
-                    .onChange(of: windowMonths) { _, _ in reviewScroll = min(scale.position(model.now), max(0, scale.maximum - visibleSteps)); inspectedStep = nil }
-                    .onChange(of: selectedCardID) { _, _ in reviewScroll = min(scale.position(model.now), max(0, scale.maximum - visibleSteps)); inspectedStep = nil }
-                    .onAppear { reviewScroll = min(scale.position(model.now), max(0, scale.maximum - visibleSteps)) }
+                    .chartXVisibleDomain(length: visibleDuration)
+                    .chartScrollPosition(x: $timelineScroll)
+                    .chartXSelection(value: $inspectedDate)
+                    .onChange(of: windowMonths) { _, _ in timelineScroll = min(model.now, latestStart); inspectedDate = nil }
+                    .onChange(of: selectedCardID) { _, _ in timelineScroll = min(model.now, latestStart); inspectedDate = nil }
+                    .onAppear { timelineScroll = min(model.now, latestStart) }
                     .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks(position: .leading, values: [axis.lowerBound, ((axis.lowerBound + 100) / 2).rounded(), 100]) }
                     .frame(height: 180)
                     .accessibilityIdentifier("deck-retention-chart")
-                    .accessibilityAction(named: "Next window") { reviewScroll = min(max(0, scale.maximum - visibleSteps), reviewScroll + visibleSteps) }
-                    .accessibilityAction(named: "Previous window") { reviewScroll = max(0, reviewScroll - visibleSteps) }
+                    .accessibilityAction(named: "Next window") { timelineScroll = min(latestStart, timelineScroll.addingTimeInterval(visibleDuration)) }
+                    .accessibilityAction(named: "Previous window") { timelineScroll = max(outlook.startDate, timelineScroll.addingTimeInterval(-visibleDuration)) }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
                     .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; forecast assumes Good at each planned review")
                     HStack(spacing: 16) {
@@ -132,10 +134,10 @@ struct DeckMemoryPanel: View {
                         Button("2 months") { setWindow(2) }
                         Button("3 months") { setWindow(3) }
                         Button("Full horizon") { setWindow(0) }
-                        if windowMonths > 0 { Button("Back to today") { reviewScroll = min(scale.position(model.now), max(0, scale.maximum - visibleSteps)); inspectedStep = nil } }
+                        if windowMonths > 0 { Button("Back to today") { timelineScroll = min(model.now, latestStart); inspectedDate = nil } }
                     } label: {
                         HStack(spacing: 4) {
-                            Text(windowMonths == 0 ? "Full horizon" : windowMonths == 1 ? "1-month starting view" : "\(windowMonths)-month starting view")
+                            Text(windowMonths == 0 ? "Full horizon" : windowMonths == 1 ? "1 month" : "\(windowMonths) months")
                             Image(systemName: "chevron.down").font(.caption2)
                         }.font(.caption).frame(minHeight: 44)
                     }.accessibilityIdentifier("deck-graph-range")
@@ -179,7 +181,7 @@ struct DeckMemoryPanel: View {
                     Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).filter { window.contains($0) }.prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(palette.secondaryText)
                 }
-                Text("Reviews are evenly spaced; time between dates varies. Dotted forecast assumes Good at due dates. New and unsupported cards are excluded.")
+                Text("Dates use real calendar spacing. Dotted forecast assumes Good at due dates. New and unsupported cards are excluded.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
             .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {
@@ -244,7 +246,7 @@ struct DeckMemoryPanel: View {
     }
 
     private func setWindow(_ months: Int) {
-        windowMonths = months; inspectedStep = nil
+        windowMonths = months; inspectedDate = nil
     }
 
     private var useDeadline: Bool { (deck.examDate ?? .distantPast) > model.now }

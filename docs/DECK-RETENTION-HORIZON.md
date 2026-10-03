@@ -36,3 +36,8 @@ The horizontal axis now uses review steps, superseding calendar spacing and disc
 
 All ten focused tests passed, including equal positions for review dates separated by 1, 10 and 100 days, inverse date mapping, duplicate review timestamps and bounds. Native simulator scrolling and full-horizon selection passed in /tmp/engram-review-steps-scroll.xcresult. Initial and scrolled screenshots were inspected and rotated in current_ui.
 Signed app installed and launched on the paired iPhone at 22:40 on 3 October 2026.
+
+Latest preference: restore true calendar-time spacing and default to one month, retaining smooth native horizontal scrolling and momentum. The viewport uses the duration from today to one calendar month later (bounded by the horizon); scrolling keeps that duration. Two/three-month and full-horizon choices remain. Dates, historical estimates, the planned-review forecast, orange no-review comparison and fixed Y-axis remain unchanged. The equal-review-step mapping was removed.
+
+All ten focused tests passed, including the one-month duration, full horizon, short horizon and safe bounds. Native default-range, scroll and full-horizon checks passed in /tmp/engram-month-timeline.xcresult. Initial and scrolled screenshots were inspected and rotated in current_ui.
+Signed app installed and launched on the paired iPhone at 22:46 on 3 October 2026.

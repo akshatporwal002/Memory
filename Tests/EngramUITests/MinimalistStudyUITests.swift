@@ -8,14 +8,14 @@ final class MinimalistStudyUITests: XCTestCase {
         app.buttons["library-deck-ui-deck"].tap()
         let range = app.buttons["deck-graph-range"]
         XCTAssertTrue(range.waitForExistence(timeout: 5))
-        XCTAssertTrue(range.label.contains("2-month"))
+        XCTAssertTrue(range.label.contains("1 month"))
         let dates = app.descendants(matching: .any)["deck-graph-window"].firstMatch
         let initial = dates.label
-        capture("Deck-Even-Reviews", app)
+        capture("Deck-One-Month", app)
         let chart = app.descendants(matching: .any)["deck-retention-chart"].firstMatch
         chart.swipeLeft()
         XCTAssertTrue(NSPredicate(format: "label != %@", initial).evaluate(with: dates))
-        capture("Deck-Scrolled-Reviews", app)
+        capture("Deck-Scrolled-Timeline", app)
         chart.swipeRight()
         XCTAssertNotEqual(dates.label, "")
         range.tap()
