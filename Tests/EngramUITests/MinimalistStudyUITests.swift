@@ -1,6 +1,24 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testLibraryAndSettingsUtilityRoutes() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Import and export"].exists)
+        XCTAssertFalse(app.buttons["screenshot-menu"].exists)
+        capture("Today-Settings-Only", app)
+        app.buttons["tab-library"].tap()
+        let portability = app.buttons["library-import-export"]
+        XCTAssertTrue(portability.waitForExistence(timeout: 5))
+        capture("Library-Utility-Actions", app)
+        app.buttons["Settings"].tap()
+        let screenshots = app.buttons["settings-screenshot-all-pages"]
+        for _ in 0..<5 where !screenshots.isHittable { app.swipeUp() }
+        XCTAssertTrue(screenshots.isHittable)
+        capture("Settings-Bottom-Utilities", app)
+        screenshots.tap()
+        XCTAssertTrue(app.buttons["capture-all-pages"].waitForExistence(timeout: 5))
+    }
     @MainActor func testShortChatFitsItsContent() {
         let app = launch()
         XCTAssertTrue(app.buttons["assistant-entry"].waitForExistence(timeout:15)); app.buttons["assistant-entry"].tap()

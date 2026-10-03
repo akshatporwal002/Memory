@@ -138,7 +138,7 @@ public struct EngramRootView: View {
                 #if os(iOS)
                 LibraryExplorerView(model: model, importAction: portabilityAction).engramAssistantClearance()
                 #else
-                LibraryView(model: model)
+                LibraryView(model: model, portabilityAction: portabilityAction)
                 #endif
             case .activity: ActivityView(model: model).engramAssistantClearance()
             }
@@ -147,7 +147,7 @@ public struct EngramRootView: View {
             EditorView(model: model, embedded: true).engramAssistantClearance().engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.settingsPresented }, set: { model.settingsPresented = $0 })) {
-            SettingsView(model: model, embedded: true, portabilityAction: portabilityAction).engramCaptureSurface()
+            SettingsView(model: model, embedded: true, portabilityAction: portabilityAction, screenshotAction: screenshotAction).engramCaptureSurface()
         }
         .navigationDestination(isPresented: Binding(get: { model.destination == destination && model.creationPresented }, set: { model.creationPresented = $0 })) {
             NotebookCreationPage(model: model).engramAssistantClearance().engramCaptureSurface()
@@ -165,15 +165,8 @@ public struct EngramRootView: View {
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
               if model.activeDeckOverviewID == nil && model.activeContentDeckID == nil && model.notebookDeckID == nil && model.questionsDeckID == nil && !model.reviewPresented && !model.editorPresented && !model.creationPresented {
-                if let portabilityAction { Button(action: portabilityAction) { Label("Import and export", systemImage: "square.and.arrow.up.on.square") } }
                 Button { model.settingsPresented = true } label: { Label("Settings", systemImage: "gearshape") }
-                if let screenshotAction {
-                    Menu {
-                        Button(action: screenshotAction) { Label("Screenshot all pages…", systemImage: "camera.on.rectangle") }
-                            .disabled(!model.loaded || model.busy)
-                    } label: { Label("More", systemImage: "ellipsis.circle") }
-                    .accessibilityIdentifier("screenshot-menu")
-                }
+
               }
             }
         }

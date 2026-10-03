@@ -83,6 +83,7 @@ struct DeckRow: View {
 
 struct LibraryView: View {
     @Bindable var model: EngramModel
+    var portabilityAction: (() -> Void)?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     private var palette: EngramPalette { theme.palette(for: scheme) }
@@ -115,6 +116,11 @@ struct LibraryView: View {
                                 Divider()
                             }
                             if decks.isEmpty { Text("No matching decks").foregroundStyle(palette.secondaryText) }
+                        }
+                        if let portabilityAction {
+                            Button("Import or export library", action: portabilityAction)
+                                .font(.caption).foregroundStyle(palette.secondaryText).frame(minHeight: 44)
+                                .accessibilityIdentifier("library-import-export")
                         }
                     }.padding(EngramSpacing.section).frame(maxWidth: 760).frame(maxWidth: .infinity)
                 }

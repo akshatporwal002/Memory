@@ -72,6 +72,7 @@ struct SettingsView: View {
     @Bindable var model: EngramModel
     var embedded = false
     var portabilityAction: (() -> Void)?
+    var screenshotAction: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -123,6 +124,16 @@ struct SettingsView: View {
                         }
                     }
                   } footer: { if search.isEmpty && index == groups.count - 1 { Text("Your library is stored on this device. Changes save automatically.") } }
+                }
+                if let screenshotAction, search.isEmpty || "Screenshot all pages".localizedCaseInsensitiveContains(search) {
+                    EngramListSection {
+                        Button(action: screenshotAction) {
+                            Label("Screenshot all pages…", systemImage: "camera.on.rectangle")
+                                .frame(minHeight: 44)
+                        }
+                        .disabled(!model.loaded || model.busy)
+                        .accessibilityIdentifier("settings-screenshot-all-pages")
+                    }
                 }
                 if !search.isEmpty && !SettingsPage.allCases.contains(where: { ($0.rawValue + " " + $0.keywords).localizedCaseInsensitiveContains(search) }) {
                     ContentUnavailableView.search(text: search)

@@ -106,6 +106,7 @@ struct LibraryExplorerView: View {
                 if let importAction {
                     Button("Import or export library",action:importAction)
                         .font(.caption).foregroundStyle(palette.secondaryText).frame(minHeight:44)
+                        .accessibilityIdentifier("library-import-export")
                 }
             }
             .padding(.horizontal,20).padding(.top,8).padding(.bottom,28)
