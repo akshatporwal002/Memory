@@ -26,3 +26,8 @@ Validation for planned reviews/reminders: nine focused forecast tests passed, in
 
 Plateau clarification: the axis now follows the orange no-more-reviews curve at the horizon endpoint, for both deck averages and individual cards, rather than the higher projected-review curve.
 The corrected no-review endpoint graph passed native UI validation in /tmp/engram-no-review-plateau.xcresult. Screenshot inspected and rotated; signed app installed and launched on the paired iPhone at 22:14 on 3 October 2026.
+
+The graph now defaults to a two-calendar-month window beginning at today. Swiping left/right pages forward/back by the selected calendar span, bounded by deck creation and the exam/rolling-year horizon. A compact menu offers 1, 2 or 3 months, Full horizon, and Back to today. Actual calendar-date spacing is retained; review intervals are not distorted into equal widths. The Y-axis continues to use the full no-review endpoint, remaining stable while paging. Visible planned-date summaries follow the current window. Native screen-reader actions provide next/previous window navigation, and tapping the plot inspects a projected review date.
+
+Validation: all ten focused forecast/window tests passed, including calendar-month boundaries, end-of-horizon clamping and full-horizon bounds. Simulator test testMemoryGraphWindows passed in /tmp/engram-two-month-windows.xcresult, covering the default range, swiping forward/back and selecting Full horizon. Default and next-window screenshots were inspected and archived, with only current/previous images retained per view.
+The signed update installed and launched on the paired iPhone at 22:32 on 3 October 2026.

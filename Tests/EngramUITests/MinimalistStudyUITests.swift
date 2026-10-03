@@ -1,6 +1,28 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testMemoryGraphWindows() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))
+        app.buttons["tab-library"].tap()
+        app.buttons["library-deck-ui-deck"].tap()
+        let range = app.buttons["deck-graph-range"]
+        XCTAssertTrue(range.waitForExistence(timeout: 5))
+        XCTAssertTrue(range.label.contains("2 months"))
+        let dates = app.descendants(matching: .any)["deck-graph-window"].firstMatch
+        let initial = dates.label
+        capture("Deck-Two-Months", app)
+        let chart = app.descendants(matching: .any)["deck-retention-chart"].firstMatch
+        chart.swipeLeft()
+        XCTAssertTrue(NSPredicate(format: "label != %@", initial).evaluate(with: dates))
+        capture("Deck-Next-Window", app)
+        chart.swipeRight()
+        XCTAssertEqual(dates.label, initial)
+        range.tap()
+        app.buttons["Full horizon"].tap()
+        XCTAssertTrue(range.label.contains("Full horizon"))
+        capture("Deck-Full-Horizon", app)
+    }
     @MainActor func testDailyReminderControls() {
         let app = launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))

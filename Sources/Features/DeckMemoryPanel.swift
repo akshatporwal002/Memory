@@ -13,6 +13,8 @@ struct DeckMemoryPanel: View {
     @State private var outlook: DeckMemoryOutlook?
     @State private var selectedCardID: String?
     @State private var inspectedDate: Date?
+    @State private var windowAnchor: Date?
+    @State private var windowMonths = 2
     @State private var editingTarget = false
     @State private var useCustomTarget = false
     @State private var target = 0.9
@@ -32,6 +34,7 @@ struct DeckMemoryPanel: View {
 
     var body: some View {
         if let outlook {
+            let window = MemoryGraphWindow.interval(anchor: windowAnchor ?? model.now, months: windowMonths, start: outlook.startDate, end: outlook.sampleDates.last ?? model.now.addingTimeInterval(1))
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("Memory outlook").font(theme.font(.section))
@@ -98,19 +101,48 @@ struct DeckMemoryPanel: View {
                     }
                     .chartYScale(domain: axis)
                     .chartPlotStyle { plot in plot.clipped() }
-                    .chartXScale(domain: outlook.startDate...(outlook.sampleDates.last ?? model.now.addingTimeInterval(1)))
-                    .chartXSelection(value: $inspectedDate)
+                    .chartXScale(domain: window.start...window.end)
+                    .chartOverlay { proxy in
+                        GeometryReader { geometry in
+                            Rectangle().fill(.clear).contentShape(Rectangle())
+                                .gesture(DragGesture(minimumDistance: 24).onEnded { drag in
+                                    guard windowMonths > 0, abs(drag.translation.width) > abs(drag.translation.height) * 1.5 else { return }
+                                    moveWindow(drag.translation.width < 0 ? 1 : -1, window: window)
+                                })
+                                .simultaneousGesture(SpatialTapGesture().onEnded { tap in
+                                    guard let frame = proxy.plotFrame else { return }
+                                    inspectedDate = proxy.value(atX: tap.location.x - geometry[frame].origin.x, as: Date.self)
+                                })
+                        }
+                    }
                     .chartXAxis(.hidden)
                     .chartYAxis { AxisMarks(position: .leading, values: [axis.lowerBound, ((axis.lowerBound + 100) / 2).rounded(), 100]) }
-                    .frame(height: 150)
+                    .frame(height: 180)
+                    .accessibilityIdentifier("deck-retention-chart")
+                    .accessibilityAction(named: "Next window") { moveWindow(1, window: window) }
+                    .accessibilityAction(named: "Previous window") { moveWindow(-1, window: window) }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: selectedCardID)
                     .accessibilityLabel("Estimated recall \(Int((values.first ?? 0) * 100)) percent today, against a \(Int(outlook.target * 100)) percent target; forecast assumes Good at each planned review")
                     HStack(spacing: 16) {
                         Label("Planned reviews", systemImage: "line.diagonal").foregroundStyle(curveColor)
                         Label("No more reviews", systemImage: "line.diagonal").foregroundStyle(palette.answerSelectionInk)
                     }.font(.caption)
-                    HStack { Text(outlook.startDate, format: .dateTime.month(.abbreviated).day().year()); Spacer(); Text(outlook.sampleDates.last ?? model.now, format: .dateTime.month(.abbreviated).day().year()) }
+                    HStack { Text(window.start, format: .dateTime.month(.abbreviated).day().year()); Spacer(); Text(window.end, format: .dateTime.month(.abbreviated).day().year()) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("deck-graph-window")
                         .font(.caption).foregroundStyle(palette.secondaryText).padding(.leading, 28)
+                    Menu {
+                        Button("1 month") { setWindow(1) }
+                        Button("2 months") { setWindow(2) }
+                        Button("3 months") { setWindow(3) }
+                        Button("Full horizon") { setWindow(0) }
+                        if windowMonths > 0 { Button("Back to today") { windowAnchor = nil; inspectedDate = nil } }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(windowMonths == 0 ? "Full horizon" : "\(windowMonths) months")
+                            Image(systemName: "chevron.down").font(.caption2)
+                        }.font(.caption).frame(minHeight: 44)
+                    }.accessibilityIdentifier("deck-graph-range")
                     if selected == nil,let next = outlook.nextPlannedReview {
                         HStack(alignment:.firstTextBaseline) {
                             Text(next <= model.now ? "Review due now" : "Next planned review · " + next.formatted(.dateTime.month(.abbreviated).day()))
@@ -147,8 +179,8 @@ struct DeckMemoryPanel: View {
                     Text(selected?.prompt ?? "").font(.subheadline).lineLimit(2)
                     Button("All cards") { selectedCardID = nil }.frame(minHeight: 44)
                 }
-                if !(selected?.reviewDates ?? outlook.reviewDates).isEmpty {
-                    Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
+                if !(selected?.reviewDates ?? outlook.reviewDates).filter({ window.contains($0) }).isEmpty {
+                    Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).filter { window.contains($0) }.prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(palette.secondaryText)
                 }
                 Text("Solid line: review history. Dotted forecast assumes Good at due dates; actual answers and daily limits can change it. Scale starts 10 points below the no-more-reviews curve’s endpoint. New and unsupported cards are excluded.")
@@ -213,6 +245,15 @@ struct DeckMemoryPanel: View {
                     outlook = await model.service.memoryOutlook(for: deck, in: model.library, now: model.now)
                 }
         }
+    }
+
+    private func setWindow(_ months: Int) {
+        windowMonths = months; windowAnchor = nil; inspectedDate = nil
+    }
+    private func moveWindow(_ direction: Int, window: DateInterval) {
+        guard windowMonths > 0 else { return }
+        windowAnchor = Calendar.current.date(byAdding: .month, value: direction * windowMonths, to: window.start)
+        inspectedDate = nil
     }
 
     private var useDeadline: Bool { (deck.examDate ?? .distantPast) > model.now }

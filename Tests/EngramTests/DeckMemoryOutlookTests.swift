@@ -47,6 +47,24 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertEqual(activity.decks.first?.counts[.belowTarget], 1)
     }
 
+    func testCalendarMonthWindowsAndBoundaries() {
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = .gmt
+        let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 3))!
+        let start = calendar.date(byAdding: .month, value: -1, to: now)!
+        let end = calendar.date(byAdding: .year, value: 1, to: now)!
+        let first = MemoryGraphWindow.interval(anchor: now, months: 2, start: start, end: end, calendar: calendar)
+        XCTAssertEqual(first.start, now)
+        XCTAssertEqual(first.end, calendar.date(from: DateComponents(year: 2026, month: 12, day: 3)))
+        let next = MemoryGraphWindow.interval(anchor: first.end, months: 2, start: start, end: end, calendar: calendar)
+        XCTAssertEqual(next.start, first.end)
+        XCTAssertEqual(next.end, calendar.date(from: DateComponents(year: 2027, month: 2, day: 3)))
+        let last = MemoryGraphWindow.interval(anchor: end, months: 2, start: start, end: end, calendar: calendar)
+        XCTAssertEqual(last.end, end)
+        XCTAssertLessThan(last.start, last.end)
+        XCTAssertEqual(MemoryGraphWindow.interval(anchor: start.addingTimeInterval(-100), months: 2, start: start, end: end, calendar: calendar).start, start)
+        XCTAssertEqual(MemoryGraphWindow.interval(anchor: now, months: 0, start: start, end: end, calendar: calendar), DateInterval(start: start, end: end))
+    }
+
     func testPlateauAxisZoomAndSafeFallback() {
         XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 0.95), 85...100)
         XCTAssertEqual(DeckMemoryOutlook.recallAxisDomain(plateau: 1), 90...100)
