@@ -34,8 +34,13 @@ struct PDFLearningDraft: Codable {
         draft = (try? Data(contentsOf: storage)).flatMap { try? JSONDecoder().decode(PDFLearningDraft.self, from: $0) } ?? PDFLearningDraft()
     }
     func selectAccount(_ userID: UUID?) {
+        selectLibrary(accountID: userID?.uuidString.lowercased(), libraryID: LibrarySpace.defaultID)
+    }
+    func selectLibrary(accountID: String?, libraryID: String) {
         cancel(); saveTask?.cancel(); persistNow()
-        storage = userID.map { localStorage.deletingLastPathComponent().appendingPathComponent("pdf-learning-draft-" + $0.uuidString.lowercased() + ".json") } ?? localStorage
+        let suffix = libraryID == LibrarySpace.defaultID ? "" : "-library-" + libraryID
+        let key = (accountID ?? "local") + suffix
+        storage = key == "local" ? localStorage : localStorage.deletingLastPathComponent().appendingPathComponent("pdf-learning-draft-" + key + ".json")
         draft = (try? Data(contentsOf:storage)).flatMap { try? JSONDecoder().decode(PDFLearningDraft.self,from:$0) } ?? PDFLearningDraft()
         error = nil; notices = []; status = ""
     }

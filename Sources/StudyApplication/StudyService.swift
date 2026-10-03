@@ -5,8 +5,17 @@ import LearningCore
 public actor StudyService {
     public enum DocumentDestination: Sendable { case notebook(String), folder(String) }
     let repository: any LibraryRepository
+    private let libraries: LibrarySpaceRepository
     let scheduler: any Scheduler
-    public init(repository: any LibraryRepository, scheduler: any Scheduler) { self.repository = repository; self.scheduler = scheduler }
+    public init(repository: any LibraryRepository, scheduler: any Scheduler) {
+        let scoped = LibrarySpaceRepository(base: repository)
+        self.repository = scoped; self.libraries = scoped; self.scheduler = scheduler
+    }
+    public func librarySpaces() async throws -> [LibrarySpace] { try await libraries.spaces() }
+    public func selectedLibraryID() async -> String { await libraries.selectedID }
+    public func selectLibrary(_ id: String) async throws { try await libraries.select(id) }
+    public func createLibrary(name: String, deviceOnly: Bool = false) async throws -> LibrarySpace { try await libraries.create(name: name, deviceOnly: deviceOnly) }
+    public func moveDeckToLibrary(_ id: String, libraryID: String) async throws { try await libraries.moveDeck(id, to: libraryID) }
     public func activity(in library: LibrarySnapshot, period: ActivityPeriod, now: Date, interval: DateInterval? = nil) -> ActivitySummary {
         ActivitySummary.make(in: library, period: period, now: now, estimator: scheduler as? any MemoryEstimating, interval: interval)
     }

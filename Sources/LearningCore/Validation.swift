@@ -2,6 +2,7 @@ import Foundation
 
 public enum LibraryValidation {
     public static func validate(_ library: LibrarySnapshot) throws {
+        try library.librarySpaces?.validate()
         guard library.schemaVersion == 1 else { throw EngramError.unsupported("Library schema \(library.schemaVersion) needs a newer Engram. Your file was not changed.") }
         guard library.notes.count <= 250_000, library.cards.count <= 500_000 else { throw EngramError.invalid("This library exceeds the current 250,000 note / 500,000 card limit.") }
         try unique(library.decks.map(\.id), "deck")

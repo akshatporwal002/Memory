@@ -122,13 +122,13 @@ struct ChatGPTConnectionView: View {
     }
 }
 
-private struct ChatGPTBrowserDestination: Identifiable {
+struct ChatGPTBrowserDestination: Identifiable {
     let id = UUID()
     let url: URL
 }
 
 #if os(iOS)
-private struct ChatGPTSignInBrowser: UIViewControllerRepresentable {
+struct ChatGPTSignInBrowser: UIViewControllerRepresentable {
     let url: URL
     let finished: () -> Void
     func makeCoordinator() -> Coordinator { Coordinator(finished: finished) }

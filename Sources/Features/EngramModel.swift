@@ -44,6 +44,66 @@ public struct DeckForm: Identifiable {
     public let chatGPT = ChatGPTConnection.live()
     public let service: StudyService
     public private(set) var library = LibrarySnapshot()
+    public private(set) var librarySpaces = LibrarySpaceCatalog().spaces
+    public private(set) var activeLibraryID = LibrarySpace.defaultID
+    public private(set) var libraryPresentationEpoch = UUID()
+    private var librarySelectionRestored = false
+    public var activeLibraryName: String { librarySpaces.first { $0.id == activeLibraryID }?.name ?? "My library" }
+    private var librarySelectionKey: String { "engram.activeLibrary." + (cloud.userID?.uuidString.lowercased() ?? cloud.localProfileID ?? "local") }
+    private var creationDraftKey: String {
+        let account = cloud.userID?.uuidString.lowercased() ?? cloud.localProfileID ?? "local"
+        return account == "local" && activeLibraryID == LibrarySpace.defaultID ? "engram.deckCreationDraft.v1" : "engram.deckCreationDraft.v1." + account + "." + activeLibraryID
+    }
+    private func refreshLibraryPresentation() {
+        libraryPresentationEpoch = UUID()
+        selectedDeckID = nil; libraryDeckRequest = nil; search = ""
+        activeDeckOverviewID = nil; activeContentDeckID = nil; activeContentKind = nil
+        notebookDeckID = nil; questionsDeckID = nil; visibleLibraryDocumentID = nil
+        notebookFocusNoteID = nil; notebookFocusBlockID = nil; selectedNoteID = nil; selectedCardID = nil
+        reviewPresented = false; reviewChoiceSelection = nil; answerFeedback = nil
+        typedAnswer.error = nil; typedAnswer.proposedAnswer = nil
+        creationPresented = false; editorPresented = false; draft = nil; deckForm = nil; deleteDeck = nil; deleteNote = nil
+        pdfLearning.selectLibrary(accountID: cloud.userID?.uuidString.lowercased() ?? cloud.localProfileID, libraryID: activeLibraryID)
+        deckCreationDraft = defaults.data(forKey: creationDraftKey).flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
+    }
+    public func restoreLibrarySelection() async {
+        do {
+            librarySpaces = try await service.librarySpaces()
+            let remembered = defaults.string(forKey: librarySelectionKey) ?? LibrarySpace.defaultID
+            let id = librarySpaces.contains(where: { $0.id == remembered }) ? remembered : LibrarySpace.defaultID
+            let resetPresentation = librarySelectionRestored || id != LibrarySpace.defaultID || cloud.signedIn
+            try await service.selectLibrary(id); activeLibraryID = id; librarySelectionRestored = true
+            if resetPresentation { refreshLibraryPresentation() }
+        } catch { self.error = error.localizedDescription }
+    }
+    public func selectLibrary(_ id: String) async {
+        guard id != activeLibraryID else { return }
+        guard !busy, !typedAnswer.busy, !markingAnswer, !cloud.busy else { error = "Finish the current edit or answer review before switching libraries."; return }
+        busy = true; defer { busy = false }
+        await assistant.stopAndWait(); voice.stop(); pdfLearning.cancel()
+        do {
+            try await service.selectLibrary(id)
+            library = try await service.snapshot(); activeLibraryID = id
+            defaults.set(id, forKey: librarySelectionKey)
+            refreshLibraryPresentation()
+            librarySpaces = try await service.librarySpaces(); now = Date()
+        } catch { self.error = error.localizedDescription }
+    }
+    public func createLibrary(name: String, deviceOnly: Bool) async {
+        guard !busy, !typedAnswer.busy, !cloud.busy else { return }
+        error = nil; busy = true
+        do {
+            let space = try await service.createLibrary(name: name, deviceOnly: deviceOnly)
+            librarySpaces = try await service.librarySpaces()
+            busy = false
+            await selectLibrary(space.id)
+        } catch { busy = false; self.error = error.localizedDescription }
+    }
+    public func moveDeckToLibrary(_ id: String, libraryID: String) async {
+        guard !busy, !typedAnswer.busy, !cloud.busy else { return }
+        await assistant.stopAndWait(); voice.stop()
+        _ = await perform { try await $0.moveDeckToLibrary(id, libraryID: libraryID) }
+    }
     public private(set) var loaded = false
     public private(set) var busy = false
     public var error: String?
@@ -54,7 +114,7 @@ public struct DeckForm: Identifiable {
     public var deckCreationDraft: DeckCreationDraft {
         didSet {
             if let data = try? JSONEncoder().encode(deckCreationDraft) {
-                defaults.set(data, forKey: "engram.deckCreationDraft.v1")
+                defaults.set(data, forKey: creationDraftKey)
             }
         }
     }
@@ -130,8 +190,10 @@ public struct DeckForm: Identifiable {
     }
     public func refresh() async {
         guard !busy else { return }
+        if !librarySelectionRestored { await restoreLibrarySelection() }
         do {
             library = try await service.snapshot(); now = Date(); loaded = true
+            librarySpaces = try await service.librarySpaces()
             if let value = library.assistantState?.preferences?["theme"],let choice = EngramTheme(rawValue:value) { theme = choice }
             if let value = library.assistantState?.preferences?["appearance"],let choice = EngramAppearance(rawValue:value) { appearance = choice }
         }

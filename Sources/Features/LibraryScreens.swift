@@ -94,6 +94,7 @@ struct LibraryView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: EngramSpacing.regular) {
+                        LibrarySpacePicker(model: model)
                         if model.library.liveDecks.isEmpty {
                             EngramEmptyState(title: "A home for your knowledge", message: "Create a deck, then add a question and answer.")
                             Button("Create a deck") { model.creationPresented = true }.buttonStyle(EngramButtonStyle())
@@ -105,6 +106,7 @@ struct LibraryView: View {
                                         Button(deck.studySuspended == true ? "Resume deck" : "Suspend deck") {
                                             Task { _ = await model.perform { try await $0.setDeckSuspended(id: deck.id, suspended: deck.studySuspended != true) } }
                                         }
+                                        MoveDeckToLibraryMenu(model: model, deckID: deck.id)
                                         Button("Delete deck", role: .destructive) { model.deleteDeck = deck }
                                     }
                                 Divider()

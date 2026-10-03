@@ -87,9 +87,10 @@ struct ContextualAssistant: View {
     }
     private var deckName: String { deckID.map(model.deckName) ?? (model.creationPresented ? "New notebook" : "Your study material") }
     private var context: String {
-        if model.pdfLearningPresented { return "pdf:" + (model.pdfLearning.draft.source?.id ?? "none") }
+        let prefix = model.activeLibraryID == LibrarySpace.defaultID ? "" : "library:" + model.activeLibraryID + ":"
+        if model.pdfLearningPresented { return prefix + "pdf:" + (model.pdfLearning.draft.source?.id ?? "none") }
         let workflow = model.reviewPresented ? "review" : model.editorPresented ? "editor" : model.activeContentKind ?? (model.activeDeckOverviewID != nil ? "deck" : model.creationPresented ? "creation" : model.questionsDeckID != nil ? "questions" : model.notebookDeckID != nil ? "notebook" : model.destination.rawValue)
-        return workflow + ":" + (deckID ?? "none")
+        return prefix + workflow + ":" + (deckID ?? "none")
     }
     private var activeConversationID: String { selectedHistoryID ?? context }
     private var recentConversations: [LearningConversation] {
@@ -192,6 +193,7 @@ struct ContextualAssistant: View {
         .animation(motion, value: stage)
         .animation(motion, value: thread.count)
         .onChange(of: context) { _, _ in prompt = ""; error = nil; showingHistory = false; selectedHistoryID = nil; close() }
+        .onChange(of: model.libraryPresentationEpoch) { _, _ in messages = [:]; selectedDeckID = nil; selectedHistoryID = nil; prompt = ""; error = nil; close() }
         .onChange(of: prompt) { _, value in
             if stage == .compact && !value.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty { withAnimation(motion) { stage = .medium } }
         }

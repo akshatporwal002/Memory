@@ -79,7 +79,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
     public func hasAccount(_ userID: String) throws -> Bool {
         !(try db.rows("SELECT account FROM libraries WHERE account=?",["user:" + userID])).isEmpty
     }
-    public func selectAccount(_ userID: String?, uploadLocal: Bool = false) throws {
+    public func selectAccount(_ userID: String?, uploadLocal: Bool = false, syncEnabled: Bool = true) throws {
         let next = userID.map { "user:" + $0 } ?? "local"
         guard !next.contains("\u{0}") else { throw EngramError.invalid("Invalid account.") }
         try db.execute("BEGIN IMMEDIATE")
@@ -87,8 +87,8 @@ public actor SQLiteLibraryRepository: LibraryRepository {
             if try db.rows("SELECT account FROM libraries WHERE account=?", [next]).isEmpty {
                 let local = try db.rows("SELECT payload FROM libraries WHERE account='local'").first?["payload"] ?? ""
                 var snapshot = uploadLocal ? try JSONDecoder().decode(LibrarySnapshot.self,from:Data(local.utf8)) : LibrarySnapshot(); snapshot.session = nil
-                try db.execute("INSERT INTO libraries(account,revision,payload,upload_enabled) VALUES(?,?,?,?)", [next,String(snapshot.revision),try Self.encode(snapshot),userID == nil ? "0" : "1"])
-                if uploadLocal, userID != nil { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),"{}"]) }
+                try db.execute("INSERT INTO libraries(account,revision,payload,upload_enabled) VALUES(?,?,?,?)", [next,String(snapshot.revision),try Self.encode(snapshot),userID == nil || !syncEnabled ? "0" : "1"])
+                if uploadLocal, userID != nil, syncEnabled { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),"{}"]) }
             }
             try db.execute("COMMIT"); if partition != next { lease = UUID().uuidString }; partition = next
         } catch { try? db.execute("ROLLBACK"); throw error }

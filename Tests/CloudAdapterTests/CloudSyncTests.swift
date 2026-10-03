@@ -6,6 +6,45 @@ import PersistenceAdapters
 import SchedulingAdapters
 
 final class CloudSyncTests: XCTestCase {
+    func testNamedLibrariesSyncWithoutDuplicatingDecksOrUploadingDeviceOnlyFiles() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let user = UUID(), server = FakeCloud(user: user)
+        let a = try SQLiteLibraryRepository(url: directory.appendingPathComponent("a.sqlite"))
+        let b = try SQLiteLibraryRepository(url: directory.appendingPathComponent("b.sqlite"))
+        try await a.selectAccount(user.uuidString.lowercased()); try await b.selectAccount(user.uuidString.lowercased())
+        let sa = StudyService(repository: a, scheduler: FSRSScheduler())
+        let sb = StudyService(repository: b, scheduler: FSRSScheduler())
+        let main = try await sa.createDeck(name: "Main notebook")
+        let exams = try await sa.createLibrary(name: "Exams")
+        try await sa.selectLibrary(exams.id)
+        let exam = try await sa.createDeck(name: "AWS")
+        let local = try await sa.createLibrary(name: "Private device", deviceOnly: true)
+        try await sa.selectLibrary(local.id)
+        let privateDeck = try await sa.createDeck(name: "Do not upload")
+        let document = LibraryDocument(name: "private.md", kind: .markdown, pages: [PDFPageText(number: 1, text: "Device-only secret")], originalData: Data("Device-only secret".utf8))
+        try await sa.addDocument(document, toFolder: "")
+        let bLocal = try await sb.createLibrary(name: "Other device private", deviceOnly: true)
+        try await sb.selectLibrary(bLocal.id)
+        let retained = try await sb.createDeck(name: "Keep this local")
+        let ea = CloudSyncEngine(repository: a, client: server, scheduler: FSRSScheduler())
+        let eb = CloudSyncEngine(repository: b, client: server, scheduler: FSRSScheduler())
+        _ = try await ea.synchronize(); _ = try await eb.synchronize(); _ = try await ea.synchronize()
+        let received = try await b.read()
+        XCTAssertTrue(received.decks.contains { $0.id == main.id })
+        XCTAssertTrue(received.decks.contains { $0.id == exam.id })
+        XCTAssertTrue(received.decks.contains { $0.id == retained.id })
+        XCTAssertFalse(received.decks.contains { $0.id == privateDeck.id })
+        XCTAssertFalse(received.folderDocuments?.contains { $0.id == document.id } ?? false)
+        try await sb.selectLibrary(exams.id)
+        let selected = try await sb.snapshot()
+        XCTAssertEqual(selected.decks.map(\.id), [exam.id])
+        try await sb.selectLibrary(bLocal.id)
+        let own = try await sb.snapshot()
+        XCTAssertEqual(own.decks.map(\.id), [retained.id])
+        _ = try await eb.synchronize()
+        let remote = try await server.decks(); XCTAssertEqual(remote.count, 2)
+    }
     func testMovingSharedQuestionHidesDestinationFromOldOnlyMember() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:directory) }

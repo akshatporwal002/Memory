@@ -11,7 +11,8 @@ public struct CloudProjectionEntity: Codable, Equatable, Sendable {
 }
 public enum CloudProjection {
     /// Shared content and learner state have independent identities and authorization scopes.
-    public static func entities(_ library: LibrarySnapshot,userID: UUID,ownedDecks: Set<String>) throws -> [CloudProjectionEntity] {
+    public static func entities(_ source: LibrarySnapshot,userID: UUID,ownedDecks: Set<String>) throws -> [CloudProjectionEntity] {
+        let library = LibrarySpaceScope.syncable(source)
         let prefix = userID.uuidString.lowercased() + ":"
         var result: [CloudProjectionEntity] = []
         func personal<T:Encodable>(_ category: String,_ id: String,_ value: T,deckID: String? = nil) throws {
@@ -35,6 +36,10 @@ public enum CloudProjection {
         for imported in library.importedReviews { try personal("importedReview",imported.id,imported,deckID:library.cards.first(where: { $0.id == imported.cardID })?.deckID) }
         for correction in library.corrections { try personal("correction",correction.id,correction,deckID:library.reviews.first(where: { $0.id == correction.reviewID })?.deckID) }
         for media in library.media { try personal("media",media.name,media) }
+        if let catalog = library.librarySpaces {
+            for space in catalog.spaces { try personal("librarySpace", space.id, space) }
+            for (key, spaceID) in catalog.membership { try personal("libraryMembership", key, spaceID) }
+        }
         try personal("folders","library",library.folders ?? [])
         if let documents = library.folderDocuments, !documents.isEmpty {
             try personal("folderFiles","library",["libraryDocumentsBlob":PrivateCloudDocument.path(data:try PrivateCloudDocument.encode(documents),userID:userID)])
@@ -95,6 +100,25 @@ public enum CloudProjection {
             return
         }
         switch category {
+        case "librarySpace":
+            let space = try value.decode(LibrarySpace.self)
+            guard !space.deviceOnly else { throw EngramError.invalid("Device-only libraries cannot be synchronized.") }
+            var catalog = library.librarySpaces ?? LibrarySpaceCatalog()
+            if library.librarySpaces == nil { catalog.spaces[0].folders = library.folders ?? [] }
+            if let index = catalog.spaces.firstIndex(where: { $0.id == space.id }) {
+                guard !catalog.spaces[index].deviceOnly else { throw EngramError.conflict }
+                catalog.spaces[index] = space
+            } else { catalog.spaces.append(space) }
+            library.librarySpaces = catalog
+            library.folders = Array(Set(catalog.spaces.flatMap(\.folders))).sorted()
+        case "libraryMembership":
+            let spaceID = try value.decode(String.self)
+            var catalog = library.librarySpaces ?? LibrarySpaceCatalog()
+            if library.librarySpaces == nil { catalog.spaces[0].folders = library.folders ?? [] }
+            // Changes may arrive before the library definition; retain the identity
+            // and validate the complete downloaded transaction before committing.
+            if catalog.spaces.first(where: { $0.id == catalog.space(for: id) })?.deviceOnly == true { throw EngramError.conflict }
+            catalog.membership[id] = spaceID; library.librarySpaces = catalog
         case "deckExtras":
             guard let index = library.decks.firstIndex(where: { $0.id == id }),case .object(let extras) = value else { return }
             if case .bool(let suspended) = extras["studySuspended"] { library.decks[index].studySuspended = suspended ? true : nil } else { library.decks[index].studySuspended = nil }
@@ -110,11 +134,16 @@ public enum CloudProjection {
         case "importedReview": replace(try value.decode(ImportedReview.self),in:&library.importedReviews)
         case "correction": replace(try value.decode(ReviewCorrection.self),in:&library.corrections)
         case "media": replace(try value.decode(MediaFile.self),in:&library.media)
-        case "folders": library.folders = try value.decode([String].self)
+        case "folders":
+            let folders = try value.decode([String].self)
+            library.folders = Array(Set(folders + (library.librarySpaces?.spaces.filter(\.deviceOnly).flatMap(\.folders) ?? []))).sorted()
         case "folderFiles":
             if case .object(let details) = value, let documents = details["libraryDocuments"] {
-                library.folderDocuments = try documents.decode([LibraryFolderDocument].self)
-            } else { library.folderDocuments = nil }
+                let local = library.folderDocuments?.filter { file in library.librarySpaces?.spaces.first(where: { $0.id == library.librarySpaces?.space(for: "file:" + file.id) })?.deviceOnly == true } ?? []
+                library.folderDocuments = local + (try documents.decode([LibraryFolderDocument].self)).filter { file in !local.contains { $0.id == file.id } }
+            } else {
+                library.folderDocuments = library.folderDocuments?.filter { file in library.librarySpaces?.spaces.first(where: { $0.id == library.librarySpaces?.space(for: "file:" + file.id) })?.deviceOnly == true }
+            }
         case "settings": library.settings = try value.decode(StudySettings.self)
         case "attempt": var attempts = library.answerAttempts ?? []; replace(try value.decode(AnswerAttempt.self),in:&attempts); library.answerAttempts = attempts
         case "conversation", "run", "memory", "preferences":

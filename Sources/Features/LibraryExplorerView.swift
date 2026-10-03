@@ -67,6 +67,7 @@ struct LibraryExplorerView: View {
             } else { explorerContent }
         }
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: model.libraryPresentationEpoch) { _, _ in openedDeck = nil; openedDocument = nil; expanded = []; query = "" }
         .refreshable { await model.refresh() }
         .navigationDestination(item:Binding(get:{ workspace ? nil : openedDeck },set:{ openedDeck = $0 })) { id in LibraryDeckDestination(model:model,deckID:id) }
         .sheet(item:$openedDocument,onDismiss:{ model.visibleLibraryDocumentID = nil }) { document in LibraryDocumentReader(document:document) }
@@ -139,6 +140,7 @@ struct LibraryExplorerView: View {
                     Spacer()
                     addMenu
                 }
+                LibrarySpacePicker(model: model)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(workspace ? "" : "FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)
@@ -174,7 +176,7 @@ struct LibraryExplorerView: View {
                             folderFileRow(item,depth:0)
                         }
                         ForEach(nodes) { node in
-                            LibraryExplorerNode(node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
+                            LibraryExplorerNode(model:model,node:node,depth:0,expanded:$expanded,searching:!query.isEmpty,
                                                 folderDocuments:folderDocuments(for:node.path),
                                                 filesInFolder:folderDocuments,
                                                 openDeck:openDeck,openDocument:openDocument,
@@ -283,6 +285,7 @@ struct LibraryExplorerView: View {
 }
 
 private struct LibraryExplorerNode: View {
+    let model: EngramModel
     let node: LibraryFolder
     let depth: Int
     @Binding var expanded: Set<String>
@@ -342,6 +345,7 @@ private struct LibraryExplorerNode: View {
                 if let deck = node.deck {
                     Button("Add image from Photos") { importPhoto(deck.id) }
                     Button(deck.deck.studySuspended == true ? "Resume deck" : "Suspend deck",systemImage:deck.deck.studySuspended == true ? "play" : "pause") { suspendDeck(deck.id,deck.deck.studySuspended != true) }
+                    MoveDeckToLibraryMenu(model: model, deckID: deck.id)
                     Button("Delete deck",role:.destructive) { deleteDeck(deck.deck) }
                 }
                 if node.deck == nil {
@@ -387,7 +391,7 @@ private struct LibraryExplorerNode: View {
                     }
                 }
                 ForEach(node.children) { child in
-                    LibraryExplorerNode(node:child,depth:depth + 1,expanded:$expanded,searching:searching,
+                    LibraryExplorerNode(model:model,node:child,depth:depth + 1,expanded:$expanded,searching:searching,
                                         folderDocuments:filesInFolder(child.path),filesInFolder:filesInFolder,
                                         openDeck:openDeck,openDocument:openDocument,newNotebook:newNotebook,
                                         newFolder:newFolder,importFile:importFile,importPhoto:importPhoto,

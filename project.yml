@@ -26,6 +26,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.engram.study
+        CODE_SIGN_ENTITLEMENTS: App/Engram-iOS.entitlements
         DEVELOPMENT_TEAM: 56S6XAQ96Q
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
@@ -33,6 +34,9 @@ targets:
     info:
       path: App/Info-iOS.plist
       properties:
+        EngramSupabaseURL: https://heedprsusmrwxasdixbt.supabase.co
+        EngramSupabasePublishableKey: sb_publishable_n_N8rBBpowlhHHEgJwCUow_zm-3Gcj0
+        EngramCloudPilotEnabled: false
         CFBundleDisplayName: Engram
         CFBundleURLTypes: &engramURLTypes
           - CFBundleURLName: dev.engram.links
@@ -78,6 +82,10 @@ targets:
         product: PersistenceAdapters
       - package: Engram
         product: SchedulingAdapters
+    entitlements:
+      path: App/Engram-iOS.entitlements
+      properties:
+        com.apple.developer.applesignin: [Default]
   Engram-macOS:
     type: application
     platform: macOS
@@ -87,12 +95,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.engram.study.mac
+        CODE_SIGN_ENTITLEMENTS: App/Engram-macOS.entitlements
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_APP_SANDBOX: YES
         ENABLE_HARDENED_RUNTIME: YES
     info:
       path: App/Info-macOS.plist
       properties:
+        EngramSupabaseURL: https://heedprsusmrwxasdixbt.supabase.co
+        EngramSupabasePublishableKey: sb_publishable_n_N8rBBpowlhHHEgJwCUow_zm-3Gcj0
+        EngramCloudPilotEnabled: false
         CFBundleDisplayName: Engram
         UTExportedTypeDeclarations: *engramTypes
         CFBundleURLTypes: *engramURLTypes
@@ -101,6 +113,7 @@ targets:
       path: App/Engram-macOS.entitlements
       properties:
         com.apple.security.app-sandbox: true
+        com.apple.developer.applesignin: [Default]
         com.apple.security.files.user-selected.read-write: true
         com.apple.security.network.client: true
         com.apple.security.network.server: true

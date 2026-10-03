@@ -1,6 +1,53 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testAccountAndLibraryBaselineCaptures() {
+        let app = launch(extra: ["--ui-monochrome", "--ui-dark"])
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))
+        app.buttons["tab-library"].tap(); capture("Library-Before", app)
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        app.buttons["Engram account"].tap()
+        capture("Account-Before", app)
+    }
+    @MainActor func testUnifiedAccountLightCapture() {
+        let app = launch(extra: ["--ui-monochrome"])
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        app.buttons["Engram account"].tap()
+        XCTAssertTrue(app.buttons["account-chatgpt"].waitForExistence(timeout: 5))
+        capture("Account-Unified-Light", app)
+    }
+    @MainActor func testUnifiedAccountAndLibraryScreens() {
+        let app = launch(extra: ["--ui-monochrome", "--ui-dark"])
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))
+        app.buttons["tab-library"].tap()
+        XCTAssertTrue(app.buttons["library-space-picker"].waitForExistence(timeout: 5))
+        capture("Library-Spaces", app)
+        app.buttons["library-space-picker"].tap()
+        app.buttons["New library"].tap()
+        let field = app.textFields["Library name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap(); field.typeText("University")
+        app.buttons["Create"].tap()
+        XCTAssertTrue(app.staticTexts["University"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["library-deck-ui-deck"].exists)
+        capture("Library-New-Space", app)
+        app.buttons["library-space-picker"].tap()
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "My library")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["library-deck-ui-deck"].waitForExistence(timeout: 5))
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        app.buttons["Engram account"].tap()
+        for id in ["account-chatgpt", "account-google", "account-apple", "account-email"] {
+            XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5))
+        }
+        capture("Account-Unified-Dark", app)
+        app.buttons["account-email"].tap()
+        XCTAssertTrue(app.textFields["you@example.com"].waitForExistence(timeout: 5))
+        capture("Account-Email-Dark", app)
+    }
     @MainActor func testMemoryGraphWindows() {
         let app = launch()
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))

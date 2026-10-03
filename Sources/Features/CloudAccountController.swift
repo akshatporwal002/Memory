@@ -4,6 +4,8 @@ import CloudAdapters
 import PersistenceAdapters
 import LearningCore
 import SchedulingAdapters
+import ChatGPTAuth
+import CryptoKit
 
 @MainActor @Observable final class CloudAccountController {
     private let repository: SQLiteLibraryRepository?
@@ -11,6 +13,24 @@ import SchedulingAdapters
     private var engine: CloudSyncEngine?
     private var notificationTask: Task<Void,Never>?
     private(set) var userID: UUID?
+    private(set) var localProfileID: String?
+    var pendingChatGPTProfile: ChatGPTRegistration?
+    var signedIn: Bool { userID != nil || localProfileID != nil }
+    func useChatGPTProfile(_ account: ChatGPTRegistration, upload: Bool, model: EngramModel) async {
+        guard let repository, account.credentials != nil, !busy, !model.busy, !model.typedAnswer.busy, !model.markingAnswer else { return }
+        busy = true; defer { busy = false }
+        let id = "chatgpt-" + SHA256.hash(data: Data(account.subject.utf8)).map { String(format: "%02x", $0) }.joined()
+        do {
+            await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
+            notificationTask?.cancel(); notificationTask = nil
+            // This is an isolated local identity profile, never a fabricated Supabase session.
+            try await repository.selectAccount(id, uploadLocal: upload, syncEnabled: false)
+            localProfileID = id; userID = nil; pendingChatGPTProfile = nil
+            UserDefaults.standard.set("chatgpt", forKey: "engram.accountMethod")
+            status = "Signed in with ChatGPT · libraries saved on this device"
+            await model.restoreLibrarySelection(); await model.refresh()
+        } catch { self.error = error.localizedDescription }
+    }
     private(set) var busy = false
     private(set) var status = "Local library"
     var error: String?
@@ -21,30 +41,66 @@ import SchedulingAdapters
     private(set) var membersDeckID: String?
     var confirmationUserID: UUID?
     var pendingJoinToken: String?
+    private(set) var emailCodeAddress: String?
+    private(set) var emailResendAfter = Date.distantPast
     var configured: Bool { client != nil }
+    var syncEnabled: Bool { engine != nil }
     init(repository: SQLiteLibraryRepository? = nil) {
         self.repository = repository
         // Hosted pilot remains disabled until two-device/two-user acceptance is complete.
-        if let repository, Bundle.main.object(forInfoDictionaryKey:"EngramCloudPilotEnabled") as? Bool == true,
+        if let repository,
            let raw = Bundle.main.object(forInfoDictionaryKey:"EngramSupabaseURL") as? String,let url = URL(string:raw),
            let key = Bundle.main.object(forInfoDictionaryKey:"EngramSupabasePublishableKey") as? String {
-            do { let client = try SupabaseCloudClient(url:url,publishableKey:key); self.client = client; engine = CloudSyncEngine(repository:repository,client:client,scheduler:FSRSScheduler()) }
+            do { let client = try SupabaseCloudClient(url:url,publishableKey:key); self.client = client; if Bundle.main.object(forInfoDictionaryKey:"EngramCloudPilotEnabled") as? Bool == true { engine = CloudSyncEngine(repository:repository,client:client,scheduler:FSRSScheduler()) } }
             catch { self.error = error.localizedDescription }
         }
     }
     func signIn(_ provider: String) async {
         guard let client,!busy else { return }; busy = true; error = nil; defer { busy = false }
-        do { confirmationUserID = try await client.signIn(provider:provider) }
+        do { finishSignIn(try await client.signIn(provider:provider)) }
         catch { self.error = error.localizedDescription }
     }
+    func signInWithApple(idToken: String, nonce: String) async {
+        guard let client, !busy else { return }
+        busy = true; error = nil; defer { busy = false }
+        do { finishSignIn(try await client.signInWithApple(idToken: idToken, nonce: nonce)) }
+        catch { self.error = error.localizedDescription }
+    }
+    func sendEmailCode(_ email: String) async {
+        guard let client, !busy else { return }
+        let address = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard address.count <= 254, address.contains("@"), !address.contains(where: { $0.isWhitespace }) else { error = "Enter a valid email address."; return }
+        guard Date() >= emailResendAfter else { error = "Please wait a minute before requesting another code."; return }
+        busy = true; error = nil; defer { busy = false }
+        do { try await client.sendEmailCode(email: address); emailCodeAddress = address; emailResendAfter = Date().addingTimeInterval(60) }
+        catch { self.error = error.localizedDescription }
+    }
+    func verifyEmailCode(_ code: String) async {
+        guard let client, let email = emailCodeAddress, !busy else { return }
+        let value = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (6...10).contains(value.count), value.allSatisfy({ $0.isASCII && $0.isNumber }) else { error = "Enter the verification code from your email."; return }
+        busy = true; error = nil; defer { busy = false }
+        do { finishSignIn(try await client.verifyEmailCode(email: email, code: value)); emailCodeAddress = nil }
+        catch { self.error = error.localizedDescription }
+    }
+    func changeEmail() { emailCodeAddress = nil; error = nil }
+    private func finishSignIn(_ id: UUID) {
+        localProfileID = nil
+        UserDefaults.standard.set("cloud", forKey: "engram.accountMethod")
+        confirmationUserID = id
+    }
     func confirmInitialLibrary(upload: Bool,model: EngramModel) async {
-        guard let id = confirmationUserID,let repository else { return }
-        guard !model.busy,!model.typedAnswer.busy else { error = "Finish the current edit or answer review before switching accounts."; return }
+        guard let id = confirmationUserID,let repository,!busy else { return }
+        guard !model.busy,!model.typedAnswer.busy,!model.markingAnswer else { error = "Finish the current edit or answer review before switching accounts."; return }
+        busy = true; defer { busy = false }
         do {
             await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
-            try await repository.selectAccount(id.uuidString.lowercased(),uploadLocal:upload)
+            try await repository.selectAccount(id.uuidString.lowercased(),uploadLocal:upload,syncEnabled:syncEnabled)
             model.pdfLearning.selectAccount(id)
-            userID = id; confirmationUserID = nil; startNotifications(model:model); await model.refresh(); await sync(model:model)
+            userID = id; confirmationUserID = nil
+            status = syncEnabled ? "Connected" : "Signed in · libraries saved on this device"
+            await model.restoreLibrarySelection(); startNotifications(model:model); await model.refresh()
+            busy = false; await sync(model:model)
         } catch { self.error = error.localizedDescription }
     }
     func cancelInitialLibrary() async {
@@ -52,23 +108,51 @@ import SchedulingAdapters
         catch { self.error = error.localizedDescription }
     }
     func restore(model: EngramModel) async {
+        if UserDefaults.standard.string(forKey: "engram.accountMethod") == "chatgpt", let account = model.chatGPT.activeAccount, account.credentials != nil {
+            await useChatGPTProfile(account, upload: false, model: model); return
+        }
         guard let client,let repository,!busy else { return }
         do {
             let id = try await client.currentUserID()
             guard try await repository.hasAccount(id.uuidString.lowercased()) else { confirmationUserID = id; return }
-            try await repository.selectAccount(id.uuidString.lowercased()); model.pdfLearning.selectAccount(id); userID = id; startNotifications(model:model); await model.refresh(); await sync(model:model)
+            try await repository.selectAccount(id.uuidString.lowercased(),syncEnabled:syncEnabled); model.pdfLearning.selectAccount(id); userID = id
+            status = syncEnabled ? "Connected" : "Signed in · libraries saved on this device"
+            await model.restoreLibrarySelection(); startNotifications(model:model); await model.refresh(); await sync(model:model)
         }
         catch { status = "Local library" }
     }
     func signOut(model: EngramModel) async {
+        guard !model.busy, !model.typedAnswer.busy, !model.markingAnswer else {
+            error = "Finish the current edit or answer review before switching accounts."; return
+        }
+        if localProfileID != nil, let repository {
+            guard !busy, !model.busy, !model.typedAnswer.busy else { return }
+            do {
+                await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
+                await model.chatGPT.signOut(); try await repository.selectAccount(nil)
+                localProfileID = nil; status = "Local library"; UserDefaults.standard.removeObject(forKey: "engram.accountMethod")
+                await model.restoreLibrarySelection(); await model.refresh()
+            } catch { self.error = error.localizedDescription }
+            return
+        }
         guard let client,let repository,!busy else { return }; busy = true; defer { busy = false }
+        if !syncEnabled {
+            do {
+                await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.selectAccount(nil)
+                try await client.signOut(); try await repository.selectAccount(nil); userID = nil; status = "Local library"
+                UserDefaults.standard.removeObject(forKey: "engram.accountMethod")
+                await model.restoreLibrarySelection(); await model.refresh()
+            }
+            catch { self.error = error.localizedDescription }
+            return
+        }
         guard !model.busy,!model.typedAnswer.busy else { error = "Finish the current edit or answer review before switching accounts."; return }
-        do { await model.assistant.stopAndWait(); try await client.signOut(); notificationTask?.cancel(); notificationTask = nil; model.voice.stop(); model.pdfLearning.selectAccount(nil); try await repository.selectAccount(nil); userID = nil; conflicts = []; members = []; membersDeckID = nil; status = "Local library"; await model.refresh() }
+        do { await model.assistant.stopAndWait(); try await client.signOut(); notificationTask?.cancel(); notificationTask = nil; model.voice.stop(); model.pdfLearning.selectAccount(nil); try await repository.selectAccount(nil); userID = nil; conflicts = []; members = []; membersDeckID = nil; status = "Local library"; UserDefaults.standard.removeObject(forKey: "engram.accountMethod"); await model.restoreLibrarySelection(); await model.refresh() }
         catch { self.error = error.localizedDescription }
     }
     private func startNotifications(model: EngramModel) {
         notificationTask?.cancel()
-        guard let client,let id = userID else { return }
+        guard engine != nil,let client,let id = userID else { return }
         notificationTask = Task { [weak self,weak model] in
             do {
                 for try await _ in await client.notifications() {

@@ -21,7 +21,8 @@ enum PrivateCloudDocument {
         try validatePath(path,userID:userID)
         guard data.count <= 45_000_000,self.path(data:data,userID:userID) == path else { throw EngramError.invalid("Private document failed integrity verification.") }
     }
-    static func uploads(for entity: CloudProjectionEntity,library: LibrarySnapshot,userID: UUID) throws -> [(String,Data)] {
+    static func uploads(for entity: CloudProjectionEntity,library source: LibrarySnapshot,userID: UUID) throws -> [(String,Data)] {
+        let library = LibrarySpaceScope.syncable(source)
         guard entity.kind == "private",case .object(let envelope) = entity.payload,
               case .object(let extras) = envelope["value"] else { return [] }
         if envelope["category"] == .string("folderFiles"),

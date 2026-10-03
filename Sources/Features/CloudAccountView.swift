@@ -9,19 +9,18 @@ struct CloudAccountView: View {
     @State private var token = ""
     var body: some View {
         Form {
-            EngramListSection {
-                if model.cloud.userID != nil {
+            if model.cloud.signedIn {
+                EngramListSection {
                     Label("Connected",systemImage:"person.crop.circle.badge.checkmark")
                     Text(model.cloud.status).font(.caption).engramSecondaryText()
-                    Button("Sync now") { Task { await model.cloud.sync(model:model) } }
+                    if model.cloud.syncEnabled && model.cloud.userID != nil { Button("Sync now") { Task { await model.cloud.sync(model:model) } } }
                     Button("Sign out",role:.destructive) { confirmSignOut = true }
-                } else {
-                    Button("Continue with Apple",systemImage:"apple.logo") { Task { await model.cloud.signIn("apple") } }.disabled(!model.cloud.configured)
-                    Button("Continue with Google") { Task { await model.cloud.signIn("google") } }.disabled(!model.cloud.configured)
-                    if !model.cloud.configured { Text("Cloud accounts are awaiting setup. Your local library remains available.").font(.caption).engramSecondaryText() }
-                }
-            } header: { Text("Engram account") } footer: { Text("Your Engram account synchronizes your learning library. Your ChatGPT connection provides AI access and remains separate.") }
-            if model.cloud.userID != nil {
+                    if model.chatGPT.activeAccount == nil { EngramAccountSignIn(model: model, linkingAIOnly: true) }
+                    else { LabeledContent("AI access", value: model.chatGPT.activeAccount?.label ?? "ChatGPT") }
+                } header: { Text("Account") } footer: { Text("Your libraries belong to your Engram profile. Eligible AI requests use your connected ChatGPT plan.") }
+                EngramListSection { LibrarySpacePicker(model: model) }
+            } else { EngramAccountSignIn(model: model) }
+            if model.cloud.userID != nil && model.cloud.syncEnabled {
                 EngramListSection("Join a shared deck") {
                     TextField("Invitation link",text:$token).textContentType(.URL)
                     Button("Join deck") {
@@ -38,10 +37,17 @@ struct CloudAccountView: View {
             if let error = model.cloud.error { EngramInlineError(message:error) }
             if model.cloud.busy { ProgressView() }
         }.modifier(UtilityListStyle()).navigationTitle("Engram account").disabled(model.cloud.busy)
+            .confirmationDialog("Choose your ChatGPT profile's starting library", isPresented: Binding(get: { model.cloud.pendingChatGPTProfile != nil && !model.chatGPT.showPlanConfirmation }, set: { if !$0 { model.cloud.pendingChatGPTProfile = nil } })) {
+                if let account = model.cloud.pendingChatGPTProfile {
+                    Button("Use this device's local library") { Task { await model.cloud.useChatGPTProfile(account, upload: true, model: model) } }
+                    Button("Start with an empty library") { Task { await model.cloud.useChatGPTProfile(account, upload: false, model: model) } }
+                }
+                Button("Cancel", role: .cancel) { model.cloud.pendingChatGPTProfile = nil }
+            } message: { Text("Your ChatGPT identity and AI access use one sign-in. Cloud library sync for this method is awaiting server setup; your libraries stay saved on this device.") }
             .onAppear { if let value = model.cloud.pendingJoinToken { token = value; model.cloud.pendingJoinToken = nil } }
             .confirmationDialog("Choose your account's starting library",isPresented:Binding(get: { model.cloud.confirmationUserID != nil },set: { _ in })) {
-                Button("Upload this device's local library") { Task { await model.cloud.confirmInitialLibrary(upload:true,model:model) } }
-                Button("Start with my cloud library") { Task { await model.cloud.confirmInitialLibrary(upload:false,model:model) } }
+                Button(model.cloud.syncEnabled ? "Upload this device's local library" : "Use this device's local library") { Task { await model.cloud.confirmInitialLibrary(upload:true,model:model) } }
+                Button(model.cloud.syncEnabled ? "Start with my cloud library" : "Start with an empty library") { Task { await model.cloud.confirmInitialLibrary(upload:false,model:model) } }
                 Button("Cancel",role:.cancel) { Task { await model.cloud.cancelInitialLibrary() } }
             } message: { Text("Uploading is optional. Local libraries and other accounts remain separate on this device.") }
             .confirmationDialog("Sign out of Engram?",isPresented:$confirmSignOut) {

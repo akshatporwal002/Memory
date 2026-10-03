@@ -107,6 +107,17 @@ public actor SupabaseCloudClient: CloudTransport {
         return session.user.id
     }
     public func signOut() async throws { try await client.auth.signOut() }
+    public func sendEmailCode(email: String) async throws {
+        try await client.auth.signInWithOTP(email: email, redirectTo: URL(string: "engram://app-auth"))
+    }
+    public func verifyEmailCode(email: String, code: String) async throws -> UUID {
+        let response = try await client.auth.verifyOTP(email: email, token: code, type: .email)
+        return response.user.id
+    }
+    public func signInWithApple(idToken: String, nonce: String) async throws -> UUID {
+        let session = try await client.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce))
+        return session.user.id
+    }
     public func apply(_ operation: CloudApply) async throws -> CloudApplyResult { try await client.rpc("engram_apply",params:operation).execute().value }
     public func changes(after sequence: Int64) async throws -> [CloudChange] { try await client.from("engram_changes").select().gt("sequence",value:String(sequence)).order("sequence").limit(500).execute().value }
     public func decks() async throws -> [CloudDeckAccess] { try await client.from("engram_decks").select().execute().value }

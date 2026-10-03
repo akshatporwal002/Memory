@@ -190,7 +190,7 @@ struct SettingsView: View {
                 EngramListSection {
                     LabeledContent("Engram sync", value: model.cloud.status)
                     Button("Engram account & sharing") { model.cloudAccountPresented = true }
-                } footer: { Text("An Engram account can synchronize your library. ChatGPT sign-in provides AI access separately.") }
+                } footer: { Text("Choose Google, Apple, Email or ChatGPT on the account screen. Each device remembers its selected library.") }
             }.modifier(UtilityListStyle()).navigationTitle(page.rawValue)
         case .about:
             Form {

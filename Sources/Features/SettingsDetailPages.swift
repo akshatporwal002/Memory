@@ -119,7 +119,9 @@ struct AISettingsPage: View {
     var body: some View {
         Form {
             EngramListSection { NavigationLink("Engram account") { CloudAccountView(model:model) } }
-            EngramListSection("ChatGPT account") { ChatGPTConnectionView(connection: model.chatGPT) }
+            if model.chatGPT.activeAccount != nil {
+                EngramListSection("ChatGPT plan & usage") { ChatGPTConnectionView(connection: model.chatGPT) }
+            }
             EngramListSection { NavigationLink("Learning memory") { LearningMemoryView(model:model) } }
             EngramListSection {
                 Toggle("AI answer marking", isOn: Binding(get: { model.aiMarker.enabled }, set: { model.aiMarker.enabled = $0 }))
