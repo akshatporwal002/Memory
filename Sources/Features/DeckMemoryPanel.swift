@@ -62,7 +62,7 @@ struct DeckMemoryPanel: View {
                         Text(selected == nil ? "average estimated recall now" : "estimated recall now")
                             .font(.caption).foregroundStyle(palette.secondaryText)
                     }
-                    let axis = DeckMemoryOutlook.recallAxisDomain(plateau: (selected?.projection ?? outlook.projection).last?.probability)
+                    let axis = DeckMemoryOutlook.recallAxisDomain(plateau: values.last)
                     Chart {
                         ForEach(selected?.history ?? outlook.history) { point in
                             LineMark(x: .value("Date", point.date), y: .value("Recall", point.probability * 100), series: .value("Period", "Recorded reviews"))
@@ -151,7 +151,7 @@ struct DeckMemoryPanel: View {
                     Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(palette.secondaryText)
                 }
-                Text("Solid line: review history. Dotted forecast assumes Good at due dates; actual answers and daily limits can change it. Scale starts 10 points below the forecast plateau; lower recall falls outside this zoom. New and unsupported cards are excluded.")
+                Text("Solid line: review history. Dotted forecast assumes Good at due dates; actual answers and daily limits can change it. Scale starts 10 points below the no-more-reviews curve’s endpoint. New and unsupported cards are excluded.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }
             .task(id: "\(model.library.revision)-\(deck.id)-\(Int(model.now.timeIntervalSince1970 / 60))") {

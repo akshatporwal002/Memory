@@ -112,7 +112,7 @@ public struct DeckMemoryOutlook: Sendable {
                     nextPlannedReview: scheduled.min(),
                     scheduledWithinWeek: scheduled.filter { $0 <= now.addingTimeInterval(7 * 86_400) }.count)
     }
-    /// Zoom ten percentage points below the projected endpoint (the visible plateau).
+    /// Zoom ten percentage points below the no-more-reviews endpoint.
     public static func recallAxisDomain(plateau: Double?) -> ClosedRange<Double> {
         guard let plateau, plateau.isFinite, (0...1).contains(plateau) else { return 0...100 }
         return max(0, (plateau * 100).rounded() - 10)...100
