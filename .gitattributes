@@ -1,0 +1,2 @@
+# Keep Mac/Linux build scripts runnable when transferred from Windows.
+*.sh text eol=lf

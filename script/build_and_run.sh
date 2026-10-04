@@ -8,10 +8,16 @@ DERIVED_DATA="$PROJECT_ROOT/.build/xcode"
 APP_NAME="Engram-macOS"
 APP_BUNDLE="$DERIVED_DATA/Build/Products/Debug/$APP_NAME.app"
 
+AVAILABLE_KB="$(df -Pk "$PROJECT_ROOT" | awk 'NR==2 {print $4}')"
+if (( AVAILABLE_KB < 20 * 1024 * 1024 )); then
+  echo "Less than 20 GiB free. Remove only this task's disposable artifacts; preserve reusable caches." >&2
+  exit 1
+fi
+
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 xcodegen generate --spec "$PROJECT_ROOT/project.yml" >/dev/null
 perl -0pi -e 's/(isa = XCSwiftPackageProductDependency;\n)(\s+productName)/$1\t\t\tpackage = 8B569F3F9CF22A765B039142 \/\* XCLocalSwiftPackageReference "." \*\/;\n$2/g' "$PROJECT/project.pbxproj"
-xcodebuild -resolvePackageDependencies -project "$PROJECT" -scheme "$APP_NAME" >/dev/null
+xcodebuild -resolvePackageDependencies -project "$PROJECT" -scheme "$APP_NAME" -derivedDataPath "$DERIVED_DATA" >/dev/null
 xcodebuild -project "$PROJECT" -scheme "$APP_NAME" -destination 'platform=macOS' \
   -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_ALLOWED=NO -configuration Debug build
 
