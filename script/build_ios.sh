@@ -45,8 +45,11 @@ XCODEGEN="$(command -v xcodegen || true)"
 if [[ -z "$XCODEGEN" && -x /opt/homebrew/bin/xcodegen ]]; then XCODEGEN=/opt/homebrew/bin/xcodegen; fi
 if [[ -z "$XCODEGEN" ]]; then echo 'Use the existing XcodeGen installation; none found.' >&2; exit 1; fi
 "$XCODEGEN" generate --spec "$PROJECT_ROOT/project.yml"
-SIGNING_ARGS=()
-[[ -n "$DEVICE_ID" ]] && SIGNING_ARGS=(CODE_SIGNING_ALLOWED=NO)
 if (( $# >= 2 )); then shift 2; else shift "$#"; fi
-xcodebuild "$ACTION" -project "$PROJECT_ROOT/Engram.xcodeproj" -scheme Engram-iOS \
-  -configuration Debug -destination "$DESTINATION" -derivedDataPath "$DERIVED_DATA" "${SIGNING_ARGS[@]}" "$@"
+if [[ -n "$DEVICE_ID" ]]; then
+  xcodebuild "$ACTION" -project "$PROJECT_ROOT/Engram.xcodeproj" -scheme Engram-iOS \
+    -configuration Debug -destination "$DESTINATION" -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_ALLOWED=NO "$@"
+else
+  xcodebuild "$ACTION" -project "$PROJECT_ROOT/Engram.xcodeproj" -scheme Engram-iOS \
+    -configuration Debug -destination "$DESTINATION" -derivedDataPath "$DERIVED_DATA" "$@"
+fi
