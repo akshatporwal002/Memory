@@ -2,6 +2,44 @@ import XCTest
 import LearningCore
 
 final class MathEntryTests: XCTestCase {
+    func testNativeSelectionReplacesTextAtCaretAndUndoRestoresTheAttempt() throws {
+        var document = MathEntryDocument()
+        let id = try XCTUnwrap(document.slots.first?.id)
+        XCTAssertTrue(document.update(id: id, value: "α🙂z"))
+        let selection = try XCTUnwrap(MathEntryTextSelection(source: "α🙂z", utf16Range: NSRange(location: 1, length: 2)))
+        let caret = try XCTUnwrap(document.replaceText("+", at: id, selection: selection))
+        XCTAssertEqual(document.slots.first?.value, "α+z")
+        XCTAssertEqual(caret.utf16Range, NSRange(location: 2, length: 0))
+        XCTAssertNotNil(document.replaceText("θ", at: id, selection: caret))
+        XCTAssertEqual(document.slots.first?.value, "α+θz")
+        document.undo(); XCTAssertEqual(document.slots.first?.value, "α+z")
+        document.undo(); XCTAssertEqual(document.slots.first?.value, "α🙂z")
+    }
+    func testTemplateReplacementIsOneUndoAndPreservesUnselectedText() throws {
+        var document = MathEntryDocument()
+        let id = try XCTUnwrap(document.slots.first?.id)
+        XCTAssertTrue(document.update(id: id, value: "a+b"))
+        let before = document.latex
+        let selection = try XCTUnwrap(MathEntryTextSelection(source: "a+b", utf16Range: NSRange(location: 1, length: 1)))
+        XCTAssertNotNil(document.insert(.fraction, at: id, selection: selection))
+        XCTAssertEqual(document.slots.first?.value, "a")
+        XCTAssertEqual(document.slots.last?.value, "b")
+        document.undo(); XCTAssertEqual(document.latex, before)
+        XCTAssertEqual(document.slots.first?.id, id)
+    }
+    func testBrokenUnicodeStaleSelectionsAndOversizedReplacementsDoNotMutate() throws {
+        XCTAssertNil(MathEntryTextSelection(source: "🙂", utf16Range: NSRange(location: 1, length: 0)))
+        XCTAssertNil(MathEntryTextSelection(source: "e\u{301}", utf16Range: NSRange(location: 0, length: 1)))
+        var document = MathEntryDocument()
+        let id = try XCTUnwrap(document.slots.first?.id)
+        XCTAssertTrue(document.update(id: id, value: "new"))
+        let stale = try XCTUnwrap(MathEntryTextSelection(source: "old", utf16Range: NSRange(location: 1, length: 1)))
+        let before = document
+        XCTAssertNil(document.replaceText("+", at: id, selection: stale))
+        XCTAssertNil(document.insert(.fraction, at: id, selection: stale))
+        XCTAssertNil(document.replaceText(String(repeating: "x", count: 2001), at: id))
+        XCTAssertEqual(document, before)
+    }
     func testResizeBeyondDocumentSlotLimitLeavesStructureAndHistoryIntact() throws {
         var document = MathEntryDocument()
         XCTAssertNotNil(document.insertMatrix(rows: 6, columns: 6, at: try XCTUnwrap(document.slots.first?.id)))

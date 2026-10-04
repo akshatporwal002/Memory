@@ -173,3 +173,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Crashed/uncertain dispatches retain a hold and cannot automatically resend or release. Settlement can reuse verified usage without another provider call. No client preference, local voice path or personal key can mint/deduct managed credits through this ledger.
 - Nine new local tests passed; the combined server fixture suite passes 34 tests. Temporary databases/fake verified receipts only; no Supabase wallet, Apple purchase or provider charge was made. Hosted auth/JWS verification, refunds, receipt reconciliation and app integration remain pending. See server/google_cloud/VOICE-LEDGER.md.
 - No iPhone/iPad layout or new question type changed; the stay-awake helper remains off.
+
+## Native equation caret/selection integration, pending validation
+
+- Connected native TextSelection to equation fields on iOS 18+/macOS 15+. Palette symbols/templates now insert at the caret or replace selected text, preserving surrounding text and atomic undo. Matrix/piecewise insertion uses the same selection.
+- Core selection snapshots bind to the exact field value and grapheme boundaries; stale/invalid/oversized edits reject without mutation. Three regression tests are written, unexecuted; an elevated Mac SSH recheck still timed out. Prior foundation captures/tests do not validate this extension. Earlier OS versions retain append behaviour; visual-formula cursor hit-testing remains pending.
+- Updated MATH-EQUATION-ENTRY.md to distinguish the passing foundation/phone evidence from this pending extension and the failed iPad capture gate. No new question type or solver was added; the stay-awake helper remains off.

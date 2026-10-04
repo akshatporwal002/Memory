@@ -1,5 +1,21 @@
 import Foundation
 
+/// Ephemeral native selection, tied to its exact field value. Not library data.
+public struct MathEntryTextSelection: Equatable {
+    public let source: String
+    public let utf16Range: NSRange
+    public init?(source: String, utf16Range: NSRange) {
+        guard source.utf8.count <= 2_000, let range = Range(utf16Range, in: source),
+              range.lowerBound == source.endIndex || source.indices.contains(range.lowerBound),
+              range.upperBound == source.endIndex || source.indices.contains(range.upperBound) else { return nil }
+        self.source = source; self.utf16Range = utf16Range
+    }
+    var offsets: (Int, Int) {
+        let range = Range(utf16Range, in: source)!
+        return (source.distance(from: source.startIndex, to: range.lowerBound), source.distance(from: range.lowerBound, to: range.upperBound))
+    }
+}
+
 public enum MathEntryCategory: String, CaseIterable, Hashable, Sendable {
     case arithmetic = "Basics", algebra = "Algebra", functions = "Functions", calculus = "Calculus"
     case linear = "Matrices", sets = "Sets", probability = "Probability", greek = "Greek"
@@ -170,6 +186,31 @@ public struct MathEntryDocument: Equatable, Sendable {
     public mutating func insert(_ template: MathEntryTemplate, at id: UUID, offset: Int? = nil) -> UUID? {
         insert(Definition(kind: template, labels: template.labels, pattern: template.pattern), at: id, offset: offset)
     }
+    public mutating func insert(_ template: MathEntryTemplate, at id: UUID, selection: MathEntryTextSelection) -> UUID? {
+        guard slots.first(where: { $0.id == id })?.value == selection.source else { return nil }
+        let (offset, length) = selection.offsets
+        return insert(Definition(kind: template, labels: template.labels, pattern: template.pattern), at: id, offset: offset, replacingCount: length)
+    }
+    public mutating func insertMatrix(rows: Int, columns: Int, at id: UUID, selection: MathEntryTextSelection) -> UUID? {
+        guard (1...6).contains(rows), (1...6).contains(columns), slots.first(where: { $0.id == id })?.value == selection.source else { return nil }
+        let (offset, length) = selection.offsets
+        return insert(Self.matrixDefinition(rows: rows, columns: columns), at: id, offset: offset, replacingCount: length)
+    }
+    public mutating func insertPiecewise(cases: Int, at id: UUID, selection: MathEntryTextSelection) -> UUID? {
+        guard (1...6).contains(cases), slots.first(where: { $0.id == id })?.value == selection.source else { return nil }
+        let (offset, length) = selection.offsets
+        return insert(Self.piecewiseDefinition(cases: cases), at: id, offset: offset, replacingCount: length)
+    }
+    /// Insert plain notation at the cursor, replacing only selected graphemes.
+    /// A stale selection rejects the edit rather than touching different text.
+    public mutating func replaceText(_ text: String, at id: UUID, selection: MathEntryTextSelection? = nil) -> MathEntryTextSelection? {
+        guard let slot = slots.first(where: { $0.id == id }), text.utf8.count <= 2_000 else { return nil }
+        let selected = selection ?? MathEntryTextSelection(source: slot.value, utf16Range: NSRange(location: slot.value.utf16.count, length: 0))!
+        guard selected.source == slot.value, let range = Range(selected.utf16Range, in: slot.value) else { return nil }
+        let value = String(slot.value[..<range.lowerBound]) + text + String(slot.value[range.upperBound...])
+        guard let caret = MathEntryTextSelection(source: value, utf16Range: NSRange(location: selected.utf16Range.location + text.utf16.count, length: 0)), update(id: id, value: value) else { return nil }
+        return caret
+    }
     public mutating func insertMatrix(rows: Int, columns: Int, at id: UUID, offset: Int? = nil) -> UUID? {
         guard (1...6).contains(rows), (1...6).contains(columns) else { return nil }
         return insert(Self.matrixDefinition(rows: rows, columns: columns), at: id, offset: offset)
@@ -247,17 +288,18 @@ public struct MathEntryDocument: Equatable, Sendable {
         }
         return false
     }
-    private mutating func insert(_ template: Definition, at id: UUID, offset: Int?) -> UUID? {
+    private mutating func insert(_ template: Definition, at id: UUID, offset: Int?, replacingCount: Int = 0) -> UUID? {
         guard slots.count + template.labels.count + 1 <= 100, (nodes.map(\.depth).max() ?? 0) < 12 else { return nil }
         let arguments = template.labels.map { _ in [Node.text(UUID(), "")] }
         guard case .text(let first, _) = arguments[0][0] else { return nil }
         var candidate = nodes
         let changed = Self.replace(&candidate, id: id) { value in
             let point = value.index(value.startIndex, offsetBy: max(0, min(offset ?? value.count, value.count)))
+            let end = value.index(point, offsetBy: replacingCount)
             var result: [Node] = []
             if point != value.startIndex { result.append(.text(id, String(value[..<point]))) }
             result.append(.template(template, arguments))
-            if point != value.endIndex { result.append(.text(UUID(), String(value[point...]))) }
+            if end != value.endIndex { result.append(.text(UUID(), String(value[end...]))) }
             return result
         }
         guard changed, Self.render(candidate).utf8.count <= 12_000 else { return nil }

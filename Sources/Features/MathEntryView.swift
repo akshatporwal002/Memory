@@ -10,6 +10,7 @@ struct MathEntryView: View {
     @State private var document = MathEntryDocument()
     @State private var category = MathEntryCategory.arithmetic
     @State private var selected: UUID?
+    @State private var carets: [UUID: MathEntryTextSelection] = [:]
     @State private var error: String?
     @State private var shape: Shape?
     @State private var rows = 2
@@ -103,9 +104,7 @@ struct MathEntryView: View {
             ForEach(document.slots) { slot in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(slot.label).font(.caption).foregroundStyle(palette.secondaryText)
-                    TextField("Enter " + slot.label.lowercased(), text: Binding(
-                        get: { document.slots.first { $0.id == slot.id }?.value ?? "" },
-                        set: { if !document.update(id: slot.id, value: $0) { error = "This expression is too long. Shorten it before adding more." } else { error = nil } }))
+                    slotInput(slot)
                         .textFieldStyle(.plain).font(.body).focused($focused, equals: slot.id)
                         .autocorrectionDisabled().frame(minHeight: 44)
                         .accessibilityIdentifier("math-slot-" + String(document.slots.firstIndex { $0.id == slot.id } ?? 0))
@@ -127,7 +126,10 @@ struct MathEntryView: View {
                             shape = template == .matrix ? .matrix : .piecewise; return
                         }
                         guard let id = selected ?? document.slots.first?.id else { return }
-                        if let next = document.insert(template, at: id) { selected = next; focused = nil; error = nil }
+                        let next: UUID?
+                        if let caret = carets[id] { next = document.insert(template, at: id, selection: caret) }
+                        else { next = document.insert(template, at: id) }
+                        if let next { carets.removeValue(forKey: id); selected = next; focused = nil; error = nil }
                         else { error = "This expression has reached its editing limit." }
                     }.font(.subheadline).frame(maxWidth: .infinity, minHeight: 44)
                         .accessibilityIdentifier("math-template-" + template.rawValue)
@@ -138,7 +140,8 @@ struct MathEntryView: View {
                     ForEach(symbols, id: \.self) { symbol in
                         Button(symbol) {
                             guard let slot = document.slots.first(where: { $0.id == selected }) ?? document.slots.first else { return }
-                            if !document.update(id: slot.id, value: slot.value + symbol) { error = "This expression is too long." }
+                            if let caret = document.replaceText(symbol, at: slot.id, selection: carets[slot.id]) { carets[slot.id] = caret; error = nil }
+                            else { error = "Select the insertion point again, or shorten this expression." }
                         }.font(.title3).frame(minWidth: 44, minHeight: 44)
                     }
                 }
@@ -152,6 +155,16 @@ struct MathEntryView: View {
         let next = max(0, min(slots.count - 1, current + direction))
         selected = slots[next].id; focused = slots[next].id
     }
+    @ViewBuilder private func slotInput(_ slot: MathEntryDocument.Slot) -> some View {
+        let value = Binding<String>(get: { document.slots.first { $0.id == slot.id }?.value ?? "" },
+            set: { if !document.update(id: slot.id, value: $0) { error = "This expression is too long. Shorten it before adding more." } else { error = nil } })
+        if #available(iOS 18.0, macOS 15.0, *) {
+            MathCaretTextField(prompt: "Enter " + slot.label.lowercased(), text: value,
+                caret: Binding(get: { carets[slot.id] }, set: { carets[slot.id] = $0 }))
+        } else {
+            TextField("Enter " + slot.label.lowercased(), text: value)
+        }
+    }
     private func applyDimensions(_ kind: Shape, allowDiscardingContent: Bool = false) {
         if let resizingSlot {
             guard document.resize(containing: resizingSlot, rows: rows, columns: columns, allowDiscardingContent: allowDiscardingContent) else {
@@ -159,15 +172,41 @@ struct MathEntryView: View {
             }
             normalizeSelection()
         } else if let id = selected ?? document.slots.first?.id {
-            let next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id) : document.insertPiecewise(cases: rows, at: id)
+            let next: UUID?
+            if let caret = carets[id] {
+                next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id, selection: caret) : document.insertPiecewise(cases: rows, at: id, selection: caret)
+            } else {
+                next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id) : document.insertPiecewise(cases: rows, at: id)
+            }
             guard let next else { error = "This expression has reached its editing limit."; return }
-            selected = next; focused = nil; error = nil
+            carets.removeValue(forKey: id); selected = next; focused = nil; error = nil
         }
         shape = nil
     }
     private func normalizeSelection() {
+        carets.removeAll()
         focused = nil
         if !document.slots.contains(where: { $0.id == selected }) { selected = document.slots.first?.id }
         error = nil
+    }
+}
+
+@available(iOS 18.0, macOS 15.0, *)
+private struct MathCaretTextField: View {
+    var prompt: String
+    @Binding var text: String
+    @Binding var caret: MathEntryTextSelection?
+    @State private var nativeSelection: TextSelection?
+    var body: some View {
+        TextField(prompt, text: $text, selection: $nativeSelection)
+            .onChange(of: nativeSelection) { _, value in
+                guard let value, case .selection(let range) = value.indices,
+                      range.lowerBound >= text.startIndex, range.upperBound <= text.endIndex else { return }
+                caret = MathEntryTextSelection(source: text, utf16Range: NSRange(range, in: text))
+            }
+            .onChange(of: caret) { _, value in
+                guard let value, value.source == text, let range = Range(value.utf16Range, in: text) else { return }
+                nativeSelection = TextSelection(range: range)
+            }
     }
 }
