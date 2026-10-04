@@ -166,3 +166,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Local speech-start events interrupt playback generations and suppress old output until provider acknowledgement. Input transcripts remain provisional; provider tools are rejected and this bridge has no grading, scheduling or repository access.
 - Ten additional asynchronous fixture tests passed; the full server fixture suite now passes 25 tests. Native iPhone/iPad transport/playback/echo control, hosted accounting, SDK compatibility and live benchmarks remain pending. See server/google_cloud/LIVE-AUDIO.md.
 - No new question type or UI layout was implemented; the stay-awake helper remains off.
+
+## Durable sandbox voice accounting prepared
+
+- Added persisted, account-scoped purchase grants, immutable rates, locked usage reservations, payload-bound dispatch records and idempotent settlement/release. Duplicate purchases and concurrent reservations cannot grant/spend credit twice. Production remains rejected and default access is disabled.
+- Crashed/uncertain dispatches retain a hold and cannot automatically resend or release. Settlement can reuse verified usage without another provider call. No client preference, local voice path or personal key can mint/deduct managed credits through this ledger.
+- Nine new local tests passed; the combined server fixture suite passes 34 tests. Temporary databases/fake verified receipts only; no Supabase wallet, Apple purchase or provider charge was made. Hosted auth/JWS verification, refunds, receipt reconciliation and app integration remain pending. See server/google_cloud/VOICE-LEDGER.md.
+- No iPhone/iPad layout or new question type changed; the stay-awake helper remains off.
