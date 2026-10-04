@@ -70,3 +70,11 @@ These do not block local implementation, fixtures or configuration instructions.
 - Pending correction preserves transcript history and invalidates older worker generations. Reconciliation of corrections after a completed grade remains outstanding.
 - Final isolated Mac regression passed 235 package tests (one skipped, zero failures), including the cloud-projection check that pending recording IDs, device IDs and voice ownership metadata are not uploaded.
 - No UI or phone installation changed in this stage. Worker/capture UI integration and entitlement enforcement remain outstanding; no new question types are implemented.
+
+## Foreground voice worker
+
+- Added bounded foreground dispatch, saved-transcript grading, post-transcription recording deletion and cancellation that rejects late provider results. Account ownership remains explicit; adapter closures must supply access/credential checks before networking.
+- Ordinary repository revision races reuse the returned transcript or assessment rather than repeating a provider request. Superseded claims fail validation. Interrupted uploads require explicit retry after recovery.
+- Shared marking accepts frozen per-job model/evidence. MCQ dispatch uses local canonical-choice grading; no new question type was introduced.
+- Isolated Mac package validation passed 240 tests, one skipped, zero failures. Five worker tests verify cancellation/restart, account isolation, marking retry, completion after review exit and result-save races.
+- Recording/settings integration, production entitlement enforcement, cleanup retry UI, live provider tests and device deployment remain outstanding. This stage changed no iPhone or iPad layout.

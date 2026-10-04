@@ -3,7 +3,7 @@ import LearningCore
 
 /// One instance per app-account recording directory. Raw recordings never enter
 /// the library database, outbox, exports or cloud Storage.
-public actor VoiceRecordingStore {
+public actor VoiceRecordingStore: VoiceAudioStorage {
     private let directory: URL
     public init(directory: URL) throws {
         let requested = directory.standardizedFileURL
