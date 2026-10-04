@@ -1,6 +1,46 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testPersonalProviderKeyEntry() {
+        let app = launch(extra: ["--ui-monochrome"])
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        let entry = app.buttons["personal-provider-openai"]
+        if !entry.isHittable { app.swipeUp() }
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        XCTAssertTrue(app.secureTextFields["personal-key-input"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["personal-key-save"].isEnabled)
+        capture("Personal-API-Key", app)
+        app.secureTextFields["personal-key-input"].tap()
+        app.secureTextFields["personal-key-input"].typeText("short")
+        app.buttons["personal-key-save"].tap()
+        XCTAssertTrue(app.staticTexts["Enter an API key without spaces or line breaks."].waitForExistence(timeout: 5))
+        capture("Personal-API-Key-Validation", app)
+    }
+    @MainActor func testIPadPersonalProviderKeyEntry() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch()
+        XCUIDevice.shared.orientation = .portrait
+        XCUIDevice.shared.orientation = .landscapeRight
+        let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
+        expectation(for: landscape, evaluatedWith: app)
+        waitForExpectations(timeout: 10)
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15)); app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        let entry = app.buttons["personal-provider-gemini"]
+        if !entry.isHittable { app.swipeUp() }
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        XCTAssertTrue(app.secureTextFields["personal-key-input"].waitForExistence(timeout: 5))
+        // Capture the app surface: the simulator screen attachment can retain
+        // portrait pixel orientation even when the application is landscape.
+        let screenshot = app.screenshot()
+        XCTAssertGreaterThan(screenshot.image.size.width, screenshot.image.size.height)
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = "iPad-Personal-API-Key"; attachment.lifetime = .keepAlways
+        add(attachment)
+    }
     @MainActor func testAccountAndLibraryBaselineCaptures() {
         let app = launch(extra: ["--ui-monochrome", "--ui-dark"])
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15))

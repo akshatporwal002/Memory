@@ -97,14 +97,18 @@ enum AssistantOutputPresentation {
             activeRunID = runID
             do {
                 await model.refresh()
-                if model.aiMarker.catalog.isEmpty || model.aiMarker.catalogAccountID != model.chatGPT.activeClientID { await model.aiMarker.loadModels(connection:model.chatGPT) }
+                if model.aiMarker.catalog.isEmpty || model.aiMarker.catalogAccountID != model.aiMarker.connectionStamp(model.chatGPT) { await model.aiMarker.loadModels(connection:model.chatGPT) }
                 var conversation = model.library.assistantState?.conversations.first(where: { $0.id == contextID }) ?? LearningConversation(id:contextID)
                 let selected = conversation.modelID ?? model.aiMarker.chatModel
-                guard let available = model.aiMarker.catalog.first(where: { $0.model == selected }) else { throw EngramError.invalid("Choose an available model in chat.") }
+                guard let available = model.aiMarker.descriptor(for: selected) else { throw EngramError.invalid("Choose an available model in chat.") }
                 let descriptor = try await model.aiMarker.resolveTools(available,connection:model.chatGPT)
-                conversation.modelID = selected
-                let account = model.chatGPT.activeClientID
+                conversation.modelID = descriptor.id
+                let account = model.aiMarker.connectionStamp(model.chatGPT)
                 var input = conversation.toolHistoryJSON.flatMap { try? JSONDecoder().decode([AIInput].self,from:$0) } ?? conversation.messages.suffix(16).map { .message(AIMessage(role:$0.role,text:$0.text,modelID:$0.modelID)) }
+                if input.contains(where: { if case .context(let context) = $0 { return context.provider != descriptor.provider }; return false }) {
+                    // A provider switch retains readable history, not another provider's opaque state.
+                    input = conversation.messages.suffix(16).map { .message(AIMessage(role:$0.role,text:$0.text,modelID:$0.modelID)) }
+                }
                 let records = model.library.assistantState?.runs.flatMap(\.actions) ?? []
                 let receipts = Dictionary(records.map { ($0.id, "\($0.status): \($0.summary)") },uniquingKeysWith: { _,new in new })
                 input = AIHistoryRecovery.reconcile(input,receipts:receipts)
@@ -123,9 +127,10 @@ enum AssistantOutputPresentation {
                     var response = AIResponse(), completed = false
                     output = ""
                     let request = AIRequest(model:descriptor,instructions:instructions,input:input,tools:descriptor.supportsTools ? AIActionRegistry.tools : [],outputLimit:60000)
-                    for try await event in ChatGPTAIProvider().stream(request,token:try await model.chatGPT.validAccessToken()) {
+                    let provider = try AIProviderRegistry.provider(descriptor.provider)
+                    for try await event in provider.stream(request,token:try await model.aiMarker.token(for: descriptor, connection:model.chatGPT)) {
                         try Task.checkCancellation()
-                        guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }
+                        guard account == model.aiMarker.connectionStamp(model.chatGPT) else { throw EngramError.conflict }
                         switch event {
                         case .textDelta(let delta):
                             response.text += delta
@@ -140,13 +145,14 @@ enum AssistantOutputPresentation {
                     }
                     guard completed else { throw AIProviderError.incomplete }
                     guard descriptor.supportsTools || response.calls.isEmpty else { throw AIProviderError.unsupportedModel }
-                    guard account == model.chatGPT.activeClientID else { throw EngramError.conflict }
+                    guard account == model.aiMarker.connectionStamp(model.chatGPT) else { throw EngramError.conflict }
                     if response.calls.isEmpty {
                         guard let reply = AssistantOutputPresentation.visibleReply(response.text) else {
                             throw AIProviderError.invalidTool
                         }
                         output = ""
                         conversation.messages.append(LearningChatMessage(role:"assistant",text:reply,modelID:descriptor.id))
+                        input += response.context
                         input.append(.message(AIMessage(role:"assistant",text:reply,modelID:descriptor.id)))
                         try await persist(&conversation,input:input,model:model)
                         try await model.service.setAIRunStatus(runID,status:"completed"); await model.refresh(); return

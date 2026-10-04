@@ -123,11 +123,11 @@ struct PDFLearningDraft: Codable {
                 let fixture = false
                 #endif
                 if !fixture {
-                    guard model.chatGPT.activeAccount != nil else { throw EngramError.invalid("Connect ChatGPT in Settings to generate learning material. Reading the PDF is available offline.") }
-                    if model.aiMarker.pdfModel.isEmpty { await model.aiMarker.loadModels(connection: model.chatGPT) }
-                    guard !model.aiMarker.pdfModel.isEmpty else { throw EngramError.invalid(model.aiMarker.error ?? "Choose an available model in Settings.") }
+                    if model.aiMarker.pdfModel.isEmpty || model.aiMarker.catalogAccountID != model.aiMarker.connectionStamp(model.chatGPT) { await model.aiMarker.loadModels(connection: model.chatGPT) }
+                    guard model.aiMarker.descriptor(for: model.aiMarker.pdfModel) != nil else { throw EngramError.invalid(model.aiMarker.error ?? "Connect an AI provider and choose an available model in Settings. PDF reading remains available offline.") }
                 }
-                let account = model.chatGPT.activeClientID
+                let account = model.aiMarker.connectionStamp(model.chatGPT)
+                let selected = model.aiMarker.descriptor(for: model.aiMarker.pdfModel) ?? AIModelDescriptor(provider: "chatgpt", model: "fixture", supportsTools: false)
                 let requests = sample ? [PDFRetrieval.retrieve(source: source, brief: brief, query: brief.topics + " " + brief.goal)] : groups
                 let start = sample ? 0 : draft.completedBatches
                 for index in start..<requests.count {
@@ -135,13 +135,15 @@ struct PDFLearningDraft: Codable {
                     let passages = requests[index]
                     let remaining = max(0, brief.questionCount - draft.sample.filter { $0.kind != "note" }.count)
                     let count = sample ? min(3, brief.questionCount) : remaining / groups.count + (index < remaining % groups.count ? 1 : 0)
+                    guard account == model.aiMarker.connectionStamp(model.chatGPT) else { throw EngramError.conflict }
+                    let token = fixture ? "fixture" : try await model.aiMarker.token(for: selected, connection: model.chatGPT)
                     status = sample ? "Generating a small sample…" : "Generating batch \(index + 1) of \(groups.count)…"
                     var items: [PDFLearningItem]
                     #if DEBUG
                     if fixture { try await Task.sleep(for: .milliseconds(800)); items = Self.fixtureItems(passages: passages, brief: brief, count: count) }
-                    else { items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken()) }
+                    else { items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: selected.id, token: token) }
                     #else
-                    items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
+                    items = try await PDFGenerationRequest.generate(passages: passages, brief: brief, count: count, existingPrompts: draft.items.map(\.prompt), model: selected.id, token: token)
                     #endif
                     try PDFRetrieval.validate(items, against: passages)
                     guard items.filter({ $0.kind != "note" }).count <= count,
@@ -156,12 +158,12 @@ struct PDFLearningDraft: Codable {
                     status = "Checking answers against the PDF…"
                     #if DEBUG
                     if fixture { try await Task.sleep(for: .milliseconds(800)) }
-                    let accepted = fixture ? Set(items.map(\.id)) : try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
+                    let accepted = fixture ? Set(items.map(\.id)) : try await PDFGenerationRequest.verify(items: items, passages: passages, model: selected.id, token: token)
                     #else
-                    let accepted = try await PDFGenerationRequest.verify(items: items, passages: passages, model: model.aiMarker.pdfModel, token: try await model.chatGPT.validAccessToken())
+                    let accepted = try await PDFGenerationRequest.verify(items: items, passages: passages, model: selected.id, token: token)
                     #endif
                     try Task.checkCancellation()
-                    guard account == model.chatGPT.activeClientID, draft.source?.id == source.id, draft.brief == brief else { throw EngramError.conflict }
+                    guard account == model.aiMarker.connectionStamp(model.chatGPT), draft.source?.id == source.id, draft.brief == brief else { throw EngramError.conflict }
                     let rejected = items.count - accepted.count
                     if rejected > 0 { notices.append("\(rejected) items were excluded because the evidence check did not support them.") }
                     items = items.filter { accepted.contains($0.id) }.map { var item = $0; item.verified = true; return item }

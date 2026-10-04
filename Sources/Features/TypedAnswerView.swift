@@ -59,7 +59,7 @@ struct TypedAnswerView: View {
                 }}
                 if assessment.rating != nil,!attempt.assisted {
                     EngramActionButton("Next",busy:model.busy || model.typedAnswer.busy) {
-                        Task { _ = await model.perform { try await $0.commitAnswerAttempt(id:attempt.id,providerAccountID:model.chatGPT.activeClientID) } }
+                        Task { _ = await model.perform { try await $0.commitAnswerAttempt(id:attempt.id,providerAccountID:model.aiMarker.commitIdentity(for:attempt, connection:model.chatGPT)) } }
                     }.accessibilityIdentifier("typed-answer-next")
                 }
                 Menu("Rate manually instead") {

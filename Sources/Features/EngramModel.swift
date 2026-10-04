@@ -67,6 +67,8 @@ public struct DeckForm: Identifiable {
         deckCreationDraft = defaults.data(forKey: creationDraftKey).flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
     }
     public func restoreLibrarySelection() async {
+        aiMarker.personal.selectAccount(cloud.userID?.uuidString.lowercased() ?? cloud.localProfileID ?? "local")
+        aiMarker.invalidateCatalog()
         do {
             librarySpaces = try await service.librarySpaces()
             let remembered = defaults.string(forKey: librarySelectionKey) ?? LibrarySpace.defaultID

@@ -163,12 +163,16 @@ The user explicitly authorizes launching a temporary PowerShell stay-awake helpe
 
 ## 11. Ordering questions (additional user requirement)
 
+User intent: present jumbled steps and let the learner put them in order. Add this after the preceding implementation stages; it is an explicit requested feature, not merely a catalogue suggestion.
+
 - Add a question type with a jumbled sequence of steps that the learner rearranges into the correct order.
 - Store canonical step identities and the expected order separately from the shuffled presentation. Retain that presentation during an attempt so it does not reshuffle while editing.
 - Provide drag reordering plus accessible move-up/move-down controls and an explicit submit action on iPhone and iPad landscape.
 - Grade the submitted sequence locally against the canonical order; show corrections/explanation after submission. A complete correct order maps to Good, an incorrect order to Again; incomplete or invalid submissions receive no automatic grade.
 - Support creation/editing and testing examples, including AWS process steps. Preserve old cards and backups through optional backward-compatible metadata.
 - Allow equivalent valid sequences and partially ordered steps when the subject permits them; do not mark a valid alternative wrong merely because it differs from one sample sequence. Exact-order grading remains the initial implementation.
+- Include an ordering deck in the Testing folder, with a short sequence, a long sequence, repeated-looking steps with distinct identities, and an explanation of the correct order. Author examples whose dependencies genuinely require the specified order.
+- Do not award a successful recall solely because the initial shuffle happened to be correct. For sequences with more than one distinguishable step, start with a non-solved arrangement; retain it across rotation, navigation and restart.
 
 ## 12. Expanded question-type catalogue and learning-platform direction
 
@@ -270,6 +274,8 @@ The user explicitly authorizes launching a temporary PowerShell stay-awake helpe
 - Tutor assignments can combine these activities; share only the assigned work and its permitted assessment results.
 
 ### Suggested delivery waves
+
+The ordering feature is committed scope for the end of this goal. Multiple-select, code debugging and grammar correction are explicitly requested follow-on priorities. The remaining catalogue is proposed support, to be implemented incrementally rather than presented as already available.
 
 1. **Reusable objective types:** ordering, multiple-select, matching, classification, multi-blank cloze and numeric/units input.
 2. **Rich response types:** full maths input, error spotting/correction, code output/completion, image occlusion and diagram labeling.

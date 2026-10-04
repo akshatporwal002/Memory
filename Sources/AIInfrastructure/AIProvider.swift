@@ -44,7 +44,9 @@ public struct AIContextItem: Codable, Equatable, Sendable {
     public let provider: String
     public let json: String
     public init(provider: String,json: String) throws {
-        guard json.utf8.count <= 350_000,let value = try JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any],["chatgpt", "openai"].contains(provider),value["type"] as? String == "reasoning",value["id"] is String else { throw AIProviderError.invalidTool }
+        guard json.utf8.count <= 350_000,let value = try JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any] else { throw AIProviderError.invalidTool }
+        if provider == "gemini" { try GeminiWire.validateContext(value) }
+        else { guard ["chatgpt", "openai"].contains(provider),value["type"] as? String == "reasoning",value["id"] is String else { throw AIProviderError.invalidTool } }
         self.provider = provider; self.json = json
     }
     var wire: [String:Any] {
@@ -287,9 +289,11 @@ public struct AIStreamDecoder {
 }
 public enum AIClient {
     public static func text(instructions: String, input: String, model: String, token: String, limit: Int = 150_000) async throws -> String {
-        let request = AIRequest(model: AIModelDescriptor(provider:"chatgpt",model:model,supportsTools:true),
+        let descriptor = try AIProviderRegistry.descriptor(model)
+        let provider = try AIProviderRegistry.provider(descriptor.provider)
+        let request = AIRequest(model: descriptor,
             instructions:instructions,input:[.message(AIMessage(role:"user",text:input))],outputLimit:limit)
-        let response = try await ChatGPTAIProvider().respond(request,token:token)
+        let response = try await provider.respond(request,token:token)
         guard response.calls.isEmpty else { throw AIProviderError.invalidTool }
         return response.text
     }

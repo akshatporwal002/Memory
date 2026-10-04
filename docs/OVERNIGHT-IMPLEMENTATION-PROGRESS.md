@@ -9,7 +9,8 @@ Goal: implement the complete requirements in OVERNIGHT-IMPLEMENTATION-REQUIREMEN
 - [x] Inline account controls, linked-identity operations and shared capsule action styles.
 - [ ] Complete the remaining app-wide shape audit and live linked-account acceptance.
 - [x] Deduplicate ChatGPT registrations and prevent accumulation on reconnect (migration/replacement tests).
-- [ ] Add provider-neutral Google/OpenAI connections, secure BYOK and Vertex preparation.
+- [x] Add provider-neutral Google/OpenAI chat connections and secure BYOK settings.
+- [ ] Prepare Vertex server integration and validate live provider accounts.
 - [ ] Implement voice adapters, interruption and durable answer processing.
 - [ ] Implement sandbox billing, authoritative wallet/entitlement interfaces and release guards.
 - [ ] Provide repeatable AWS MCQ, short-answer and maths sample imports.
@@ -47,4 +48,16 @@ These do not block local implementation, fixtures or configuration instructions.
 - OpenAI personal API adapter now shares the existing streaming contract, with its own API catalog/function schema and provider-owned continuation state.
 - Added account-scoped device-only Keychain operations for OpenAI/Gemini personal keys and secret-safe local validation.
 - Foundation suite: 211 tests, one skipped, zero failures. These are contract/regression tests, not live provider validation.
-- Gemini transport, key-entry UI, workflow routing, voice jobs and billing remain outstanding. See PERSONAL-AI-PROVIDER-FOUNDATION.md.
+- Gemini discovery/streaming, opaque signature continuation, masked key-entry UI and shared chat/grading/PDF routing are now implemented. Unavailable selections never silently change provider.
+- Exact isolated provider source passed 222 Mac package tests (one skipped, zero failures); unrelated feedback/action-expansion source was excluded from that checkout. iPhone key-entry validation and inline account capture passed; the isolated iPhone key-entry regression also passed.
+- iPad application landscape bounds and key-page traversal pass, but exported screen pixels remained portrait. Direct screenshot-dimension validation fails even after a forced orientation transition, so those captures are not accepted as landscape evidence. The stronger UI test retains this failure; investigate simulator surfaces before accepting the capture gate. Do not claim that the landscape screenshot review passed.
+- iPhone provider-key and validation captures are stored under `current_ui/Settings/PersonalAPIKey`. The account-light capture was updated, retaining one previous revision. New key pages have no pre-feature screenshot.
+- Live personal-provider behavior, Vertex, voice jobs and billing remain outstanding. See PERSONAL-AI-PROVIDER-FOUNDATION.md.
+
+## Stage 3 started: speech adapters
+
+- Added separate transcription/output interfaces and an OpenAI personal API audio adapter. Bounded multipart recordings, WAV output checks, cancellation, blocked credential redirects and secret-safe errors are implemented.
+- Transcription requests never contain the card's expected answer. Transcript spelling, negations and self-corrections are preserved; provider usage is recorded separately from correctness.
+- No automatic retries or billing-path fallbacks. A network interruption reports uncertain delivery because personal audio requests are not assumed idempotent.
+- The provider source plus initial speech fixtures passed 226 Mac package tests (one skipped, zero failures). No live audio request or audio-quality claim is made.
+- These adapters are not yet connected to recording/settings. Durable jobs, capture storage, entitlement checks, provider disclosure, Google audio and managed backend integration still need implementation before cloud voice is usable.

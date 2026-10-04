@@ -112,7 +112,7 @@ struct PDFLearningView: View {
             if flow.draft.brief.output != "Questions only" {
                 picker("Notes", value: $flow.draft.brief.noteDepth, options: ["Condensed", "Detailed"])
             }
-            Text("First, review a small sample. The full scope needs \(flow.batches.count) \(flow.batches.count == 1 ? "batch" : "batches"), each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your connected ChatGPT model.")
+            Text("First, review a small sample. The full scope needs \(flow.batches.count) \(flow.batches.count == 1 ? "batch" : "batches"), each with generation and evidence checks. Fewer questions may be returned when the source is insufficient. Selected passages are sent to your selected AI provider.")
                 .font(.caption).foregroundStyle(palette.secondaryText)
             Button("Preview a sample") { flow.generateSample(model: model) }
                 .buttonStyle(EngramButtonStyle()).accessibilityIdentifier("pdf-preview")

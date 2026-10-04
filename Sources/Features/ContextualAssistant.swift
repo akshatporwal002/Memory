@@ -349,9 +349,9 @@ struct ContextualAssistant: View {
                 }.accessibilityLabel(expanded ? "Collapse assistant" : "Expand assistant")
                 Menu {
                     ForEach(model.aiMarker.models, id: \.self) { id in
-                        Button(model.aiMarker.title(for:id)) { Task { await model.assistant.selectModel(id, contextID: activeConversationID, model: model) } }
+                        Button(model.aiMarker.title(for:id) + " · " + (model.aiMarker.descriptor(for:id)?.provider.capitalized ?? "")) { Task { await model.assistant.selectModel(id, contextID: activeConversationID, model: model) } }
                     }
-                    if model.chatGPT.activeAccount == nil { Button("Connect ChatGPT") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true } }
+                    Button("Manage AI connections") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true }
                     Button("Refresh models") { Task { await model.aiMarker.loadModels(connection: model.chatGPT) } }
                 } label: {
                     Image(systemName:"ellipsis").font(.caption).frame(width:44,height:44).contentShape(Rectangle())
@@ -432,8 +432,8 @@ struct ContextualAssistant: View {
                 }.buttonStyle(.plain)
             }
             if let error = error ?? model.assistant.error { Text(error).font(.caption).foregroundStyle(chatPalette.againInk).frame(maxWidth: .infinity, alignment: .leading) }
-            if model.chatGPT.activeAccount == nil && error != nil {
-                Button("Connect ChatGPT in Settings") { close(); model.settingsPresented = true }
+            if model.chatGPT.activeAccount == nil && !model.aiMarker.hasConnection && error != nil {
+                Button("Manage AI connections") { close(); model.settingsRoute = "AI & Connections"; model.settingsPresented = true }
                     .font(.caption.weight(.medium)).frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
             }
             if busy || recentSavedAction != nil {
@@ -535,8 +535,8 @@ struct ContextualAssistant: View {
             prompt = ""; composerFocused = false; composerEpoch += 1; return
         }
         #endif
-        guard model.chatGPT.activeAccount != nil else {
-            error = "Connect ChatGPT to ask about your notes."
+        guard model.chatGPT.activeAccount != nil || model.aiMarker.hasConnection else {
+            error = "Connect ChatGPT or add a personal API key to ask about your notes."
             return
         }
         let key = activeConversationID

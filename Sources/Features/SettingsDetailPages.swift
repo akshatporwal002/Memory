@@ -1,4 +1,5 @@
 import SwiftUI
+import AIInfrastructure
 import DesignSystem
 import LearningCore
 import StudyApplication
@@ -119,10 +120,17 @@ struct AISettingsPage: View {
     var body: some View {
         List {
             AccountSettingsRows(model: model)
+            EngramListSection {
+                ForEach(PersonalAIProvider.allCases, id: \.rawValue) { provider in
+                    NavigationLink { PersonalAPIKeySettings(model: model, provider: provider) } label: {
+                        HStack { Text(provider.title); Spacer(); Text(model.aiMarker.personal.configured.contains(provider) ? "Connected" : "Add key").font(.caption).engramSecondaryText() }
+                    }.accessibilityIdentifier("personal-provider-" + provider.rawValue)
+                }
+            } header: { Text("Personal API keys") }
             EngramListSection { NavigationLink("Learning memory") { LearningMemoryView(model:model) } }
             EngramListSection {
                 Toggle("AI answer marking", isOn: Binding(get: { model.aiMarker.enabled }, set: { model.aiMarker.enabled = $0 }))
-            } footer: { Text("When enabled, spoken answer text and relevant deck passages are sent to OpenAI. Audio stays local. Multiple choice is marked on this device.") }
+            } footer: { Text("Answer text and relevant evidence are sent to your selected grading provider. Multiple choice is marked on this device. Audio stays local until a cloud voice service is explicitly configured.") }
             EngramListSection {
                 LabeledContent("Marking model", value: model.aiMarker.selectedModel.isEmpty ? "Default" : model.aiMarker.selectedModel)
                 NavigationLink("Advanced model selection") {
