@@ -6,7 +6,8 @@
 - Keep at most one reusable build directory per platform/configuration where separate directories are necessary.
 - For iOS testing, use the existing iPhone 17 Pro simulator: `E75C5BB1-19D3-4085-9BFA-B296E40DFBE9`.
 - For iPad-specific testing, use the existing iPad Pro 13-inch M5: `C9DD5AAC-E456-4648-BCF3-A50DD6D8FFF3`.
-- Both simulators use the installed iOS 26.0.1 runtime. Verify their availability before use. Do not create extra devices or download additional runtimes without asking the user. If the app requires a newer runtime, explain that requirement first.
+- Both simulators use the iOS 26.5 runtime (user-approved upgrade from 26.0.1). Verify their availability before use. Do not create extra devices or download additional runtimes without asking the user. If the app requires a newer runtime, explain that requirement first.
+- On the current Mac, Xcode's `iphoneos26.5` SDK defaults to missing runtime build `23F81a`. The verified installed 26.5 runtime is `23F73`; the user-approved setup uses `xcrun simctl runtime match set iphoneos26.5 23F73`. Inspect `simctl runtime match list -v` and installed runtimes before changing this mapping after future Xcode updates. Do not download another runtime just to satisfy the old default mapping.
 - Preserve these simulators' app data. Do not erase or delete them as routine cleanup.
 - After completing and validating a task, remove temporary build folders, exported app bundles, IPA files, archives, copied dependencies, disk images, and staging directories created by that task if they will not be reused or needed as deliverables.
 - Preserve the reusable build cache so ordinary incremental builds remain fast. Do not clean it after every build.

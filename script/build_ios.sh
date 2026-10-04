@@ -26,8 +26,8 @@ for runtime in data["runtimes"]:
     devices = data["devices"].get(runtime["identifier"], [])
     device = next((d for d in devices if d["udid"] == device_id), None)
     if device:
-        if not device.get("isAvailable") or not runtime.get("isAvailable") or runtime.get("version") != "26.0.1":
-            sys.exit("Requested simulator or iOS 26.0.1 runtime unavailable; do not create/download replacements without approval.")
+        if not device.get("isAvailable") or not runtime.get("isAvailable") or runtime.get("version") != "26.5":
+            sys.exit("Requested simulator or iOS 26.5 runtime unavailable; do not create/download replacements without approval.")
         print("Verified:", device["name"], device_id, "iOS", runtime["version"])
         break
 else:
