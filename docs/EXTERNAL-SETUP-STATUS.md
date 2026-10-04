@@ -17,7 +17,9 @@ Verified App Store Connect access. Existing Gradia is a different bundle (`Aksha
 - App Store Connect app ID: `6819023861`.
 - Primary language: English (Australia).
 - Draft consumable: `dev.engram.study.voice.credits10`, Apple product ID `6819023766`.
+- Draft monthly subscription: `dev.engram.study.voice.monthly`, Apple product ID `6819024288`.
+- Voice access subscription group: `22439622`.
 
-The consumable is Prepare for Submission. Pricing, storefront availability, localization, review evidence, server verification and sandbox test-account configuration still need completion. No app/product was submitted, no purchase occurred and production activation remains disabled. App Store Connect product drafts are shared metadata, not an isolated sandbox catalogue; only the test environment's transactions are sandbox transactions.
+Both products are Prepare for Submission. Pricing is awaiting explicit approval of US$1.99/month and US$9.99/top-up, the closest standard tiers to the prior US$2/US$10 targets. Automatic approval review blocked setting these shared sandbox/production metadata prices without exact approval. Storefront availability, localization, review evidence, server verification and sandbox test-account configuration still need completion. No app/product was submitted, no purchase occurred and production activation remains disabled. App Store Connect product drafts are shared metadata, not an isolated sandbox catalogue; only the test environment's transactions are sandbox transactions.
 
 Review screenshots are retained in `.build/setup-evidence`. StoreKit product metadata is not evidence of a functioning wallet. Do not connect the purchase UI until authenticated server verification and sandbox ledger are ready.
