@@ -1,6 +1,34 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testEquationEntryOnExistingTypedAnswer() {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        exerciseEquationEntry(app, prefix: "iPhone")
+    }
+    @MainActor func testIPadEquationEntryLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
+        expectation(for: landscape, evaluatedWith: app); waitForExpectations(timeout: 10)
+        exerciseEquationEntry(app, prefix: "iPad")
+        let screenshot = app.screenshot()
+        XCTAssertGreaterThan(screenshot.image.size.width, screenshot.image.size.height)
+    }
+    @MainActor private func exerciseEquationEntry(_ app: XCUIApplication, prefix: String) {
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15)); app.buttons["Start review"].tap()
+        XCTAssertTrue(app.buttons["Type answer"].waitForExistence(timeout: 5)); app.buttons["Type answer"].tap()
+        capture(prefix + "-Typed-Answer-Before-Equation", app)
+        app.buttons["typed-answer-equation"].tap()
+        XCTAssertTrue(app.buttons["math-template-fraction"].waitForExistence(timeout: 5)); app.buttons["math-template-fraction"].tap()
+        let numerator = app.textFields["math-slot-0"], denominator = app.textFields["math-slot-1"]
+        XCTAssertTrue(numerator.waitForExistence(timeout: 5)); numerator.tap(); numerator.typeText("1")
+        denominator.tap(); denominator.typeText("2")
+        capture(prefix + "-Equation-Fraction", app)
+        app.buttons["math-entry-insert"].tap()
+        XCTAssertTrue((app.descendants(matching: .any).matching(identifier: "typed-answer-input").firstMatch.value as? String ?? "").contains(#"\frac{1}{2}"#))
+        capture(prefix + "-Typed-Answer-After-Equation", app)
+    }
     @MainActor func testTestingSamplesImportAndReimport() {
         let app = launch()
         XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15)); app.buttons["tab-library"].tap()

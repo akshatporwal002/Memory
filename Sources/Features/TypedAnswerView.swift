@@ -9,6 +9,7 @@ struct TypedAnswerView: View {
     @State private var discussion = ""
     @State private var discussing = false
     @State private var accepting = false
+    @State private var equationPresented = false
     @FocusState private var inputFocused: Bool
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -72,6 +73,12 @@ struct TypedAnswerView: View {
                     .focused($inputFocused)
                     .padding(12).background(palette.surface,in:RoundedRectangle(cornerRadius:12))
                     .accessibilityIdentifier("typed-answer-input")
+                Button("Equation", systemImage: "function") { inputFocused = false; equationPresented = true }
+                    .buttonStyle(.plain).font(.subheadline).foregroundStyle(palette.accentInk)
+                    .accessibilityIdentifier("typed-answer-equation")
+                    .sheet(isPresented: $equationPresented) {
+                        MathEntryView { source in answer += (answer.isEmpty ? "" : " ") + source }
+                    }
                 EngramActionButton("Review answer",busy:model.typedAnswer.busy) {
                     inputFocused = false; Task { await model.typedAnswer.assess(answer,model:model) }
                 }.disabled(answer.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)

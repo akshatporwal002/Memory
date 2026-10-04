@@ -93,3 +93,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Official AWS references were inspected. The configured Supabase project's read-only auth count is still zero, so authenticated account import remains deferred; no hosted writes were made.
 - Three package tests and iPhone/iPad import/capture flows are written but unexecuted. SSH to mac.modem timed out during transfer and test attempts; no claim of compilation, screenshot acceptance or phone installation is made. The last passing 246-test run predates these changes.
 - See TESTING-LIBRARY.md for variants and pending acceptance gates. Existing current_ui images are retained until new validated captures can be obtained.
+
+## Equation-entry editor started
+
+- Added a structured notation tree with nested editable slots, portable LaTeX output and bounded/escaped input. Palettes cover the requested arithmetic, algebra, functions, calculus, matrices, sets, probability and Greek families.
+- Existing typed answers now offer Equation entry. iPhone uses a stacked editor; wide iPad/Mac use two columns with an accessibility fallback. No solver or new question type was added.
+- Named-slot editing is implemented; direct visual caret editing, variable-size matrices/piecewise structures, structural removal/undo and optional evaluative calculators remain outstanding.
+- Four package tests and iPhone/landscape iPad capture flows are written but unexecuted. A bounded Mac SSH recheck still timed out; Windows has no Swift compiler. Compilation, screenshot review and phone deployment remain pending. See MATH-EQUATION-ENTRY.md.
