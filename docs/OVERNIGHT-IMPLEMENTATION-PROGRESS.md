@@ -207,3 +207,11 @@ These do not block local implementation, fixtures or configuration instructions.
 - Refunds prevent fresh dispatch against lost funds while preserving existing provider usage and uncertain holds. Spent refunded credits can produce a deficit; no automatic purchase or fee is created.
 - Five new regression tests pass; all 39 Google/Live/ledger fixture tests pass. Apple verification/notifications routing, partial-refund/reversal policy, subscription entitlement verification and hosted integration remain unconfigured. No real purchase/refund/provider call was made.
 - Mac SSH remains unreachable; local Xcode tooling also reports missing xcrun on Windows. Latest iOS compilation/captures/installation remain blocked by Mac access. No new question type was added, and the stay-awake helper remains off.
+
+## Mac access restored; latest app compilation — 4 October 2026
+
+- Isolated committed source a862263 passed 275 Mac package tests, one skipped, zero failures. Evidence copied to .build/engram-overnight-latest-tests.log; this validates compilation of the optional personal-key speech output extension and its separate consent regression.
+- Latest iPhone simulator build succeeded (/tmp/engram-overnight-latest-ios.log). Live provider/microphone/echo/interruption and fresh UI captures remain unverified.
+- Physical iPhone is paired and available. Initial device build encountered Apple entitlement/profile mismatch; preview already has EngramAppleSignInEnabled=false. A temporary /tmp/engram-preview.entitlements omitting only com.apple.developer.applesignin allowed device compilation with the existing wildcard profile. Source entitlement remains unchanged; this preview does not enable Apple login.
+- Device compilation reached codesign, which failed with errSecInternalComponent. Waiting for user to unlock login keychain/approve codesign; no latest phone installation occurred. Retry the existing preview build after unlock instead of rebuilding a different source snapshot.
+- Stay-awake helper remains off. Other task's dirty files are excluded.
