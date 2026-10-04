@@ -157,8 +157,9 @@ import AIInfrastructure
         let owner = model.aiMarker.gradingIdentity(model.chatGPT)
         worker = VoiceWorkProcessor(service: model.service, storage: recordingStore, deviceID: deviceID, ownerID: owner,
             authorize: { [weak self, weak model] job, stage in
+                guard let self, let model else { throw EngramError.conflict }
                 try await MainActor.run {
-                    guard let self, let model, self.foreground, self.scope == identity,
+                    guard self.foreground, self.scope == identity,
                           self.currentScope(model) == identity, job.ownerID == owner else { throw EngramError.conflict }
                     if stage == .transcription { throw EngramError.invalid("Cloud transcription is not connected to recording yet. No audio was uploaded.") }
                 }

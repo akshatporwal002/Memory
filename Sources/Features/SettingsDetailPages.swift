@@ -161,16 +161,16 @@ struct VoiceSettingsPage: View {
         Form {
             EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.localAvailable(model)) }
             EngramListSection("Listening") {
-                Picker("Speech recognition", selection: $model.voiceWork.selection) {
+                Picker("Speech recognition", selection: Binding(get: { model.voiceWork.selection }, set: { model.voiceWork.selection = $0 })) {
                     ForEach(VoiceProcessingController.Selection.allCases) { Text($0.title).tag($0) }
                 }
                 LabeledContent("Access", value: model.voiceWork.localAvailable(model) ? "Development preview" : "Not configured")
-                Picker("After answering", selection: $model.voiceWork.mode) {
+                Picker("After answering", selection: Binding(get: { model.voiceWork.mode }, set: { model.voiceWork.mode = $0 })) {
                     Text("Continue while processing").tag(VoiceReviewMode.continueProcessing)
                     Text("Wait for feedback").tag(VoiceReviewMode.waitForFeedback)
                 }
                 #if DEBUG
-                Toggle("Enable local development preview", isOn: $model.voiceWork.developmentLocalPreview)
+                Toggle("Enable local development preview", isOn: Binding(get: { model.voiceWork.developmentLocalPreview }, set: { model.voiceWork.developmentLocalPreview = $0 }))
                 Text("Preview uses on-device recognition. AI marking uses your selected AI connection; provider charges may apply. Production voice access is not configured.").font(.footnote).foregroundStyle(.secondary)
                 #endif
                 NavigationLink("Pending answers & results") { VoiceAnswerHistoryView(model: model) }

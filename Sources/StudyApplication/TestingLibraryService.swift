@@ -57,7 +57,7 @@ extension StudyService {
     /// do not accidentally share scheduling or content IDs.
     public func importTestingLibrary(now: Date = Date()) async throws -> TestingLibraryImport {
         var library = try await repository.read()
-        let scope = await libraries.selectedID
+        let scope = await selectedLibraryID()
         var addedDecks = 0, addedQuestions = 0, preserved = 0
         for sample in TestingLibraryContent.decks {
             let deckID = "engram-testing-v1-" + scope + "-" + sample.key
@@ -70,7 +70,10 @@ extension StudyService {
                     throw EngramError.invalid("A notebook named \(name) already exists. Rename it before importing the testing samples.")
                 }
                 var deck = Deck(id: deckID, name: name, createdAt: now, modifiedAt: now)
-                deck.sourceDocument = "Original practice questions for testing Engram. Not official AWS exam material.\n\n" + sample.questions.map { "## " + $0.front + "\n\n" + $0.back + "\n\nReference: " + $0.source }.joined(separator: "\n\n")
+                let sections: [String] = sample.questions.map { question in
+                    "## \(question.front)\n\n\(question.back)\n\nReference: \(question.source)"
+                }
+                deck.sourceDocument = "Original practice questions for testing Engram. Not official AWS exam material.\n\n" + sections.joined(separator: "\n\n")
                 library.decks.append(deck); addedDecks += 1
             }
             for question in sample.questions {

@@ -90,7 +90,7 @@ struct ReviewView: View {
             }
             .engramCanvas()
             .sheet(isPresented: $optionsPresented) { reviewOptions }
-            .sheet(isPresented: $model.voiceWork.summaryPresented) { NavigationStack { VoiceAnswerHistoryView(model: model) } }
+            .sheet(isPresented: Binding(get: { model.voiceWork.summaryPresented }, set: { model.voiceWork.summaryPresented = $0 })) { NavigationStack { VoiceAnswerHistoryView(model: model) } }
             .onChange(of: model.library.session?.current?.revealedAt) { _, newValue in if newValue != nil { answerFocused = true } }
         }
         .modifier(EngramTaskSizing(embedded: embedded, width: 820, height: 550))

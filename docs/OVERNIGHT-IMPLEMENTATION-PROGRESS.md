@@ -144,3 +144,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added server-only speech synthesis with an explicit voice/language allowlist, bounded plain text and validated PCM WAV output. Empty voice configuration disables output; no mobile playback, provider call or production activation occurred.
 - Mandatory authorization now includes the exact serialized payload hash for transcription, speech output and text generation. Durable authenticated dispatch/accounting integration remains outstanding.
 - Fifteen Python fixture tests passed locally, including malformed/truncated audio, voice/language mismatch and payload binding. Swift compilation, iPhone/iPad screenshots and installation remain pending; no new question type was implemented. The stay-awake helper remains off.
+
+## Mac validation resumed
+
+- The Mac became reachable after the user woke it. Transferred committed revision 54f6ba2 into the existing isolated source snapshot, excluding the other task's unfinished changes.
+- Fixed the sample importer's access to the selected-library accessor and split its source assembly for Swift type checking. Fixed bindings through the immutable voice-controller reference and promoted weak captures before the MainActor authorization closure.
+- With these fixes, the Mac package suite passed 269 tests, one skipped, zero failures; the iPhone simulator build succeeded. Evidence: .build/engram-overnight-validation-54f6ba2.log locally and /tmp/engram-overnight-ios-54f6ba2.log on the Mac.
+- Targeted iPhone UI tests/captures are running; iPad visual acceptance, live providers and physical-device installation remain pending. No new question type was added and the stay-awake helper remains off.
