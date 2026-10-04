@@ -100,3 +100,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Existing typed answers now offer Equation entry. iPhone uses a stacked editor; wide iPad/Mac use two columns with an accessibility fallback. No solver or new question type was added.
 - Named-slot editing is implemented; direct visual caret editing, variable-size matrices/piecewise structures, structural removal/undo and optional evaluative calculators remain outstanding.
 - Four package tests and iPhone/landscape iPad capture flows are written but unexecuted. A bounded Mac SSH recheck still timed out; Windows has no Swift compiler. Compilation, screenshot review and phone deployment remain pending. See MATH-EQUATION-ENTRY.md.
+
+## Structural equation editing and tutor specification
+
+- Added bounded structural undo/redo, removing the nearest template without losing its values/identities, and configurable matrices (1–6 rows/columns) and piecewise expressions (1–6 cases). Direct formula cursor hit-testing and resizing existing structures remain outstanding.
+- Two additional package tests and UI undo/redo assertions are written; all new equation tests remain unexecuted pending Mac access. Do not apply the earlier passing-suite count to this code.
+- Delivered TUTOR-ASSIGNMENTS-PLAN.md: provisional A$3 total/five-student tier, assigned-work-only access, invitations/consent/capacity, versioned assignments, bounded weekly insights, removal/revocation/expiry, iPhone/iPad layouts and acceptance gates. No tutor tier or hosted student access was activated.

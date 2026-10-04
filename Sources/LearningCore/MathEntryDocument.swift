@@ -31,7 +31,7 @@ public enum MathEntryTemplate: String, CaseIterable, Hashable, Sendable {
         case .derivative: return "Derivative"; case .partialDerivative: return "Partial ∂"
         case .integral: return "∫"; case .definiteIntegral: return "Definite ∫"; case .limit: return "Limit"
         case .sum: return "Σ"; case .product: return "Product Π"
-        case .matrix: return "2 × 2 matrix"; case .vector: return "Vector"
+        case .matrix: return "Matrix"; case .vector: return "Vector"
         case .piecewise: return "Piecewise"; case .set: return "Set { }"; case .union: return "Union ∪"
         case .intersection: return "Intersection ∩"; case .membership: return "Member ∈"
         case .factorial: return "n!"; case .permutation: return "nPr"; case .combination: return "nCr"
@@ -113,26 +113,66 @@ public enum MathEntryTemplate: String, CaseIterable, Hashable, Sendable {
 
 public struct MathEntryDocument: Equatable, Sendable {
     public struct Slot: Identifiable, Equatable, Sendable { public let id: UUID; public let label: String; public let value: String }
+    private struct Definition: Equatable, Sendable {
+        let kind: MathEntryTemplate
+        let labels: [String]
+        let pattern: String
+        var title: String { kind.title }
+    }
     private indirect enum Node: Equatable, Sendable {
         case text(UUID, String)
-        case template(MathEntryTemplate, [[Node]])
-        var depth: Int { switch self { case .text: return 1; case .template(_, let arguments): return 1 + (arguments.flatMap { $0 }.map(\.depth).max() ?? 0) } }
+        case separator
+        case template(Definition, [[Node]])
+        var depth: Int { switch self { case .text, .separator: return 1; case .template(_, let arguments): return 1 + (arguments.flatMap { $0 }.map(\.depth).max() ?? 0) } }
     }
     private var nodes: [Node]
+    private var undoStates: [[Node]] = []
+    private var redoStates: [[Node]] = []
     public init() { nodes = [.text(UUID(), "")] }
     public var slots: [Slot] { Self.slots(nodes, label: "Expression") }
     public var complete: Bool { slots.allSatisfy { !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }
     public var latex: String { Self.render(nodes) }
+    public var canUndo: Bool { !undoStates.isEmpty }
+    public var canRedo: Bool { !redoStates.isEmpty }
+    public mutating func undo() {
+        guard let previous = undoStates.popLast() else { return }
+        redoStates.append(nodes); nodes = previous
+    }
+    public mutating func redo() {
+        guard let next = redoStates.popLast() else { return }
+        undoStates.append(nodes); nodes = next
+    }
+    private mutating func accept(_ candidate: [Node]) {
+        guard candidate != nodes else { return }
+        undoStates.append(nodes)
+        if undoStates.count > 50 { undoStates.removeFirst(undoStates.count - 50) }
+        redoStates = []; nodes = candidate
+    }
     @discardableResult public mutating func update(id: UUID, value: String) -> Bool {
         guard value.utf8.count <= 2_000 else { return false }
         var candidate = nodes
         let changed = Self.replace(&candidate, id: id) { _ in [.text(id, value)] }
         guard changed, Self.render(candidate).utf8.count <= 12_000 else { return false }
-        nodes = candidate; return true
+        accept(candidate); return true
     }
     /// Nested insertion retains both sides of the selected character offset. The
     /// default is the end of a slot; positions use graphemes, not UTF-16 indices.
     public mutating func insert(_ template: MathEntryTemplate, at id: UUID, offset: Int? = nil) -> UUID? {
+        insert(Definition(kind: template, labels: template.labels, pattern: template.pattern), at: id, offset: offset)
+    }
+    public mutating func insertMatrix(rows: Int, columns: Int, at id: UUID, offset: Int? = nil) -> UUID? {
+        guard (1...6).contains(rows), (1...6).contains(columns) else { return nil }
+        let labels = (0..<rows).flatMap { row in (0..<columns).map { column in "Row \(row + 1) column \(column + 1)" } }
+        let entries = (0..<rows).map { row in (0..<columns).map { column in "«\(row * columns + column)»" }.joined(separator: "&") }.joined(separator: #"\\"#)
+        return insert(Definition(kind: .matrix, labels: labels, pattern: #"\begin{pmatrix}"# + entries + #"\end{pmatrix}"#), at: id, offset: offset)
+    }
+    public mutating func insertPiecewise(cases: Int, at id: UUID, offset: Int? = nil) -> UUID? {
+        guard (1...6).contains(cases) else { return nil }
+        let labels = (1...cases).flatMap { ["Case \($0) expression", "Case \($0) condition"] }
+        let entries = (0..<cases).map { "«\($0 * 2)»&«\($0 * 2 + 1)»" }.joined(separator: #"\\"#)
+        return insert(Definition(kind: .piecewise, labels: labels, pattern: #"\begin{cases}"# + entries + #"\end{cases}"#), at: id, offset: offset)
+    }
+    private mutating func insert(_ template: Definition, at id: UUID, offset: Int?) -> UUID? {
         guard slots.count + template.labels.count + 1 <= 100, (nodes.map(\.depth).max() ?? 0) < 12 else { return nil }
         let arguments = template.labels.map { _ in [Node.text(UUID(), "")] }
         guard case .text(let first, _) = arguments[0][0] else { return nil }
@@ -146,7 +186,38 @@ public struct MathEntryDocument: Equatable, Sendable {
             return result
         }
         guard changed, Self.render(candidate).utf8.count <= 12_000 else { return nil }
-        nodes = candidate; return first
+        accept(candidate); return first
+    }
+    public func canRemoveTemplate(containing id: UUID) -> Bool {
+        Self.containsTemplate(nodes, id: id)
+    }
+    /// Unwrap the nearest template containing this slot, preserving argument
+    /// contents and their IDs instead of silently deleting the entered values.
+    @discardableResult public mutating func removeTemplate(containing id: UUID) -> Bool {
+        var candidate = nodes
+        guard Self.unwrap(&candidate, id: id), Self.render(candidate).utf8.count <= 12_000 else { return false }
+        accept(candidate); return true
+    }
+    private static func containsTemplate(_ values: [Node], id: UUID) -> Bool {
+        values.contains { node in
+            if case .template(_, let arguments) = node { return arguments.contains { slots($0, label: "").contains { $0.id == id } } }
+            return false
+        }
+    }
+    private static func unwrap(_ values: inout [Node], id: UUID) -> Bool {
+        for index in values.indices {
+            guard case .template(let definition, var arguments) = values[index] else { continue }
+            for argument in arguments.indices {
+                if unwrap(&arguments[argument], id: id) {
+                    values[index] = .template(definition, arguments); return true
+                }
+            }
+            if arguments.contains(where: { argument in argument.contains { if case .text(let found, _) = $0 { return found == id }; return false } }) {
+                let unwrapped = arguments.enumerated().flatMap { index, argument in index == 0 ? argument : [.separator] + argument }
+                values.replaceSubrange(index...index, with: unwrapped); return true
+            }
+        }
+        return false
     }
     private static func replace(_ values: inout [Node], id: UUID, transform: (String) -> [Node]) -> Bool {
         for index in values.indices {
@@ -166,6 +237,7 @@ public struct MathEntryDocument: Equatable, Sendable {
         values.flatMap { node in
             switch node {
             case .text(let id, let value): return [Slot(id: id, label: label, value: value)]
+            case .separator: return []
             case .template(let template, let arguments):
                 return arguments.enumerated().flatMap { index, argument in slots(argument, label: template.title + " · " + template.labels[index]) }
             }
@@ -174,6 +246,7 @@ public struct MathEntryDocument: Equatable, Sendable {
     private static func render(_ values: [Node]) -> String {
         values.map { node in
             switch node {
+            case .separator: return #"\;"#
             case .text(_, let value):
                 if value.isEmpty { return #"\square"# }
                 return value.map { character -> String in

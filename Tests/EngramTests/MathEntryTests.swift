@@ -2,6 +2,37 @@ import XCTest
 import LearningCore
 
 final class MathEntryTests: XCTestCase {
+    func testUndoRedoRestoreStructureAndUnwrapPreservesValuesAndIDs() throws {
+        var document = MathEntryDocument()
+        let initial = try XCTUnwrap(document.slots.first?.id)
+        let first = try XCTUnwrap(document.insert(.fraction, at: initial))
+        XCTAssertTrue(document.update(id: first, value: "1"))
+        let second = try XCTUnwrap(document.slots.last?.id)
+        XCTAssertTrue(document.update(id: second, value: "2"))
+        XCTAssertTrue(document.canRemoveTemplate(containing: first))
+        XCTAssertTrue(document.removeTemplate(containing: first))
+        XCTAssertEqual(document.latex, #"1\;2"#)
+        XCTAssertEqual(document.slots.map(\.id), [first, second])
+        document.undo(); XCTAssertEqual(document.latex, #"\frac{1}{2}"#)
+        document.redo(); XCTAssertEqual(document.latex, #"1\;2"#)
+        document.undo(); XCTAssertTrue(document.update(id: first, value: "3"))
+        XCTAssertFalse(document.canRedo); XCTAssertEqual(document.latex, #"\frac{3}{2}"#)
+    }
+    func testCustomMatrixAndPiecewiseDimensionsPreserveRowOrderAndRejectOversize() throws {
+        var matrix = MathEntryDocument()
+        let id = try XCTUnwrap(matrix.slots.first?.id)
+        XCTAssertNotNil(matrix.insertMatrix(rows: 2, columns: 3, at: id))
+        for (index, slot) in matrix.slots.enumerated() { XCTAssertTrue(matrix.update(id: slot.id, value: String(index + 1))) }
+        XCTAssertEqual(matrix.latex, #"\begin{pmatrix}1&2&3\\4&5&6\end{pmatrix}"#)
+        let before = matrix
+        XCTAssertNil(matrix.insertMatrix(rows: 7, columns: 1, at: matrix.slots[0].id))
+        XCTAssertEqual(matrix, before)
+        var piecewise = MathEntryDocument()
+        XCTAssertNotNil(piecewise.insertPiecewise(cases: 3, at: try XCTUnwrap(piecewise.slots.first?.id)))
+        XCTAssertEqual(piecewise.slots.count, 6)
+        for slot in piecewise.slots { XCTAssertTrue(piecewise.update(id: slot.id, value: "x")) }
+        XCTAssertEqual(piecewise.latex, #"\begin{cases}x&x\\x&x\\x&x\end{cases}"#)
+    }
     func testFractionFieldsProducePortableNotationWithoutEvaluating() throws {
         var document = MathEntryDocument()
         let initial = try XCTUnwrap(document.slots.first?.id)

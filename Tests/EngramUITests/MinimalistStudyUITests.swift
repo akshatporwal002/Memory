@@ -24,6 +24,11 @@ final class MinimalistStudyUITests: XCTestCase {
         let numerator = app.textFields["math-slot-0"], denominator = app.textFields["math-slot-1"]
         XCTAssertTrue(numerator.waitForExistence(timeout: 5)); numerator.tap(); numerator.typeText("1")
         denominator.tap(); denominator.typeText("2")
+        XCTAssertTrue(app.buttons["math-entry-insert"].isEnabled)
+        app.buttons["Undo"].tap()
+        XCTAssertFalse(app.buttons["math-entry-insert"].isEnabled)
+        app.buttons["Redo"].tap()
+        XCTAssertTrue(app.buttons["math-entry-insert"].isEnabled)
         capture(prefix + "-Equation-Fraction", app)
         app.buttons["math-entry-insert"].tap()
         XCTAssertTrue((app.descendants(matching: .any).matching(identifier: "typed-answer-input").firstMatch.value as? String ?? "").contains(#"\frac{1}{2}"#))

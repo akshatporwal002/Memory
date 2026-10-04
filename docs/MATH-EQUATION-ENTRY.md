@@ -15,10 +15,10 @@ Insert produces inline portable LaTeX in the existing answer. It does not create
 ## Remaining work and limits
 
 - Initial UI uses named slots and inserts templates at the end of the selected slot. Core offsets exist, but native text caret/selection tracking and direct cursor hit-testing in the visual formula are not yet integrated. Do not claim a finished Symbolab-like editing experience.
-- The current matrix is fixed at 2×2 and piecewise form has two cases. Variable-size structural editing, removing a template while retaining its content, and editor-level undo/redo remain to implement.
+- Matrix entry now selects 1–6 rows and columns; piecewise entry selects 1–6 cases. Structural removal preserves each argument and its slot identity, separating contents rather than merging distinct numbers. Editor undo/redo restores exact prior structures/values, retains up to 50 snapshots and clears redo after a new edit. Resizing an existing structure in place remains to implement; users can undo/reinsert with the desired dimensions.
 - Exercise keyboard navigation, nested templates, preview sizing, dark/light/mono contrast, accessible slot labels and long expressions on actual iPhone and landscape iPad.
 - Capture before/after typed-answer and equation views; update current_ui only from verified renders, keeping one preceding image. The existing iPad screenshot surface/orientation problem remains unresolved.
 - Optional Off/Basic/Scientific evaluative calculator settings and permitted-tool-use history remain separate work. This editor is notation input, not that calculator.
 - All new numeric/ordering/multiple-select/debugging question formats still await explicit individual approval.
 
-Four package tests cover fraction output, Unicode cursor preservation and nested entry, all template slots, and command/recipe-marker isolation plus oversized-edit rejection. iPhone and landscape iPad UI tests exercise fraction insertion into an existing answer and capture before/after. These tests are written but unexecuted.
+Six package tests cover fraction output, Unicode cursor preservation and nested entry, all template slots, command/recipe-marker isolation plus oversized-edit rejection, undo/redo/removal with retained identities, and matrix/piecewise dimensions with bounds. iPhone and landscape iPad UI tests exercise fraction insertion and undo/redo in an existing answer and capture before/after. These tests are written but unexecuted.

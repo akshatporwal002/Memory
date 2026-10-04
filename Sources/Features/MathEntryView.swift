@@ -5,11 +5,15 @@ import DesignSystem
 /// Notation entry only. Accepting inserts portable LaTeX into the existing answer;
 /// it neither evaluates expressions nor changes the question's grading rules.
 struct MathEntryView: View {
+    private enum Shape: String, Identifiable { case matrix, piecewise; var id: String { rawValue } }
     var insert: (String) -> Void
     @State private var document = MathEntryDocument()
     @State private var category = MathEntryCategory.arithmetic
     @State private var selected: UUID?
     @State private var error: String?
+    @State private var shape: Shape?
+    @State private var rows = 2
+    @State private var columns = 2
     @FocusState private var focused: UUID?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.engramTheme) private var theme
@@ -27,6 +31,17 @@ struct MathEntryView: View {
                         RichContentView(source: "$$\n" + document.latex + "\n$$")
                             .frame(maxWidth: .infinity, minHeight: 84).accessibilityLabel("Equation preview")
                         Divider()
+                        HStack(spacing: 20) {
+                            Button("Undo", systemImage: "arrow.uturn.backward") { document.undo(); normalizeSelection() }.disabled(!document.canUndo)
+                            Button("Redo", systemImage: "arrow.uturn.forward") { document.redo(); normalizeSelection() }.disabled(!document.canRedo)
+                            Spacer()
+                            if let selected, document.canRemoveTemplate(containing: selected) {
+                                Button("Remove template") {
+                                    if document.removeTemplate(containing: selected) { normalizeSelection() }
+                                    else { error = "Shorten this expression before removing the template." }
+                                }
+                            }
+                        }.buttonStyle(.plain).font(.subheadline).frame(minHeight: 44)
                         if geometry.size.width >= 700 && !typeSize.isAccessibilitySize {
                             HStack(alignment: .top, spacing: 28) { fields.frame(maxWidth: .infinity); paletteView.frame(width: 320) }
                         } else { fields; paletteView }
@@ -49,6 +64,23 @@ struct MathEntryView: View {
             }
             .onAppear { selected = document.slots.first?.id }
             .onChange(of: focused) { _, value in if let value { selected = value } }
+            .sheet(item: $shape) { kind in
+                NavigationStack {
+                    Form {
+                        Stepper(kind == .matrix ? "Rows: \(rows)" : "Cases: \(rows)", value: $rows, in: 1...6)
+                        if kind == .matrix { Stepper("Columns: \(columns)", value: $columns, in: 1...6) }
+                        Button("Insert " + (kind == .matrix ? "matrix" : "piecewise expression")) {
+                            if let id = selected ?? document.slots.first?.id {
+                                let next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id) : document.insertPiecewise(cases: rows, at: id)
+                                if let next { selected = next; focused = nil; error = nil }
+                                else { error = "This expression has reached its editing limit." }
+                            }
+                            shape = nil
+                        }
+                    }.modifier(UtilityListStyle()).navigationTitle(kind == .matrix ? "Matrix size" : "Piecewise cases")
+                        .engramInlineTitle().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { shape = nil } } }
+                }.presentationDetents([.medium])
+            }
         }
     }
     private var fields: some View {
@@ -75,6 +107,10 @@ struct MathEntryView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 86))], spacing: 8) {
                 ForEach(MathEntryTemplate.allCases.filter { $0.category == category }, id: \.self) { template in
                     Button(template.title) {
+                        if template == .matrix || template == .piecewise {
+                            rows = 2; columns = 2; focused = nil
+                            shape = template == .matrix ? .matrix : .piecewise; return
+                        }
                         guard let id = selected ?? document.slots.first?.id else { return }
                         if let next = document.insert(template, at: id) { selected = next; focused = nil; error = nil }
                         else { error = "This expression has reached its editing limit." }
@@ -100,5 +136,10 @@ struct MathEntryView: View {
         let current = slots.firstIndex { $0.id == (focused ?? selected) } ?? 0
         let next = max(0, min(slots.count - 1, current + direction))
         selected = slots[next].id; focused = slots[next].id
+    }
+    private func normalizeSelection() {
+        focused = nil
+        if !document.slots.contains(where: { $0.id == selected }) { selected = document.slots.first?.id }
+        error = nil
     }
 }
