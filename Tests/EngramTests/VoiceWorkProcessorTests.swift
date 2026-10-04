@@ -53,7 +53,7 @@ final class VoiceWorkProcessorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let calls = Calls()
         let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "owner",
-            transcribe: { _, bytes in
+            authorize: { _, _ in }, transcribe: { _, bytes in
                 XCTAssertEqual(bytes, Data([1, 2, 3])); await calls.upload()
                 return VoiceTranscriptResult(text: "ATP")
             }, assess: { claimed in
@@ -75,7 +75,7 @@ final class VoiceWorkProcessorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let calls = Calls()
         let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "owner",
-            transcribe: { _, _ in await calls.upload(); return VoiceTranscriptResult(text: "ATP") },
+            authorize: { _, _ in }, transcribe: { _, _ in await calls.upload(); return VoiceTranscriptResult(text: "ATP") },
             assess: { _ in await calls.grade(); return AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact") })
         await processor.start(); await processor.waitUntilIdle()
         let saved = try await service.snapshot(), counts = await calls.counts()
@@ -87,7 +87,7 @@ final class VoiceWorkProcessorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let calls = Calls()
         let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "owner",
-            transcribe: { _, _ in await calls.upload(); return VoiceTranscriptResult(text: "ATP") },
+            authorize: { _, _ in }, transcribe: { _, _ in await calls.upload(); return VoiceTranscriptResult(text: "ATP") },
             assess: { _ in
                 await calls.grade()
                 let counts = await calls.counts()
@@ -107,18 +107,31 @@ final class VoiceWorkProcessorTests: XCTestCase {
         let (service, storage, _, directory) = try await fixture()
         defer { try? FileManager.default.removeItem(at: directory) }
         let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "other",
-            transcribe: { _, _ in XCTFail("Foreign upload"); return VoiceTranscriptResult(text: "ATP") },
+            authorize: { _, _ in }, transcribe: { _, _ in XCTFail("Foreign upload"); return VoiceTranscriptResult(text: "ATP") },
             assess: { _ in XCTFail("Foreign grade"); return AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact") })
         await processor.start(); await processor.waitUntilIdle()
         let saved = try await service.snapshot()
         XCTAssertEqual(saved.voiceJobs?.first?.state, .captured); XCTAssertTrue(saved.reviews.isEmpty)
+    }
+    func testDeniedAuthorizationKeepsRecordingAndNeverCallsProviders() async throws {
+        let (service, storage, job, directory) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "owner",
+            authorize: { _, _ in throw EngramError.invalid("Voice subscription is not configured.") },
+            transcribe: { _, _ in XCTFail("Unauthorized upload"); return VoiceTranscriptResult(text: "ATP") },
+            assess: { _ in XCTFail("Unauthorized marking"); return AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact") })
+        await processor.start(); await processor.waitUntilIdle()
+        let saved = try await service.snapshot(), bytes = try await storage.read(job.recordingID)
+        XCTAssertEqual(saved.voiceJobs?.first?.state, .needsAttention)
+        XCTAssertEqual(saved.voiceJobs?.first?.attempt.originalAnswer, "")
+        XCTAssertEqual(bytes, Data([1, 2, 3])); XCTAssertTrue(saved.reviews.isEmpty)
     }
     func testStopRejectsLateTranscriptAndRestartRequiresExplicitUploadRetry() async throws {
         let (service, storage, _, directory) = try await fixture()
         defer { try? FileManager.default.removeItem(at: directory) }
         let calls = Calls()
         let processor = VoiceWorkProcessor(service: service, storage: storage, deviceID: "device", ownerID: "owner",
-            transcribe: { _, _ in
+            authorize: { _, _ in }, transcribe: { _, _ in
                 await calls.upload()
                 // Simulate a transport returning buffered data after cancellation.
                 try? await Task.sleep(for: .seconds(30))

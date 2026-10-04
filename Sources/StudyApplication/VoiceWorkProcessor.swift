@@ -7,6 +7,7 @@ public actor VoiceWorkProcessor {
     public typealias Transcribe = @Sendable (VoiceAnswerJob, Data) async throws -> VoiceTranscriptResult
     public typealias Assess = @Sendable (VoiceAnswerJob) async throws -> AnswerAssessment
     public typealias Changed = @Sendable () async -> Void
+    public typealias Authorize = @Sendable (VoiceAnswerJob, VoiceWorkerStage) async throws -> Void
     private let service: StudyService
     private let storage: any VoiceAudioStorage
     private let deviceID: String
@@ -14,14 +15,15 @@ public actor VoiceWorkProcessor {
     private let transcribe: Transcribe
     private let assess: Assess
     private let changed: Changed
+    private let authorize: Authorize
     private var loop: Task<Void, Never>?
     private var workers: [String: Task<Void, Never>] = [:]
     private var epoch = UUID()
     public private(set) var error: String?
     public init(service: StudyService, storage: any VoiceAudioStorage, deviceID: String, ownerID: String,
-                transcribe: @escaping Transcribe, assess: @escaping Assess, changed: @escaping Changed = {}) {
+                authorize: @escaping Authorize, transcribe: @escaping Transcribe, assess: @escaping Assess, changed: @escaping Changed = {}) {
         self.service = service; self.storage = storage; self.deviceID = deviceID; self.ownerID = ownerID
-        self.transcribe = transcribe; self.assess = assess; self.changed = changed
+        self.authorize = authorize; self.transcribe = transcribe; self.assess = assess; self.changed = changed
     }
     public func start() {
         guard loop == nil, workers.isEmpty else { return }
@@ -67,6 +69,8 @@ public actor VoiceWorkProcessor {
         defer { workers[key] = nil }
         do {
             guard epoch == token else { return }
+            try await authorize(job, stage)
+            try Task.checkCancellation(); guard epoch == token else { return }
             if stage == .transcription {
                 let recording = try await storage.read(job.recordingID)
                 try Task.checkCancellation(); guard epoch == token else { return }

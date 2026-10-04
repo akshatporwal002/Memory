@@ -78,3 +78,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Shared marking accepts frozen per-job model/evidence. MCQ dispatch uses local canonical-choice grading; no new question type was introduced.
 - Isolated Mac package validation passed 240 tests, one skipped, zero failures. Five worker tests verify cancellation/restart, account isolation, marking retry, completion after review exit and result-save races.
 - Recording/settings integration, production entitlement enforcement, cleanup retry UI, live provider tests and device deployment remain outstanding. This stage changed no iPhone or iPad layout.
+
+## Voice access and StoreKit foundation
+
+- Worker dispatch requires explicit stage authorization. Denied access retains audio, records needs-attention and invokes no provider.
+- Added account/environment-bound subscription, provider/purpose disclosure and job/rate-bound reservation checks. Production remains disabled by default. These are not yet wired into the existing local voice UI.
+- Added inactive StoreKit product/purchase/restore/update handling with app-account binding, verified transaction/environment checks and server acknowledgement before finish. No products/backend are configured and no purchase was attempted.
+- Isolated Mac package run passed 246 tests, one skipped, zero failures; StoreKit code compiled. Live purchase/ledger and device capture validation remain outstanding. See VOICE-PURCHASE-AND-ACCESS-FOUNDATION.md.
