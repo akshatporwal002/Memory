@@ -44,11 +44,11 @@ public struct AIContextItem: Codable, Equatable, Sendable {
     public let provider: String
     public let json: String
     public init(provider: String,json: String) throws {
-        guard json.utf8.count <= 350_000,let value = try JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any],provider == "chatgpt",value["type"] as? String == "reasoning",value["id"] is String else { throw AIProviderError.invalidTool }
+        guard json.utf8.count <= 350_000,let value = try JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any],["chatgpt", "openai"].contains(provider),value["type"] as? String == "reasoning",value["id"] is String else { throw AIProviderError.invalidTool }
         self.provider = provider; self.json = json
     }
     var wire: [String:Any] {
-        guard provider == "chatgpt",json.utf8.count <= 350_000,let value = try? JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any],value["type"] as? String == "reasoning" else { return [:] }
+        guard ["chatgpt", "openai"].contains(provider),json.utf8.count <= 350_000,let value = try? JSONSerialization.jsonObject(with:Data(json.utf8)) as? [String:Any],value["type"] as? String == "reasoning" else { return [:] }
         return value.filter { ["id","type","summary","encrypted_content"].contains($0.key) }
     }
 }
@@ -140,8 +140,10 @@ public extension AIProvider {
 }
 
 public struct ChatGPTAIProvider: AIProvider {
-    public let id = "chatgpt"
-    public init() {}
+    private let apiKeyAccount: Bool
+    public var id: String { apiKeyAccount ? "openai" : "chatgpt" }
+    public init() { apiKeyAccount = false }
+    init(apiKeyAccount: Bool) { self.apiKeyAccount = apiKeyAccount }
     public func models(token: String) async throws -> [AIModelDescriptor] {
         let session = URLSession(configuration: .ephemeral, delegate: AIRedirectBlocker(), delegateQueue: nil)
         defer { session.invalidateAndCancel() }
@@ -149,8 +151,9 @@ public struct ChatGPTAIProvider: AIProvider {
         request.timeoutInterval = 20; request.setValue("Bearer " + token, forHTTPHeaderField:"Authorization")
         let (data,response) = try await session.data(for:request)
         guard (response as? HTTPURLResponse)?.statusCode == 200, data.count <= 1_000_000,
-              let root = try JSONSerialization.jsonObject(with:data) as? [String:Any],
-              let models = root["models"] as? [[String:Any]] else { throw AIProviderError.unavailable }
+              let root = try JSONSerialization.jsonObject(with:data) as? [String:Any] else { throw AIProviderError.unavailable }
+        if apiKeyAccount { return try OpenAIAPIProvider.decodeModels(root) }
+        guard let models = root["models"] as? [[String:Any]] else { throw AIProviderError.unavailable }
         return models.filter { $0["visibility"] as? String == "list" }.compactMap { entry in
             guard let slug = entry["slug"] as? String else { return nil }
             let capabilities = entry["capabilities"] as? [String:Any]
@@ -175,6 +178,10 @@ public struct ChatGPTAIProvider: AIProvider {
                 let session = URLSession(configuration: .ephemeral, delegate: AIRedirectBlocker(), delegateQueue: nil)
                 defer { session.invalidateAndCancel() }
                 do {
+                    guard request.model.provider == id else { throw AIProviderError.unsupportedModel }
+                    for item in request.input {
+                        if case .context(let context) = item, context.provider != id { throw AIProviderError.invalidTool }
+                    }
                     guard request.tools.isEmpty || request.model.supportsTools else { throw AIProviderError.unsupportedModel }
                     var http = URLRequest(url: URL(string:"https://api.openai.com/v1/responses")!)
                     http.httpMethod = "POST"; http.timeoutInterval = 90
@@ -183,7 +190,8 @@ public struct ChatGPTAIProvider: AIProvider {
                     var body: [String:Any] = ["model":request.model.model,"store":false,"stream":true,
                         "instructions":request.instructions,"input":request.input.map(\.wire)]
                     if !request.tools.isEmpty {
-                        body["tools"] = [["type":"namespace","name":"engram","description":"Engram application capabilities","tools":request.tools.map(\.wire)]]
+                        if apiKeyAccount { body["tools"] = request.tools.map(\.wire) }
+                        else { body["tools"] = [["type":"namespace","name":"engram","description":"Engram application capabilities","tools":request.tools.map(\.wire)]] }
                         body["include"] = ["reasoning.encrypted_content"]
                     }
                     http.httpBody = try JSONSerialization.data(withJSONObject:body)
@@ -194,7 +202,7 @@ public struct ChatGPTAIProvider: AIProvider {
                         for try await byte in bytes { guard failure.count < 8000 else { break }; failure.append(byte) }
                         throw Self.failure(failure)
                     }
-                    var decoder = AIStreamDecoder(limit: request.outputLimit)
+                    var decoder = AIStreamDecoder(limit: request.outputLimit, provider: id)
                     for try await line in bytes.lines {
                         try Task.checkCancellation()
                         for event in try decoder.accept(line) { continuation.yield(event) }
@@ -206,7 +214,7 @@ public struct ChatGPTAIProvider: AIProvider {
                     let (data,response) = try await session.data(for:http)
                     guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw Self.failure(Data(data.prefix(8000))) }
                     guard data.count <= 2_000_000 else { throw AIProviderError.exceededLimit }
-                    var decoder = AIStreamDecoder(limit:request.outputLimit)
+                    var decoder = AIStreamDecoder(limit:request.outputLimit, provider: id)
                     for line in String(decoding:data,as:UTF8.self).components(separatedBy:"\n") {
                         for event in try decoder.accept(line) { continuation.yield(event) }
                     }
@@ -234,7 +242,8 @@ public struct AIStreamDecoder {
     private var calls = Set<String>()
     private var contexts = Set<String>()
     private let limit: Int
-    public init(limit: Int = 150_000) { self.limit = limit }
+    private let provider: String
+    public init(limit: Int = 150_000, provider: String = "chatgpt") { self.limit = limit; self.provider = provider }
     public mutating func accept(_ line: String) throws -> [AIEvent] {
         guard !completed, line.hasPrefix("data: ") else { return [] }
         let raw = String(line.dropFirst(6)).trimmingCharacters(in:.whitespacesAndNewlines)
@@ -265,7 +274,7 @@ public struct AIStreamDecoder {
         if item["type"] as? String == "reasoning" {
             guard let id = item["id"] as? String,contexts.insert(id).inserted else { return [] }
             let data = try JSONSerialization.data(withJSONObject:item.filter { ["id","type","summary","encrypted_content"].contains($0.key) })
-            return [.contextItem(try AIContextItem(provider:"chatgpt",json:String(decoding:data,as:UTF8.self)))]
+            return [.contextItem(try AIContextItem(provider:provider,json:String(decoding:data,as:UTF8.self)))]
         }
         guard item["type"] as? String == "function_call" else { return [] }
         guard let id = item["call_id"] as? String, !id.isEmpty,

@@ -41,3 +41,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Apple sign-in readiness defaults to false until provisioning/provider setup is validated. Browser linking stores expiring account ownership metadata, never tokens, and ordinary sign-in callbacks are not intercepted as linking callbacks.
 - Hosted account linking, revocation and live authentication remain configuration-dependent and unverified.
 - Recovered Mac build space by removing three inspected redundant generated build directories, preserving sources and screenshot evidence.
+
+## Stage 2 in progress
+
+- OpenAI personal API adapter now shares the existing streaming contract, with its own API catalog/function schema and provider-owned continuation state.
+- Added account-scoped device-only Keychain operations for OpenAI/Gemini personal keys and secret-safe local validation.
+- Foundation suite: 211 tests, one skipped, zero failures. These are contract/regression tests, not live provider validation.
+- Gemini transport, key-entry UI, workflow routing, voice jobs and billing remain outstanding. See PERSONAL-AI-PROVIDER-FOUNDATION.md.
