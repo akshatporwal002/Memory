@@ -15,6 +15,46 @@ private actor SpeechFixtureTransport: SpeechHTTPTransport {
 }
 final class SpeechProviderTests: XCTestCase {
     private let key = "fixture-key-not-a-secret"
+    func testSpeechOutputRejectsTruncatedAndInconsistentWAVWithoutRetry() async throws {
+        let valid = try VoiceWAV.encode([0, 0.5, -0.5], sampleRate: 24_000)
+        var badRate = valid; badRate[28] ^= 1
+        var oversizedChunk = valid; oversizedChunk[40] = 255
+        let fake = Data("RIFF0000WAVE".utf8)
+        for audio in [fake, Data(valid.dropLast()), badRate, oversizedChunk] {
+            let transport = SpeechFixtureTransport(SpeechHTTPResponse(data: audio, status: 200, contentType: "audio/wav"))
+            do {
+                _ = try await OpenAISpeechProvider(transport: transport).synthesize(text: "Hello", token: key, requestID: UUID())
+                XCTFail("Expected malformed audio rejection")
+            } catch let error as SpeechServiceError {
+                guard case .malformed = error else { XCTFail("Expected malformed audio error"); continue }
+            }
+            let requests = await transport.requests
+            XCTAssertEqual(requests.count, 1)
+        }
+        let transport = SpeechFixtureTransport(SpeechHTTPResponse(data: valid, status: 200, contentType: "audio/wav"))
+        let returned = try await OpenAISpeechProvider(transport: transport).synthesize(text: "Hello", token: key, requestID: UUID())
+        XCTAssertEqual(returned, valid)
+    }
+
+    func testWAVChunkPaddingAndMetadataAreValidatedWithoutAllocatingDeclaredSizes() throws {
+        let valid = try VoiceWAV.encode([0, 1], sampleRate: 24_000)
+        // A legal odd-sized ancillary chunk has one padding byte.
+        var withMetadata = Data(valid.prefix(12))
+        withMetadata.append(Data([74, 85, 78, 75, 1, 0, 0, 0, 42, 0]))
+        withMetadata.append(valid.dropFirst(12))
+        withMetadata[4] = UInt8(withMetadata.count - 8)
+        XCTAssertNoThrow(try VoiceWAV.validateOutput(withMetadata))
+        var empty = valid; empty[40] = 0
+        XCTAssertThrowsError(try VoiceWAV.validateOutput(empty))
+        var invalidBits = valid; invalidBits[34] = 8
+        XCTAssertThrowsError(try VoiceWAV.validateOutput(invalidBits))
+        var hugeRIFF = valid; hugeRIFF.replaceSubrange(4..<8, with: [255, 255, 255, 255])
+        XCTAssertThrowsError(try VoiceWAV.validateOutput(hugeRIFF))
+        var duplicateFormat = Data(valid.prefix(36)); duplicateFormat.append(valid.dropFirst(12))
+        duplicateFormat[4] = UInt8(duplicateFormat.count - 8)
+        XCTAssertThrowsError(try VoiceWAV.validateOutput(duplicateFormat))
+    }
+
     func testMultipartKeepsBinaryAudioAndNeverInjectsExpectedAnswers() throws {
         let audio = Data([0, 255, 13, 10, 42])
         let request = try OpenAISpeechProvider.transcriptionRequest(audio: audio, format: .wav, model: "gpt-4o-mini-transcribe", language: "en", token: key, requestID: UUID())

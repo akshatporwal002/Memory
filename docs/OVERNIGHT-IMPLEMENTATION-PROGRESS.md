@@ -153,3 +153,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Targeted iPhone sample import/reimport passed. Fraction entry/insert/undo/redo and matrix resize/preserved value/undo passed after adapting the test to the actual keyboard Next control and stepper children. Three targeted phone flows pass in total; captures were exported and visually inspected. Current/previous pairs are saved under current_ui/iphone for library-testing, math-matrix and typed-equation-answer; math-entry contains the current fraction editor.
 - On iPad, all three workflows reached their final functional assertions, then failed the actual screenshot aspect check: app frame was landscape but UIImage size was 1032 by 1376. The assertion remains intact. Results are /tmp/engram-overnight-ipad-641df58.xcresult on the Mac; screenshots exported there, but SSH timed out during download and a bounded retry. No iPad visual acceptance is claimed.
 - Live providers and physical-device installation remain pending. No new question type was added and the stay-awake helper remains off.
+
+## Speech output validation extended, pending Mac run
+
+- Replaced OpenAI output's signature-only check with bounded RIFF/WAV chunk and sample validation. Truncated or inconsistent headers, duplicate format/data chunks, unsupported encoding and excessive duration are rejected before playback. No automatic retry or billing-path change was added.
+- Two regression tests cover provider rejection without retry, valid PCM preservation, metadata padding and malformed size/format claims. They are written but unexecuted: an elevated SSH check to the Mac still timed out. The passing 269-test run predates this extension.
+- No UI layout or question type changed. iPad screenshot validation and device installation remain pending; the stay-awake helper remains off.

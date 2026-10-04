@@ -62,8 +62,7 @@ public struct OpenAISpeechProvider: TranscriptionProvider, SpeechOutputProvider 
         let response = try await transport.send(request, responseLimit: 25_000_000)
         try Task.checkCancellation()
         guard (200...299).contains(response.status) else { throw SpeechServiceError.unavailable(response.status) }
-        guard response.data.count >= 12, response.data.count <= 25_000_000,
-              response.data.prefix(4) == Data("RIFF".utf8), response.data[8..<12] == Data("WAVE".utf8) else { throw SpeechServiceError.malformed }
+        try VoiceWAV.validateOutput(response.data)
         return response.data
     }
     private static func authorized(path: String, token: String, requestID: UUID) throws -> URLRequest {
