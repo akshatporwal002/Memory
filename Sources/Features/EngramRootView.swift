@@ -58,10 +58,15 @@ public struct EngramRootView: View {
         .overlay(alignment: .bottomTrailing) {
             if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
         }
-        .task { await model.cloud.restore(model:model) }
+        .task { await model.cloud.restore(model:model); if scenePhase == .active { await model.voiceWork.resume(model: model) } }
         .onChange(of:model.chatGPT.activeClientID) { _,_ in
             model.assistant.cancel(); model.pdfLearning.cancel(); model.aiMarker.invalidateCatalog()
-            Task { if model.chatGPT.activeClientID != nil { await model.aiMarker.loadModels(connection:model.chatGPT) } }
+            model.voice.stop()
+            Task { await model.voiceWork.pause(); if model.chatGPT.activeClientID != nil { await model.aiMarker.loadModels(connection:model.chatGPT) }; if scenePhase == .active { await model.voiceWork.resume(model: model) } }
+        }
+        .onChange(of: model.aiMarker.personal.stamp) { _, _ in
+            model.voice.stop()
+            Task { await model.voiceWork.pause(); if scenePhase == .active { await model.voiceWork.resume(model: model) } }
         }
         .onPreferenceChange(AssistantDockHeight.self) { assistantDockHeight = max(72, $0 + 12) }
         .sheet(item: $model.deckForm) { form in DeckFormView(model: model, form: form).engramCaptureSurface() }
@@ -96,7 +101,10 @@ public struct EngramRootView: View {
                 await model.cloud.sync(model:model)
             }
         }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.refresh(); await model.cloud.sync(model:model) } } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await model.refresh(); await model.cloud.sync(model:model); if scenePhase == .active { await model.voiceWork.resume(model: model) } } }
+            else { model.voice.stop(); Task { await model.voiceWork.pause() } }
+        }
         .onChange(of:model.library.session?.current?.presentationID) { old,new in
             if old != nil,new != nil { Task { await model.cloud.sync(model:model,allowStudyBoundary:true) } }
         }

@@ -29,6 +29,47 @@ final class VoiceAnswerJobTests: XCTestCase {
         let marking = try await service.claimVoiceAnswer(stage: .marking, deviceID: "device", ownerID: "account-revision")
         return try XCTUnwrap(marking)
     }
+    func testLocalTranscriptIsDurableBeforeContinueAdvancesAndSkipsUpload() async throws {
+        let service = try await fixture()
+        let before = try await service.snapshot()
+        let session = try XCTUnwrap(before.session), item = try XCTUnwrap(session.current)
+        let recordingID = UUID()
+        let job = try await service.captureVoiceAnswer(recordingID: recordingID, deviceID: "device", ownerID: "account-revision",
+            provider: "local", transcriptionModel: "parakeet", gradingModel: "chatgpt:fixture", billingPath: .local,
+            mode: .continueProcessing, sessionID: session.id, presentationID: item.presentationID,
+            evidence: [], localTranscript: "not ATP", now: now)
+        let saved = try await service.snapshot()
+        XCTAssertEqual(saved.voiceJobs?.first?.attempt.originalAnswer, "not ATP")
+        XCTAssertEqual(job.state, .awaitingMarking)
+        XCTAssertNotEqual(saved.session?.current?.presentationID, item.presentationID)
+        let upload = try await service.claimVoiceAnswer(stage: .transcription, deviceID: "device", ownerID: "account-revision")
+        XCTAssertNil(upload)
+        let marking = try await service.claimVoiceAnswer(stage: .marking, deviceID: "device", ownerID: "account-revision")
+        XCTAssertEqual(marking?.attempt.originalAnswer, "not ATP")
+        // Retrying uncertain capture returns the accepted original, never rewrites it.
+        let repeated = try await service.captureVoiceAnswer(recordingID: recordingID, deviceID: "device", ownerID: "account-revision",
+            provider: "local", transcriptionModel: "parakeet", gradingModel: "chatgpt:fixture", billingPath: .local,
+            mode: .continueProcessing, sessionID: session.id, presentationID: item.presentationID,
+            evidence: [], localTranscript: "ATP", now: now)
+        XCTAssertEqual(repeated.attempt.originalAnswer, "not ATP")
+    }
+    func testLocalTranscriptCannotImpersonateCloudCaptureOrSaveEmptyAnswer() async throws {
+        let service = try await fixture()
+        let snapshot = try await service.snapshot()
+        let session = try XCTUnwrap(snapshot.session), item = try XCTUnwrap(session.current)
+        for (provider, path, text) in [("openai", VoiceBillingPath.personalKey, "ATP"), ("local", .local, " ")] {
+            do {
+                _ = try await service.captureVoiceAnswer(recordingID: UUID(), deviceID: "device", ownerID: "account-revision",
+                    provider: provider, transcriptionModel: "test", gradingModel: "test", billingPath: path,
+                    mode: .continueProcessing, sessionID: session.id, presentationID: item.presentationID,
+                    evidence: [], localTranscript: text, now: now)
+                XCTFail("Invalid local capture accepted")
+            } catch { }
+        }
+        let saved = try await service.snapshot()
+        XCTAssertTrue((saved.voiceJobs ?? []).isEmpty)
+        XCTAssertEqual(saved.session?.current?.presentationID, item.presentationID)
+    }
     func testContinueCommitsOriginalTimeOnceAfterLeavingSessionWithoutStealingFocus() async throws {
         let service = try await fixture()
         let captured = try await capture(service)

@@ -8,7 +8,11 @@ extension StudyService {
     @discardableResult public func captureVoiceAnswer(recordingID: UUID, deviceID: String, ownerID: String,
         provider: String, transcriptionModel: String, gradingModel: String, billingPath: VoiceBillingPath,
         mode: VoiceReviewMode, sessionID: String, presentationID: String, evidence: [AttemptEvidence],
-        now: Date = Date()) async throws -> VoiceAnswerJob {
+        localTranscript: String? = nil, now: Date = Date()) async throws -> VoiceAnswerJob {
+        if let localTranscript {
+            guard provider == "local", billingPath == .local, !localTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  localTranscript.utf8.count <= 16_000 else { throw EngramError.invalid("Check the on-device transcript before submitting.") }
+        }
         var library = try await repository.read()
         if let existing = library.voiceJobs?.first(where: { $0.id == "voice-" + presentationID }) {
             guard existing.deviceID == deviceID, existing.ownerID == ownerID, existing.recordingID == recordingID else { throw EngramError.conflict }
@@ -29,9 +33,10 @@ extension StudyService {
         attempt.providerAccountID = ownerID
         var settings = library.settings
         if let retention = library.liveDecks.first(where: { $0.id == item.card.deckID })?.desiredRetention { settings.desiredRetention = retention }
-        let job = VoiceAnswerJob(deviceID: deviceID, ownerID: ownerID, recordingID: recordingID, provider: provider,
+        var job = VoiceAnswerJob(deviceID: deviceID, ownerID: ownerID, recordingID: recordingID, provider: provider,
             transcriptionModel: transcriptionModel, billingPath: billingPath, mode: mode, note: note,
             card: item.card, settings: settings, attempt: attempt)
+        if let localTranscript { job.attempt.originalAnswer = localTranscript; job.state = .awaitingMarking }
         try job.validate()
         library.voiceJobs = (library.voiceJobs ?? []) + [job]
         if mode == .continueProcessing {

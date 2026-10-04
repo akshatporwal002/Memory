@@ -22,6 +22,7 @@ public struct DeckForm: Identifiable {
 @MainActor @Observable public final class EngramModel {
     public let reminders: ReviewReminderController
     let voice = VoiceStudyController()
+    let voiceWork = VoiceProcessingController()
     let aiMarker = AIAnswerMarker()
     let pdfLearning = PDFLearningController()
     let cloud: CloudAccountController
@@ -67,6 +68,7 @@ public struct DeckForm: Identifiable {
         deckCreationDraft = defaults.data(forKey: creationDraftKey).flatMap { try? JSONDecoder().decode(DeckCreationDraft.self, from: $0) } ?? DeckCreationDraft()
     }
     public func restoreLibrarySelection() async {
+        voice.stop(); await voiceWork.pause()
         aiMarker.personal.selectAccount(cloud.userID?.uuidString.lowercased() ?? cloud.localProfileID ?? "local")
         aiMarker.invalidateCatalog()
         do {
@@ -80,15 +82,16 @@ public struct DeckForm: Identifiable {
     }
     public func selectLibrary(_ id: String) async {
         guard id != activeLibraryID else { return }
-        guard !busy, !typedAnswer.busy, !markingAnswer, !cloud.busy else { error = "Finish the current edit or answer review before switching libraries."; return }
+        guard !busy, !typedAnswer.busy, !markingAnswer, !cloud.busy, !voiceWork.capturing else { error = "Finish the current edit or answer review before switching libraries."; return }
         busy = true; defer { busy = false }
-        await assistant.stopAndWait(); voice.stop(); pdfLearning.cancel()
+        await assistant.stopAndWait(); voice.stop(); await voiceWork.pause(); pdfLearning.cancel()
         do {
             try await service.selectLibrary(id)
             library = try await service.snapshot(); activeLibraryID = id
             defaults.set(id, forKey: librarySelectionKey)
             refreshLibraryPresentation()
             librarySpaces = try await service.librarySpaces(); now = Date()
+            await voiceWork.resume(model: self)
         } catch { self.error = error.localizedDescription }
     }
     public func createLibrary(name: String, deviceOnly: Bool) async {
@@ -219,11 +222,13 @@ public struct DeckForm: Identifiable {
         if await perform({ _ = try await $0.refreshSession(now: Date()) }) { reviewPresented = true }
     }
     public func reveal(sessionID: String, presentationID: String) async {
+        guard !(library.voiceJobs ?? []).contains(where: { $0.attempt.presentationID == presentationID && $0.state != .cancelled }) else { return }
         _ = await perform { service in
             if self.pendingAttempt != nil { try await service.markAttemptAssisted(presentationID: presentationID) }
             _ = try await service.reveal(sessionID: sessionID, presentationID: presentationID, now: Date()) }
     }
     public func grade(_ rating: Grade, sessionID: String, presentationID: String) async {
+        guard !(library.voiceJobs ?? []).contains(where: { $0.attempt.presentationID == presentationID && $0.state != .cancelled }) else { return }
         // Stable presentation-derived mutation ID supports retry after uncertain completion.
         _ = await perform { try await $0.grade(sessionID: sessionID, presentationID: presentationID,
             rating: rating, mutationID: "grade-" + presentationID, now: Date()) }
@@ -233,6 +238,7 @@ public struct DeckForm: Identifiable {
         _ = await perform { try await $0.undo(sessionID: session.id, now: Date()) }
     }
     func submitChoice(_ choice: String, presentationID: String) async {
+        guard !(library.voiceJobs ?? []).contains(where: { $0.attempt.presentationID == presentationID && $0.state != .cancelled }) else { return }
         guard let session = library.session, session.current?.presentationID == presentationID else { return }
         _ = await perform { try await $0.submitAnswer(sessionID: session.id, presentationID: presentationID, choiceID: choice) }
     }
@@ -259,6 +265,9 @@ public struct DeckForm: Identifiable {
     func nextAnswer() async {
         guard let session = library.session, let item = session.current else { return }
         answerFeedback = nil
+        if let job = voiceWork.jobs(self).first(where: { $0.attempt.presentationID == item.presentationID && $0.state == .completed }) {
+            await voiceWork.advanceCompleted(job, model: self); return
+        }
         _ = await perform { try await $0.nextAssessedAnswer(sessionID: session.id, presentationID: item.presentationID) }
     }
     func skipAnswer() async {

@@ -21,6 +21,11 @@ struct ReviewView: View {
                 VStack(spacing: 0) {
                     if let error = model.error { EngramInlineError(message: error).padding(EngramSpacing.regular) }
                     if model.voice.enabled { Text(model.voice.status).font(.caption).padding(8) }
+                    let unresolved = model.voiceWork.jobs(model).filter { $0.state.unresolved }.count
+                    if unresolved > 0 {
+                        Button("\(unresolved) pending", systemImage: "waveform") { model.voiceWork.summaryPresented = true }
+                            .font(.caption).buttonStyle(.plain).padding(8)
+                    }
                     if model.markingAnswer { ProgressView("Checking your answer…").padding(8) }
                     if let feedback = model.answerFeedback { Text(feedback).font(.subheadline).padding(8) }
                     if let session = model.library.session, let item = session.current,
@@ -40,7 +45,9 @@ struct ReviewView: View {
                                 }
                                 }
                             }
-                            if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil && (note.mcq == nil || item.assessment != nil) {
+                            .disabled(model.voiceWork.capturing || (model.library.voiceJobs ?? []).contains(where: { $0.attempt.presentationID == item.presentationID && $0.state.unresolved }))
+                            if !(typing && item.revealedAt == nil) && model.pendingAttempt?.assessment == nil && (note.mcq == nil || item.assessment != nil)
+                                && !(model.library.voiceJobs ?? []).contains(where: { $0.attempt.presentationID == item.presentationID && $0.state.unresolved }) {
                             controls(session: session, item: item, width: geometry.size.width)
                                 .padding(EngramSpacing.regular).frame(maxWidth: .infinity)
                                 .background(theme.palette(for: scheme).canvas)
@@ -83,6 +90,7 @@ struct ReviewView: View {
             }
             .engramCanvas()
             .sheet(isPresented: $optionsPresented) { reviewOptions }
+            .sheet(isPresented: $model.voiceWork.summaryPresented) { NavigationStack { VoiceAnswerHistoryView(model: model) } }
             .onChange(of: model.library.session?.current?.revealedAt) { _, newValue in if newValue != nil { answerFocused = true } }
         }
         .modifier(EngramTaskSizing(embedded: embedded, width: 820, height: 550))
@@ -148,7 +156,11 @@ struct ReviewView: View {
                         .keyboardShortcut("z", modifiers: .command).disabled(!model.canUndo || model.busy)
                     if let error = model.error { EngramInlineError(message: error) }
                 }
-                Section("Voice") { VoiceModeSettings(voice: model.voice) }
+                Section("Voice") {
+                    VoiceModeSettings(voice: model.voice).disabled(!model.voiceWork.localAvailable(model))
+                    NavigationLink("Voice settings") { VoiceSettingsPage(model: model) }
+                    NavigationLink("Voice answers") { VoiceAnswerHistoryView(model: model) }
+                }
                 Section("Appearance") {
                     Picker("Theme", selection: model.themeSelection) {
                         ForEach(EngramTheme.allCases) { Text($0.title).tag($0) }

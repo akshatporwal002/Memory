@@ -101,6 +101,7 @@ import LearningCore
     }
     func present(model: EngramModel) {
         guard enabled, ready, !preparing else { return }
+        guard model.voiceWork.localAvailable(model) else { stop(); error = "Configure voice access in Settings before starting voice review."; return }
         stop(); let token = generation
         task = Task { [weak self, weak model] in
             guard let self, let model else { return }
@@ -169,6 +170,7 @@ import LearningCore
         let converter = AudioConverter(sampleRate: 16000)
         var state = VadStreamState.initial(), pending: [Float] = [], preRoll: [Float] = []
         var answering = false
+        var utteranceAudio: [Float] = []
         speak(try questionText(model))
         for await incoming in stream {
             try Task.checkCancellation(); guard generation == token else { return }
@@ -178,9 +180,8 @@ import LearningCore
                 let detection = try await vad.processStreamingChunk(samples, state: state, config: VadSegmentationConfig(minSilenceDuration: 1.0))
                 state = detection.state
                 if detection.event?.isStart == true {
-                    let wasMarking = model.markingAnswer
-                    if wasMarking { prefix = transcript }
                     interrupt(); utteranceID = UUID(); model.answerFeedback = nil
+                    utteranceAudio = preRoll
                     requestedEndpoint = false; await asr.reset(); answering = true
                     let currentUtterance = utteranceID
                     await asr.setPartialCallback { [weak self] text in
@@ -193,7 +194,11 @@ import LearningCore
                     }
                     if !preRoll.isEmpty { _ = try await asr.process(audioBuffer: Self.pcm(preRoll)) }
                 }
-                if answering { _ = try await asr.process(audioBuffer: Self.pcm(samples)) }
+                if answering {
+                    guard utteranceAudio.count + samples.count <= 16000 * 120 else { throw EngramError.invalid("This voice answer is too long. Keep recordings under two minutes.") }
+                    utteranceAudio += samples
+                    _ = try await asr.process(audioBuffer: Self.pcm(samples))
+                }
                 preRoll = samples
                 if answering, detection.event?.isEnd == true || requestedEndpoint {
                     answering = false
@@ -202,16 +207,17 @@ import LearningCore
                     let text = (prefix + " " + recognized).trimmingCharacters(in: .whitespacesAndNewlines); prefix = ""; transcript = text
                     guard !text.isEmpty else { continue }
                     let turn = utteranceID
+                    let recording = utteranceAudio; utteranceAudio = []
                     markingTask = Task { [weak self, weak model] in
                         guard let self, let model else { return }
-                        await self.respond(text, model: model, token: token, turn: turn)
+                        await self.respond(text, samples: recording, model: model, token: token, turn: turn)
                     }
                 }
             }
         }
         if generation == token { throw EngramError.invalid("Audio processing could not keep up. Please restart voice mode.") }
     }
-    private func respond(_ text: String, model: EngramModel, token: UUID, turn: UUID) async {
+    private func respond(_ text: String, samples: [Float], model: EngramModel, token: UUID, turn: UUID) async {
         guard generation == token, utteranceID == turn else { return }
         let command = text.lowercased().trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
         if ["stop", "pause"].contains(command) { enabled = false; return }
@@ -238,10 +244,10 @@ import LearningCore
         status = "Checking your answer…"
         let answer = text.replacingOccurrences(of: "(?i)(?:^|\\s)done[.!?]*\\s*$", with: "", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !answer.isEmpty else { speak("Please say your answer, then done."); return }
-        await model.markSpokenAnswer(answer)
+        await model.voiceWork.submitLocal(answer, samples: samples, model: model, sessionID: session.id, presentationID: item.presentationID)
         guard !Task.isCancelled, generation == token, utteranceID == turn else { return }
-        if let feedback = model.answerFeedback { speak(feedback) }
-        else if let error = model.error { speak(error) }
+        if let error = model.voiceWork.error { self.error = error; status = "Check pending answers." }
+        else { status = model.voiceWork.mode == .continueProcessing ? "Answer saved." : "Waiting for feedback…" }
     }
     private static func pcm(_ samples: [Float], sampleRate: Double = 16000) -> AVAudioPCMBuffer {
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!

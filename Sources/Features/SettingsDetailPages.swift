@@ -159,9 +159,21 @@ struct VoiceSettingsPage: View {
     @Bindable var model: EngramModel
     var body: some View {
         Form {
-            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing) }
+            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.localAvailable(model)) }
             EngramListSection("Listening") {
-                LabeledContent("Speech recognition", value: "Parakeet · on device")
+                Picker("Speech recognition", selection: $model.voiceWork.selection) {
+                    ForEach(VoiceProcessingController.Selection.allCases) { Text($0.title).tag($0) }
+                }
+                LabeledContent("Access", value: model.voiceWork.localAvailable(model) ? "Development preview" : "Not configured")
+                Picker("After answering", selection: $model.voiceWork.mode) {
+                    Text("Continue while processing").tag(VoiceReviewMode.continueProcessing)
+                    Text("Wait for feedback").tag(VoiceReviewMode.waitForFeedback)
+                }
+                #if DEBUG
+                Toggle("Enable local development preview", isOn: $model.voiceWork.developmentLocalPreview)
+                Text("Preview uses on-device recognition. AI marking uses your selected AI connection; provider charges may apply. Production voice access is not configured.").font(.footnote).foregroundStyle(.secondary)
+                #endif
+                NavigationLink("Pending answers & results") { VoiceAnswerHistoryView(model: model) }
                 NavigationLink("Test microphone") { MicrophoneTestPage().onAppear { model.voice.enabled = false; model.voice.stopPreview() } }
             }
             EngramListSection("Speaking") {
@@ -173,7 +185,12 @@ struct VoiceSettingsPage: View {
                 Text("Speak to interrupt. Answer multiple choice with a letter or the option text.")
                 NavigationLink("AI answer marking") { AISettingsPage(model: model) }
             } footer: { Text("Keep Engram open during voice review. Screen-locked use has not been validated.") }
+            if let error = model.voiceWork.error { EngramListSection { Text(error).engramErrorText() } }
         }.modifier(UtilityListStyle()).navigationTitle("Voice").onDisappear { model.voice.stopPreview() }
+            .onChange(of: model.voiceWork.selection) { _, _ in model.voice.enabled = false }
+            #if DEBUG
+            .onChange(of: model.voiceWork.developmentLocalPreview) { _, _ in model.voice.enabled = false }
+            #endif
     }
 }
 

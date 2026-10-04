@@ -106,3 +106,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added bounded structural undo/redo, removing the nearest template without losing its values/identities, and configurable matrices (1–6 rows/columns) and piecewise expressions (1–6 cases). Direct formula cursor hit-testing and resizing existing structures remain outstanding.
 - Two additional package tests and UI undo/redo assertions are written; all new equation tests remain unexecuted pending Mac access. Do not apply the earlier passing-suite count to this code.
 - Delivered TUTOR-ASSIGNMENTS-PLAN.md: provisional A$3 total/five-student tier, assigned-work-only access, invitations/consent/capacity, versioned assignments, bounded weekly insights, removal/revocation/expiry, iPhone/iPad layouts and acceptance gates. No tutor tier or hosted student access was activated.
+
+## Voice capture and result controls, validation pending
+
+- Connected on-device recognition to durable answer jobs, added bounded WAV capture, provider/Continue/Wait settings and an explicit debug-only local preview. Unconfigured cloud recording remains disabled.
+- Added pending-count navigation, results/transcript correction/retry/cancel forms and Wait-mode advancement without duplicate grading. Worker scopes stop on suspension and connection changes.
+- Added four focused tests; none has run. A fresh bounded SSH check still timed out. No new screenshots or phone installation can be claimed. See VOICE-CAPTURE-INTEGRATION.md for remaining production, reconciliation and lifecycle gates.
+- New question types remain proposals awaiting individual user approval. No stay-awake helper was started in this stage.
