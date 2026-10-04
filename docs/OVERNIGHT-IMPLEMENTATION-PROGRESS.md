@@ -119,3 +119,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added atomic removal of the previous voice grade, retained recognition/assessment revisions and replay of later reviews from the preserved imported baseline. Replacement grading keeps the original answer time and a stable revision-specific ID.
 - Correcting a completed result is available through the same transcript editor on iPhone/iPad. Its explanation states that saving recalculates due dates. A changed reference, account, unsupported scheduling state or concurrent mutation prevents an automatic overwrite.
 - Cloud reconciliation uses the full review/correction history so a later event cannot resurrect a removed first grade. Three focused tests are written; compilation, tests and simulator/device review remain unexecuted pending Mac access.
+
+## Recording cleanup and old-connection recovery, validation pending
+
+- Persisted cleanup-needed state independently of grades, with protected-file removal and idempotent acknowledgement. The results list offers recording cleanup retries without uploading or remarking.
+- Same-account/device pending jobs survive grading-connection changes visibly. Cancel releases their cards; retries/corrections stay tied to the original connection. New jobs carry explicit app-account ownership; legacy format recognition stays inside the account-isolated repository.
+- Removed grades are labelled as previous results rather than claiming they remain scheduled. No question layout or new question type was added.
+- Three focused tests are written, unexecuted. A new bounded Mac SSH check still timed out. Phone/iPad screenshots and installation remain pending; the stay-awake helper remains off.

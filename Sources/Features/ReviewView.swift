@@ -21,7 +21,7 @@ struct ReviewView: View {
                 VStack(spacing: 0) {
                     if let error = model.error { EngramInlineError(message: error).padding(EngramSpacing.regular) }
                     if model.voice.enabled { Text(model.voice.status).font(.caption).padding(8) }
-                    let unresolved = model.voiceWork.jobs(model).filter { $0.state.unresolved }.count
+                    let unresolved = model.voiceWork.historyJobs(model).filter { $0.state.unresolved }.count
                     if unresolved > 0 {
                         Button("\(unresolved) pending", systemImage: "waveform") { model.voiceWork.summaryPresented = true }
                             .font(.caption).buttonStyle(.plain).padding(8)

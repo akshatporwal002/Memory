@@ -27,6 +27,10 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     public var error: String?
     public var usageJSON: Data?
     public var transcriptRevisions: [String]?
+    /// Device-private ownership for cleanup after the grading connection changes.
+    /// Optional for backups written before account-scoped capture was connected.
+    public var appAccountID: String?
+    public var recordingCleanupPending: Bool?
     /// Optional for pre-correction jobs/backups. Content remains frozen; this
     /// version authorizes only the reconciled scheduling projection.
     public var reconciliationCardVersion: Int?
@@ -34,6 +38,14 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     public var reviewID: String {
         let base = "answer-" + attempt.presentationID
         return (reviewRevision ?? 0) == 0 ? base : base + "-voice-revision-" + String(reviewRevision ?? 0)
+    }
+    public func belongsToAppAccount(_ account: String, deviceID requestedDevice: String, currentGradingIdentity: String) -> Bool {
+        guard !account.isEmpty, deviceID == requestedDevice else { return false }
+        if let appAccountID { return appAccountID == account }
+        if ownerID == currentGradingIdentity { return true }
+        let pieces = ownerID.split(separator: ":", omittingEmptySubsequences: false)
+        guard pieces.count >= 3, pieces[0] == account, let revision = Int(pieces[1]), revision >= 0 else { return false }
+        return true
     }
     public init(deviceID: String, ownerID: String, recordingID: UUID, provider: String, transcriptionModel: String,
                 billingPath: VoiceBillingPath, mode: VoiceReviewMode, note: Note, card: StudyCard,
@@ -45,6 +57,7 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     public func validate() throws {
         guard !deviceID.isEmpty, !ownerID.isEmpty, deviceID.utf8.count <= 200, ownerID.utf8.count <= 500,
               !provider.isEmpty, provider.utf8.count <= 100, transcriptionModel.utf8.count <= 200,
+              appAccountID.map({ !$0.isEmpty && $0.utf8.count <= 200 }) ?? true,
               generation >= 0, (reviewRevision ?? 0) >= 0, (reviewRevision ?? 0) <= 100,
               reconciliationCardVersion.map({ $0 >= card.version }) ?? true,
               attempt.noteID == note.id, attempt.cardID == card.id, card.noteID == note.id, card.deckID == note.deckID,
@@ -53,6 +66,7 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
               attempt.evidence.count <= 20, attempt.createdAt.timeIntervalSince1970.isFinite,
               (error?.utf8.count ?? 0) <= 2000, (usageJSON?.count ?? 0) <= 32_000,
               (transcriptRevisions?.count ?? 0) <= 100, transcriptRevisions?.allSatisfy({ $0.utf8.count <= 16_000 }) ?? true,
+              recordingCleanupPending != true || state == .cancelled || !attempt.originalAnswer.isEmpty,
               state != .completed || attempt.committedAt != nil else { throw EngramError.invalid("Invalid pending voice answer.") }
     }
 }

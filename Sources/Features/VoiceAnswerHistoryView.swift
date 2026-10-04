@@ -7,28 +7,35 @@ struct VoiceAnswerHistoryView: View {
     @Bindable var model: EngramModel
     var body: some View {
         Form {
-            let jobs = model.voiceWork.jobs(model)
-            if jobs.isEmpty { Text("No voice answers for this connection and library.").foregroundStyle(.secondary) }
+            let jobs = model.voiceWork.historyJobs(model)
+            if jobs.isEmpty { Text("No voice answers for this account, device and library.").foregroundStyle(.secondary) }
             ForEach(jobs) { job in
+                let gradeRemoved = job.state == .completed && model.library.corrections.contains { $0.reviewID == job.reviewID }
                 EngramListSection {
                     Text(job.attempt.prompt).font(.headline)
-                    LabeledContent("Status", value: title(job.state))
+                    LabeledContent("Status", value: gradeRemoved ? "Grade removed" : title(job.state))
                     if !job.attempt.originalAnswer.isEmpty { Text(job.attempt.originalAnswer) }
                     if let assessment = job.attempt.assessment {
-                        LabeledContent("Result", value: assessment.outcome.rawValue.capitalized)
+                        LabeledContent(gradeRemoved ? "Previous result" : "Result", value: assessment.outcome.rawValue.capitalized)
                         RichContentView(source: assessment.reason)
                     }
                     if let error = job.error { Text(error).engramErrorText() }
-                    if job.state.unresolved || job.state == .completed {
+                    if !model.voiceWork.canProcess(job, model: model), job.state.unresolved {
+                        Text("The grading connection changed. Cancel this pending answer to release the card; it will not be sent through another connection.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if (job.state.unresolved || job.state == .completed) && !gradeRemoved && model.voiceWork.canProcess(job, model: model) {
                         NavigationLink("Correct transcript") { VoiceTranscriptCorrectionView(model: model, job: job) }
                     }
                     if job.state.unresolved {
-                        if job.state == .needsAttention, !job.attempt.originalAnswer.isEmpty {
+                        if job.state == .needsAttention, !job.attempt.originalAnswer.isEmpty, model.voiceWork.canProcess(job, model: model) {
                             Button("Retry marking") { Task { await model.voiceWork.retry(job, model: model) } }.disabled(model.busy)
                         }
                         Button("Cancel pending answer", role: .destructive) { Task { await model.voiceWork.cancel(job, model: model) } }.disabled(model.busy)
                     }
-                    if job.state == .completed { Text("Saved once at the original answer time.").font(.footnote).foregroundStyle(.secondary) }
+                    if job.state == .completed && !gradeRemoved { Text("Saved once at the original answer time.").font(.footnote).foregroundStyle(.secondary) }
+                    if job.recordingCleanupPending == true {
+                        Button("Remove saved recording") { Task { await model.voiceWork.cleanup(job, model: model) } }.disabled(model.busy)
+                    }
                     if let revisions = job.transcriptRevisions, !revisions.isEmpty {
                         DisclosureGroup("Recognition history") {
                             ForEach(Array(revisions.enumerated()), id: \.offset) { index, text in

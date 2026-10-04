@@ -5,6 +5,16 @@ import PersistenceAdapters
 import SchedulingAdapters
 
 final class VoiceWorkProcessorTests: XCTestCase {
+    private actor CleanupFailure: VoiceAudioStorage {
+        let underlying: VoiceRecordingStore
+        var failNext = true
+        init(_ underlying: VoiceRecordingStore) { self.underlying = underlying }
+        func read(_ id: UUID) async throws -> Data { try await underlying.read(id) }
+        func remove(_ id: UUID) async throws {
+            if failNext { failNext = false; throw EngramError.invalid("Fixture cleanup failure") }
+            try await underlying.remove(id)
+        }
+    }
     private actor Calls {
         var uploads = 0
         var grades = 0
@@ -47,6 +57,27 @@ final class VoiceWorkProcessorTests: XCTestCase {
             billingPath: .personalKey, mode: .continueProcessing, sessionID: session.id,
             presentationID: item.presentationID, evidence: [])
         return (service, storage, job, directory)
+    }
+    func testCleanupFailureIsDurableAndRetryDoesNotRepeatProviderOrGrade() async throws {
+        let (service, storage, job, directory) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let cleanup = CleanupFailure(storage), calls = Calls()
+        let processor = VoiceWorkProcessor(service: service, storage: cleanup, deviceID: "device", ownerID: "owner",
+            authorize: { _, _ in }, transcribe: { _, _ in await calls.upload(); return VoiceTranscriptResult(text: "ATP") },
+            assess: { _ in await calls.grade(); return AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact") })
+        await processor.start(); await processor.waitUntilIdle()
+        let saved = try await service.snapshot()
+        XCTAssertEqual(saved.voiceJobs?.first?.state, .completed)
+        XCTAssertEqual(saved.voiceJobs?.first?.recordingCleanupPending, true)
+        let retained = try await storage.read(job.recordingID)
+        XCTAssertEqual(retained, Data([1, 2, 3]))
+        try await cleanup.remove(job.recordingID)
+        try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: "device", ownerID: "owner")
+        await processor.start(); await processor.waitUntilIdle()
+        let final = try await service.snapshot(), count = await calls.counts()
+        XCTAssertEqual(final.voiceJobs?.first?.recordingCleanupPending, false)
+        XCTAssertEqual(final.reviews.count, 1)
+        XCTAssertEqual(count, [1, 1])
     }
     func testWorkerPersistsTranscriptDeletesRecordingAndCommitsOnce() async throws {
         let (service, storage, job, directory) = try await fixture()

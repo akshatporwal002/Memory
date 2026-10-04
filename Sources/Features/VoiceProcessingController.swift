@@ -64,6 +64,13 @@ import AIInfrastructure
         return (model.library.voiceJobs ?? []).filter { $0.deviceID == deviceID && $0.ownerID == owner }
             .sorted { $0.attempt.createdAt > $1.attempt.createdAt }
     }
+    func historyJobs(_ model: EngramModel) -> [VoiceAnswerJob] {
+        let account = model.aiMarker.personal.accountID, current = model.aiMarker.gradingIdentity(model.chatGPT)
+        return (model.library.voiceJobs ?? []).filter { job in
+            job.belongsToAppAccount(account, deviceID: deviceID, currentGradingIdentity: current)
+        }.sorted { $0.attempt.createdAt > $1.attempt.createdAt }
+    }
+    func canProcess(_ job: VoiceAnswerJob, model: EngramModel) -> Bool { job.ownerID == model.aiMarker.gradingIdentity(model.chatGPT) }
     func advanceCompleted(_ job: VoiceAnswerJob, model: EngramModel) async {
         _ = await model.perform { try await $0.advanceCompletedVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }
     }
@@ -81,12 +88,24 @@ import AIInfrastructure
         if await model.perform({ try await $0.retryVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }) { await worker?.start() }
     }
     func cancel(_ job: VoiceAnswerJob, model: EngramModel) async {
-        guard jobs(model).contains(where: { $0.id == job.id }) else { return }
-        let recordingStore = storage
+        guard historyJobs(model).contains(where: { $0.id == job.id && $0.state.unresolved }) else { return }
         if await model.perform({ try await $0.cancelVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }) {
-            do { try await recordingStore?.remove(job.recordingID) }
-            catch { self.error = "Answer cancelled; its recording needs cleanup." }
+            await cleanup(job, model: model)
         }
+    }
+    func cleanup(_ job: VoiceAnswerJob, model: EngramModel) async {
+        let identity = currentScope(model)
+        do {
+            try await prepare(model: model)
+            guard identity == currentScope(model), let storage,
+                  let current = historyJobs(model).first(where: { $0.id == job.id }),
+                  current.state == .cancelled || !current.attempt.originalAnswer.isEmpty else { throw EngramError.conflict }
+            _ = await model.perform { service in
+                try await storage.remove(current.recordingID)
+                guard self.currentScope(model) == identity else { throw EngramError.conflict }
+                try await service.acknowledgeVoiceRecordingDeletion(id: current.id, deviceID: self.deviceID, ownerID: current.ownerID)
+            }
+        } catch { if identity == currentScope(model) { self.error = error.localizedDescription } }
     }
     private func currentScope(_ model: EngramModel) -> String {
         model.aiMarker.gradingIdentity(model.chatGPT) + ":library:" + model.activeLibraryID
@@ -181,14 +200,18 @@ import AIInfrastructure
                 let prompt = try CardRenderer.render(note: note, card: item.card, revealed: false).prompt
                 let evidence = LocalAnswerEvidence.retrieve(note: note, prompt: prompt, library: model.library)
                     .map { AttemptEvidence(id: $0.id, text: $0.text, version: $0.version) }
-                _ = try await model.service.captureVoiceAnswer(recordingID: recordingID, deviceID: deviceID,
+                let saved = try await model.service.captureVoiceAnswer(recordingID: recordingID, deviceID: deviceID,
                     ownerID: model.aiMarker.gradingIdentity(model.chatGPT), provider: "local", transcriptionModel: "parakeet",
                     gradingModel: model.aiMarker.selectedModel, billingPath: .local, mode: mode,
-                    sessionID: sessionID, presentationID: presentationID, evidence: evidence, localTranscript: text)
+                    sessionID: sessionID, presentationID: presentationID, evidence: evidence,
+                    appAccountID: model.aiMarker.personal.accountID, localTranscript: text)
                 captured = true
                 // Recognition is already local and durably saved. Cleanup does
                 // not repeat capture or erase the accepted transcript on failure.
-                do { try await storage.remove(recordingID) }
+                do {
+                    try await storage.remove(recordingID)
+                    try await model.service.acknowledgeVoiceRecordingDeletion(id: saved.id, deviceID: deviceID, ownerID: saved.ownerID)
+                }
                 catch { self.error = "Answer saved, but its recording needs cleanup." }
                 await worker?.start(); await model.refresh()
             } catch {

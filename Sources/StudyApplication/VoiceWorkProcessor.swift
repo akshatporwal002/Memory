@@ -82,7 +82,10 @@ public actor VoiceWorkProcessor {
                 }
                 // Persisting the transcript precedes deletion. Cleanup failure is
                 // reported independently; it must not retranscribe or erase text.
-                do { try await storage.remove(job.recordingID) }
+                do {
+                    try await storage.remove(job.recordingID)
+                    try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: deviceID, ownerID: ownerID)
+                }
                 catch { self.error = "Transcript saved, but its device recording could not be deleted. Retry recording cleanup." }
             } else {
                 if let question = job.note.mcq {

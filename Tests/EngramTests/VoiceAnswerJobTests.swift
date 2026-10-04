@@ -53,6 +53,43 @@ final class VoiceAnswerJobTests: XCTestCase {
             evidence: [], localTranscript: "ATP", now: now)
         XCTAssertEqual(repeated.attempt.originalAnswer, "not ATP")
     }
+    func testRecordingDeletionAcknowledgementProtectsUntranscribedAudioAndIsIdempotent() async throws {
+        let service = try await fixture()
+        let job = try await capture(service)
+        do {
+            try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: "device", ownerID: "account-revision")
+            XCTFail("Untranscribed audio acknowledged as deleted")
+        } catch { }
+        try await service.cancelVoiceAnswer(id: job.id, deviceID: "device", ownerID: "account-revision")
+        let cancelled = try await service.snapshot()
+        XCTAssertEqual(cancelled.voiceJobs?.first?.recordingCleanupPending, true)
+        do {
+            try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: "other", ownerID: "account-revision")
+            XCTFail("Another device changed cleanup state")
+        } catch { }
+        try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: "device", ownerID: "account-revision")
+        let cleaned = try await service.snapshot()
+        XCTAssertEqual(cleaned.voiceJobs?.first?.recordingCleanupPending, false)
+        try await service.acknowledgeVoiceRecordingDeletion(id: job.id, deviceID: "device", ownerID: "account-revision")
+        let repeated = try await service.snapshot()
+        XCTAssertEqual(cleaned.revision, repeated.revision)
+        XCTAssertTrue(repeated.reviews.isEmpty)
+    }
+    func testHistoryOwnershipRecognizesOldConnectionButNeverAnotherAccountOrDevice() async throws {
+        let service = try await fixture()
+        let source = try await capture(service)
+        func job(_ owner: String) -> VoiceAnswerJob {
+            VoiceAnswerJob(deviceID: "device", ownerID: owner, recordingID: source.recordingID, provider: source.provider,
+                transcriptionModel: source.transcriptionModel, billingPath: source.billingPath, mode: source.mode,
+                note: source.note, card: source.card, settings: source.settings, attempt: source.attempt)
+        }
+        XCTAssertTrue(job("account:1:old").belongsToAppAccount("account", deviceID: "device", currentGradingIdentity: "account:2:new"))
+        XCTAssertFalse(job("another:1:old").belongsToAppAccount("account", deviceID: "device", currentGradingIdentity: "account:2:new"))
+        XCTAssertFalse(job("account:1:old").belongsToAppAccount("account", deviceID: "other", currentGradingIdentity: "account:2:new"))
+        XCTAssertFalse(job("account:not-a-revision:old").belongsToAppAccount("account", deviceID: "device", currentGradingIdentity: "account:2:new"))
+        var explicit = job("account:1:old"); explicit.appAccountID = "another"
+        XCTAssertFalse(explicit.belongsToAppAccount("account", deviceID: "device", currentGradingIdentity: "account:1:old"))
+    }
     func testLocalTranscriptCannotImpersonateCloudCaptureOrSaveEmptyAnswer() async throws {
         let service = try await fixture()
         let snapshot = try await service.snapshot()

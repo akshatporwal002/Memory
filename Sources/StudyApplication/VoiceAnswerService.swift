@@ -8,7 +8,7 @@ extension StudyService {
     @discardableResult public func captureVoiceAnswer(recordingID: UUID, deviceID: String, ownerID: String,
         provider: String, transcriptionModel: String, gradingModel: String, billingPath: VoiceBillingPath,
         mode: VoiceReviewMode, sessionID: String, presentationID: String, evidence: [AttemptEvidence],
-        localTranscript: String? = nil, now: Date = Date()) async throws -> VoiceAnswerJob {
+        appAccountID: String? = nil, localTranscript: String? = nil, now: Date = Date()) async throws -> VoiceAnswerJob {
         if let localTranscript {
             guard provider == "local", billingPath == .local, !localTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   localTranscript.utf8.count <= 16_000 else { throw EngramError.invalid("Check the on-device transcript before submitting.") }
@@ -36,7 +36,8 @@ extension StudyService {
         var job = VoiceAnswerJob(deviceID: deviceID, ownerID: ownerID, recordingID: recordingID, provider: provider,
             transcriptionModel: transcriptionModel, billingPath: billingPath, mode: mode, note: note,
             card: item.card, settings: settings, attempt: attempt)
-        if let localTranscript { job.attempt.originalAnswer = localTranscript; job.state = .awaitingMarking }
+        job.appAccountID = appAccountID
+        if let localTranscript { job.attempt.originalAnswer = localTranscript; job.state = .awaitingMarking; job.recordingCleanupPending = true }
         try job.validate()
         library.voiceJobs = (library.voiceJobs ?? []) + [job]
         if mode == .continueProcessing {
@@ -74,6 +75,7 @@ extension StudyService {
         let index = try voiceIndex(jobs, id: id, generation: generation, deviceID: deviceID, ownerID: ownerID)
         guard jobs[index].state == .transcribing else { throw EngramError.conflict }
         jobs[index].attempt.originalAnswer = text; jobs[index].usageJSON = usageJSON
+        jobs[index].recordingCleanupPending = true
         jobs[index].state = .awaitingMarking; jobs[index].generation += 1
         library.voiceJobs = jobs
         try Task.checkCancellation(); try await repository.commit(library, expectedRevision: library.revision)
@@ -89,7 +91,17 @@ extension StudyService {
         var library = try await repository.read(); var jobs = library.voiceJobs ?? []
         guard let index = jobs.firstIndex(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID }),
               jobs[index].state.unresolved else { throw EngramError.conflict }
-        jobs[index].state = .cancelled; jobs[index].generation += 1
+        jobs[index].state = .cancelled; jobs[index].generation += 1; jobs[index].recordingCleanupPending = true
+        library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision)
+    }
+    /// Acknowledges deletion only after the caller removed the protected file.
+    /// An untranscribed live job must retain audio; cleanup never changes its grade.
+    public func acknowledgeVoiceRecordingDeletion(id: String, deviceID: String, ownerID: String) async throws {
+        var library = try await repository.read(); var jobs = library.voiceJobs ?? []
+        guard let index = jobs.firstIndex(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID }),
+              jobs[index].state == .cancelled || !jobs[index].attempt.originalAnswer.isEmpty else { throw EngramError.conflict }
+        guard jobs[index].recordingCleanupPending != false else { return }
+        jobs[index].recordingCleanupPending = false
         library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision)
     }
     public func retryVoiceAnswer(id: String, deviceID: String, ownerID: String) async throws {
