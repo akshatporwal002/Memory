@@ -28,7 +28,9 @@ final class MinimalistStudyUITests: XCTestCase {
         capture(prefix + "-Matrix-Before-Resize", app)
         app.buttons["Structure"].tap(); app.buttons["math-resize"].tap()
         let rows = app.steppers["math-dimension-rows"]
-        XCTAssertTrue(rows.waitForExistence(timeout: 5)); rows.buttons["Increment"].tap()
+        XCTAssertTrue(rows.waitForExistence(timeout: 5))
+        XCTAssertEqual(rows.buttons.count, 2)
+        rows.buttons.element(boundBy: 1).tap()
         app.buttons["math-dimensions-apply"].tap()
         XCTAssertTrue(app.textFields["math-slot-5"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.textFields["math-slot-0"].value as? String, "7")
@@ -59,7 +61,10 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["math-template-fraction"].waitForExistence(timeout: 5)); app.buttons["math-template-fraction"].tap()
         let numerator = app.textFields["math-slot-0"], denominator = app.textFields["math-slot-1"]
         XCTAssertTrue(numerator.waitForExistence(timeout: 5)); numerator.tap(); numerator.typeText("1")
-        denominator.tap(); denominator.typeText("2")
+        // Navigate with the editor's keyboard control; the next field can be
+        // below the keyboard after the first value is entered on a phone.
+        app.buttons["Next"].tap(); denominator.typeText("2")
+        app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["math-entry-insert"].isEnabled)
         app.buttons["Undo"].tap()
         XCTAssertFalse(app.buttons["math-entry-insert"].isEnabled)
