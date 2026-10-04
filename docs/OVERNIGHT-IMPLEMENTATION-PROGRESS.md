@@ -132,3 +132,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added in-place matrix/piecewise resizing through a compact Structure menu. Coordinates, nested expressions and stable field identities survive expansion; removing entered content requires confirmation and remains undoable.
 - Added four core tests plus iPhone/landscape iPad resize and before/after capture flows. Rejected dimension/slot-limit changes preserve the whole document and editing history. All remain unexecuted pending Mac access.
 - This extends the separately approved notation keyboard on existing text-answer cards. It adds no question type or solver. Direct visual/native-caret editing, optional calculators and runtime visual review remain outstanding.
+
+## GCP/Vertex server preparation
+
+- Added server-only, credential-injected Chirp 3 and Vertex text adapters with disabled-by-default sandbox dispatch and unavailable production. Strict endpoint/configuration/model/language/input limits, no automatic retries, completion checks and secret-safe errors are implemented.
+- Configuration example and setup/integration documentation are in server/google_cloud/README.md. No provider call, hosting/IAM provisioning or credential change was made. Longer Chirp audio, streaming/tools, Google speech output, Gemini Live and hosted accounting remain outstanding.
+- Eleven Python fixture tests passed locally. This is independent of the pending Swift compilation, phone/iPad capture and installation gates. The stay-awake helper remains off.

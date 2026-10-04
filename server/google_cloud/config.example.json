@@ -1,0 +1,9 @@
+{
+  "project": "replace-with-project-id",
+  "speech_location": "eu",
+  "vertex_location": "global",
+  "vertex_models": [],
+  "languages": ["en-AU", "en-US", "en-GB"],
+  "sandbox_enabled": false,
+  "environment": "sandbox"
+}
