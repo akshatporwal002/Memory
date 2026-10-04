@@ -159,3 +159,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Replaced OpenAI output's signature-only check with bounded RIFF/WAV chunk and sample validation. Truncated or inconsistent headers, duplicate format/data chunks, unsupported encoding and excessive duration are rejected before playback. No automatic retry or billing-path change was added.
 - Two regression tests cover provider rejection without retry, valid PCM preservation, metadata padding and malformed size/format claims. They are written but unexecuted: an elevated SSH check to the Mac still timed out. The passing 269-test run predates this extension.
 - No UI layout or question type changed. iPad screenshot validation and device installation remain pending; the stay-awake helper remains off.
+
+## Combined Google audio bridge prepared
+
+- Added disabled-by-default, sandbox-only Gemini Live connection/stream normalization with explicit model allowlists, session/payload authorization, bounded PCM input/output, duration watchdog, cancellation and no automatic reconnect. No live SDK/provider connection was made.
+- Local speech-start events interrupt playback generations and suppress old output until provider acknowledgement. Input transcripts remain provisional; provider tools are rejected and this bridge has no grading, scheduling or repository access.
+- Ten additional asynchronous fixture tests passed; the full server fixture suite now passes 25 tests. Native iPhone/iPad transport/playback/echo control, hosted accounting, SDK compatibility and live benchmarks remain pending. See server/google_cloud/LIVE-AUDIO.md.
+- No new question type or UI layout was implemented; the stay-awake helper remains off.

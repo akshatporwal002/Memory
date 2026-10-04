@@ -19,6 +19,8 @@ Server-only provider adapters, not a deployed API or billing server. No credenti
 
 ## Still needed before deployment
 
+The optional combined-audio bridge is prepared separately in [LIVE-AUDIO.md](LIVE-AUDIO.md), with disabled-by-default configuration and injected SDK connection/authorization. It is not a deployed or mobile-integrated Live service.
+
 Verified hosted auth/StoreKit accounting, durable dispatch receipts/settlement, rate/quota limits, streaming or temporary private batch-storage lifecycle for long audio, Vertex streaming/tools, Gemini Live, mobile transport/disclosure and speech playback integration, and live benchmarks. Provider usage may be billable even when returned audio fails validation; settlement must handle this before deployment. No GCP project, service, bucket, IAM permission or purchase was created. iPhone/iPad settings stay Not configured for managed GCP; no UI layout changed here.
 
 ## Fixture validation
