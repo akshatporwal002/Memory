@@ -2,6 +2,20 @@ import XCTest
 import LearningCore
 
 final class MathEntryTests: XCTestCase {
+    func testContinueOutsideFractionPreservesItsValues() throws {
+        var document = MathEntryDocument()
+        let slot = try XCTUnwrap(document.slots.first?.id)
+        _ = document.insert(.fraction, at: slot)
+        let fraction = document.slots
+        XCTAssertTrue(document.update(id: fraction[0].id, value: "1"))
+        XCTAssertTrue(document.update(id: fraction[1].id, value: "2"))
+        let tail = try XCTUnwrap(document.appendExpression())
+        XCTAssertTrue(document.update(id: tail, value: "+x"))
+        XCTAssertTrue(document.complete)
+        XCTAssertEqual(document.latex, #"\frac{1}{2}+x"#)
+        document.undo(); document.undo()
+        XCTAssertEqual(document.latex, #"\frac{1}{2}"#)
+    }
     func testNativeSelectionReplacesTextAtCaretAndUndoRestoresTheAttempt() throws {
         var document = MathEntryDocument()
         let id = try XCTUnwrap(document.slots.first?.id)

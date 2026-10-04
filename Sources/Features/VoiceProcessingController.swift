@@ -282,6 +282,21 @@ import AIInfrastructure
     func submitLocal(_ text: String, samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {
         await submit(text, samples: samples, model: model, sessionID: sessionID, presentationID: presentationID)
     }
+    func confirm(_ job: VoiceAnswerJob, text: String, model: EngramModel) async -> AnswerAttempt? {
+        guard canProcess(job, model: model) else { return nil }
+        do {
+            let attempt = try await model.service.confirmVoiceTranscript(id: job.id, deviceID: deviceID, ownerID: job.ownerID, text: text)
+            await model.refresh(); await worker?.start()
+            await model.research.configure(model)
+            var metric = ResearchEvent(kind: "transcript_confirmed")
+            metric.questionID = model.research.pseudonym(attempt.cardID); metric.attemptID = model.research.pseudonym(attempt.id)
+            metric.questionType = job.note.canonicalQuestionType; metric.questionSchemaVersion = 1
+            metric.subject = job.note.declaredSubject; metric.questionSubtype = job.note.declaredQuestionSubtype
+            metric.inputModality = "voice"; metric.answerText = text
+            await model.research.record(metric, key: "transcript:" + job.id)
+            return attempt
+        } catch { self.error = error.localizedDescription; return nil }
+    }
     func submitRecording(samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {
         await submit(nil, samples: samples, model: model, sessionID: sessionID, presentationID: presentationID)
     }
@@ -311,7 +326,7 @@ import AIInfrastructure
                     ownerID: model.aiMarker.gradingIdentity(model.chatGPT), provider: personal ? "openai" : "local", transcriptionModel: transcriptionModel,
                     gradingModel: model.aiMarker.selectedModel, billingPath: personal ? .personalKey : .local, mode: mode,
                     sessionID: sessionID, presentationID: presentationID, evidence: evidence,
-                    appAccountID: model.aiMarker.personal.accountID, localTranscript: text)
+                    appAccountID: model.aiMarker.personal.accountID, localTranscript: text, requireConfirmation: true)
                 captured = true
                 // Recognition is already local and durably saved. Cleanup does
                 // not repeat capture or erase the accepted transcript on failure.

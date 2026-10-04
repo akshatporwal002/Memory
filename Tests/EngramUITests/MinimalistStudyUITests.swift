@@ -2,78 +2,56 @@ import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
     @MainActor func testMatrixResizeOnPhone() {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-review-polish-fixture", "--ui-inline-maths"]; app.launch()
         exerciseMatrixResize(app, prefix: "iPhone")
     }
     @MainActor func testMatrixResizeOnIPadLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-review-polish-fixture", "--ui-inline-maths", "--ui-landscape"]; app.launch()
         let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
         expectation(for: landscape, evaluatedWith: app); waitForExpectations(timeout: 10)
         exerciseMatrixResize(app, prefix: "iPad")
-        XCTAssertGreaterThan(app.screenshot().image.size.width, app.screenshot().image.size.height)
+        // Screenshot pixels may remain in device axes with orientation metadata.
+        // Validate the actual app window, and retain the full-screen attachment.
+        XCTAssertGreaterThan(app.frame.width, app.frame.height)
     }
     @MainActor private func exerciseMatrixResize(_ app: XCUIApplication, prefix: String) {
         XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15)); app.buttons["Start review"].tap()
-        XCTAssertTrue(app.buttons["Type answer"].waitForExistence(timeout: 5)); app.buttons["Type answer"].tap()
-        capture(prefix + "-Typed-Before-Matrix", app)
-        app.buttons["typed-answer-equation"].tap()
-        app.buttons["math-category"].tap(); app.buttons["Matrices"].tap()
-        XCTAssertTrue(app.buttons["math-template-matrix"].waitForExistence(timeout: 5)); app.buttons["math-template-matrix"].tap()
-        app.buttons["math-dimensions-apply"].tap()
-        let first = app.textFields["math-slot-0"]
-        XCTAssertTrue(first.waitForExistence(timeout: 5)); first.tap(); first.typeText("7")
-        if app.keyboards.count > 0 { app.buttons["Done"].tap() }
+        app.buttons["Type answer"].tap()
+        app.buttons["Advanced notation"].tap(); app.buttons["Matrices"].tap(); app.buttons["Matrix"].tap()
+        app.buttons["math-key-7"].tap()
         capture(prefix + "-Matrix-Before-Resize", app)
-        app.buttons["Structure"].tap(); app.buttons["math-resize"].tap()
-        let rows = app.steppers["math-dimension-rows"]
-        XCTAssertTrue(rows.waitForExistence(timeout: 5))
-        XCTAssertEqual(rows.buttons.count, 2)
-        rows.buttons.element(boundBy: 1).tap()
-        app.buttons["math-dimensions-apply"].tap()
-        XCTAssertTrue(app.textFields["math-slot-5"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.textFields["math-slot-0"].value as? String, "7")
+        app.buttons["Advanced notation"].tap(); app.buttons["Size: 2 × 2"].tap(); app.buttons["Add row"].tap()
+        XCTAssertTrue(app.buttons["math-slot-5"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["math-slot-0"].value as? String, "7")
         capture(prefix + "-Matrix-After-Resize", app)
-        app.buttons["Undo"].tap()
-        XCTAssertFalse(app.textFields["math-slot-5"].exists)
-        XCTAssertEqual(app.textFields["math-slot-0"].value as? String, "7")
+        app.buttons["math-key-undo"].tap()
+        XCTAssertFalse(app.buttons["math-slot-5"].exists)
+        XCTAssertEqual(app.buttons["math-slot-0"].value as? String, "7")
     }
     @MainActor func testEquationEntryOnExistingTypedAnswer() {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-review-polish-fixture", "--ui-inline-maths"]; app.launch()
         exerciseEquationEntry(app, prefix: "iPhone")
     }
     @MainActor func testIPadEquationEntryLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-review-polish-fixture", "--ui-inline-maths", "--ui-landscape"]; app.launch()
         let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
         expectation(for: landscape, evaluatedWith: app); waitForExpectations(timeout: 10)
         exerciseEquationEntry(app, prefix: "iPad")
-        let screenshot = app.screenshot()
-        XCTAssertGreaterThan(screenshot.image.size.width, screenshot.image.size.height)
+        XCTAssertGreaterThan(app.frame.width, app.frame.height)
     }
     @MainActor private func exerciseEquationEntry(_ app: XCUIApplication, prefix: String) {
         XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15)); app.buttons["Start review"].tap()
-        XCTAssertTrue(app.buttons["Type answer"].waitForExistence(timeout: 5)); app.buttons["Type answer"].tap()
-        capture(prefix + "-Typed-Answer-Before-Equation", app)
-        app.buttons["typed-answer-equation"].tap()
-        XCTAssertTrue(app.buttons["math-template-fraction"].waitForExistence(timeout: 5)); app.buttons["math-template-fraction"].tap()
-        let numerator = app.textFields["math-slot-0"], denominator = app.textFields["math-slot-1"]
-        XCTAssertTrue(numerator.waitForExistence(timeout: 5)); numerator.tap(); numerator.typeText("1")
-        // Navigate with the editor's keyboard control; the next field can be
-        // below the keyboard after the first value is entered on a phone.
-        app.buttons["Next"].tap(); denominator.typeText("2")
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["math-entry-insert"].isEnabled)
-        app.buttons["Undo"].tap()
-        XCTAssertFalse(app.buttons["math-entry-insert"].isEnabled)
-        app.buttons["Redo"].tap()
-        XCTAssertTrue(app.buttons["math-entry-insert"].isEnabled)
-        capture(prefix + "-Equation-Fraction", app)
-        app.buttons["math-entry-insert"].tap()
-        XCTAssertTrue((app.descendants(matching: .any).matching(identifier: "typed-answer-input").firstMatch.value as? String ?? "").contains(#"\frac{1}{2}"#))
-        capture(prefix + "-Typed-Answer-After-Equation", app)
+        app.buttons["Type answer"].tap()
+        XCTAssertTrue(app.buttons["math-key-fraction"].waitForExistence(timeout: 5))
+        app.buttons["math-key-fraction"].tap()
+        app.buttons["math-key-1"].tap(); app.buttons["math-key-next"].tap(); app.buttons["math-key-2"].tap()
+        XCTAssertTrue(app.buttons["typed-answer-submit"].isEnabled)
+        XCTAssertEqual(app.keyboards.count, 0)
+        capture(prefix + "-Equation-Fraction-Inline", app)
     }
     @MainActor func testTestingSamplesImportAndReimport() {
         let app = launch()

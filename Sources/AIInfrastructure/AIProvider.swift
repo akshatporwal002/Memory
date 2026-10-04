@@ -74,11 +74,13 @@ public struct AIRequest: Sendable {
         self.model = model; self.instructions = instructions; self.input = input; self.tools = tools; self.outputLimit = outputLimit
     }
 }
-public enum AIEvent: Sendable, Equatable { case textDelta(String), toolCall(AIToolCall), contextItem(AIContextItem), completed }
+public enum AIEvent: Sendable, Equatable { case textDelta(String), toolCall(AIToolCall), contextItem(AIContextItem), usage(AIUsage), completed }
 public struct AIResponse: Sendable {
     public var text = ""
     public var calls: [AIToolCall] = []
     public var context: [AIInput] = []
+    public var usage: AIUsage?
+    public var firstTokenMS: Double?
     public init() {}
 }
 public struct AIConversation: Codable, Equatable, Identifiable, Sendable {
@@ -123,16 +125,20 @@ public extension AIProvider {
     func respond(_ request: AIRequest, token: String) async throws -> AIResponse {
         guard request.tools.isEmpty || request.model.supportsTools else { throw AIProviderError.unsupportedModel }
         var result = AIResponse(), completed = false
+        let started = Date()
         for try await event in stream(request, token: token) {
             try Task.checkCancellation()
             guard !completed else { throw AIProviderError.incomplete }
             switch event {
-            case .textDelta(let text): result.text += text; guard result.text.utf8.count <= request.outputLimit else { throw AIProviderError.exceededLimit }
+            case .textDelta(let text):
+                if result.firstTokenMS == nil && !text.isEmpty { result.firstTokenMS = Date().timeIntervalSince(started) * 1000 }
+                result.text += text; guard result.text.utf8.count <= request.outputLimit else { throw AIProviderError.exceededLimit }
             case .toolCall(let call):
                 guard !result.calls.contains(where: { $0.id == call.id }) else { continue }
                 result.calls.append(call)
                 result.context.append(.call(call))
             case .contextItem(let item): result.context.append(.context(item))
+            case .usage(let usage): result.usage = usage
             case .completed: completed = true
             }
         }
@@ -267,6 +273,7 @@ public struct AIStreamDecoder {
             if let response = event["response"] as? [String:Any], let output = response["output"] as? [[String:Any]] {
                 for item in output { result += try tool(item) }
             }
+            if let response = event["response"] as? [String: Any], let raw = response["usage"] as? [String: Any], let usage = AIUsage.responses(raw) { result.append(.usage(usage)) }
             completed = true; result.append(.completed); return result
         default: return []
         }
@@ -289,13 +296,16 @@ public struct AIStreamDecoder {
 }
 public enum AIClient {
     public static func text(instructions: String, input: String, model: String, token: String, limit: Int = 150_000) async throws -> String {
+        try await response(instructions: instructions, input: input, model: model, token: token, limit: limit).text
+    }
+    public static func response(instructions: String, input: String, model: String, token: String, limit: Int = 150_000) async throws -> AIResponse {
         let descriptor = try AIProviderRegistry.descriptor(model)
         let provider = try AIProviderRegistry.provider(descriptor.provider)
         let request = AIRequest(model: descriptor,
             instructions:instructions,input:[.message(AIMessage(role:"user",text:input))],outputLimit:limit)
         let response = try await provider.respond(request,token:token)
         guard response.calls.isEmpty else { throw AIProviderError.invalidTool }
-        return response.text
+        return response
     }
 }
 private final class AIRedirectBlocker: NSObject, URLSessionTaskDelegate, @unchecked Sendable {

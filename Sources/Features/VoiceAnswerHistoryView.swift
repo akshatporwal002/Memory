@@ -14,7 +14,7 @@ struct VoiceAnswerHistoryView: View {
                 let gradeRemoved = job.state == .completed && model.library.corrections.contains { $0.reviewID == job.reviewID }
                 EngramListSection {
                     Text(job.attempt.prompt).font(.headline)
-                    LabeledContent("Status", value: gradeRemoved ? "Grade removed" : title(job.state))
+                    LabeledContent("Status", value: job.movedToDeferred == true ? "Sent for batch marking" : gradeRemoved ? "Grade removed" : title(job.state))
                     if !job.attempt.originalAnswer.isEmpty { Text(job.attempt.originalAnswer) }
                     if let assessment = job.attempt.assessment {
                         LabeledContent(gradeRemoved ? "Previous result" : "Result", value: assessment.outcome.rawValue.capitalized)
@@ -68,6 +68,7 @@ struct VoiceAnswerHistoryView: View {
         switch state {
         case .captured: "Saved"
         case .transcribing: "Transcribing"
+        case .awaitingConfirmation: "Confirm transcript"
         case .awaitingMarking: "Waiting for marking"
         case .marking: "Marking"
         case .completed: "Completed"

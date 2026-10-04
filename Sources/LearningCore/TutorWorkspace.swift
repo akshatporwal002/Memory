@@ -21,6 +21,7 @@ public struct TutorStudentMembership: Codable, Equatable, Identifiable, Sendable
     public let id: UUID
     public let studentID: UUID
     public var consent: TutorSharingConsent
+    public var displayName: String?
     public init(id: UUID = UUID(), studentID: UUID, consent: TutorSharingConsent = .pending) {
         self.id = id; self.studentID = studentID; self.consent = consent
     }
@@ -34,6 +35,8 @@ public struct TutorAssignment: Codable, Equatable, Identifiable, Sendable {
     public let questionIDs: Set<UUID>
     public let dueAt: Date?
     public var withdrawn: Bool
+    public var subject: String?
+    public var sourceDeckID: String?
     public init(id: UUID = UUID(), studentID: UUID, revision: Int = 1, title: String,
                 questionIDs: Set<UUID>, dueAt: Date? = nil, withdrawn: Bool = false) {
         self.id = id; self.studentID = studentID; self.revision = revision
@@ -49,8 +52,19 @@ public struct TutorWorkspace: Codable, Equatable, Identifiable, Sendable {
     public var memberships: [TutorStudentMembership]
     public var assignments: [TutorAssignment]
     public var progress: [UUID: TutorProgressSummary]
+    public var drafts: [TutorDeckDraft]?
     public init(id: UUID = UUID(), ownerID: UUID, title: String) {
         self.id = id; self.ownerID = ownerID; self.title = title; version = 1
         memberships = []; assignments = []; progress = [:]
+    }
+}
+
+public struct TutorDeckDraft: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { sourceDeckID }
+    public let sourceDeckID: String
+    public var title: String
+    public var subject: String
+    public init(sourceDeckID: String, title: String, subject: String) {
+        self.sourceDeckID = sourceDeckID; self.title = title; self.subject = subject
     }
 }

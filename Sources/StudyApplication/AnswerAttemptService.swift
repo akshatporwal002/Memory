@@ -52,6 +52,10 @@ extension StudyService {
             rating:grade,reviewedAt:attempt.createdAt,committedAt:now,before:item.card.schedule,after:outcome)
         review.settingsSnapshot = library.settings
         review.assessment = attempt.assessment
+        review.questionType = library.liveNotes.first { $0.id == attempt.noteID }?.canonicalQuestionType
+        review.subject = library.liveNotes.first { $0.id == attempt.noteID }?.declaredSubject
+        review.questionSubtype = library.liveNotes.first { $0.id == attempt.noteID }?.declaredQuestionSubtype
+        review.questionSchemaVersion = 1; review.inputModality = attempt.inputModality ?? "typed"
         guard !library.reviews.contains(where: { $0.id == review.id }) else { throw EngramError.conflict }
         library.reviews.append(review); attempts[index].committedAt = now; library.answerAttempts = attempts
         if let improvement = attempt.acceptedImprovement {

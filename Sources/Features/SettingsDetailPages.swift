@@ -33,6 +33,13 @@ struct StudyPreferencesPage: View {
             }
             if !scheduling {
                 EngramListSection {
+                    Stepper("Mark every \(model.deferredReview.batchSize) answers", value: Binding(get: { model.deferredReview.batchSize }, set: { model.deferredReview.batchSize = $0 }), in: 1...10)
+                        .accessibilityIdentifier("review-batch-size")
+                    Toggle("Show answer after submitting", isOn: Binding(get: { model.deferredReview.revealAfterAnswer }, set: { model.deferredReview.revealAfterAnswer = $0 }))
+                    Button("Review saved feedback") { model.deferredReview.openSummary(model, includeViewed: true) }
+                        .disabled(!(model.library.answerAttempts ?? []).contains { $0.deferredCard != nil && ["finished", "attention", "failed"].contains($0.processingState ?? "") } || model.deferredReview.processing)
+                } header: { Text("Answer review") } footer: { Text("Keep studying while AI marks. Supported grades save automatically; unclear answers need manual review.") }
+                EngramListSection {
                     Toggle("Daily review reminder", isOn: Binding(get: { model.reminders.enabled }, set: { model.reminders.enabled = $0 }))
                         .accessibilityIdentifier("daily-review-reminder")
                     if model.reminders.enabled {
@@ -44,7 +51,7 @@ struct StudyPreferencesPage: View {
             if let error = model.error { EngramListSection { Text(error).engramErrorText() } }
             if model.busy { EngramListSection { ProgressView("Saving…") } }
         }.modifier(UtilityListStyle()).navigationTitle(scheduling ? "Scheduling" : "Study")
-            .disabled(model.busy).onAppear { retention = settings.desiredRetention }
+            .disabled(model.busy).onAppear { retention = settings.desiredRetention; model.deferredReview.configure(model) }
     }
     private func save(_ preference: StudyPreference) {
         Task { if !(await model.perform({ try await $0.updatePreference(preference) })) { retention = settings.desiredRetention } }

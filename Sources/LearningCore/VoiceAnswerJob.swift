@@ -1,7 +1,7 @@
 import Foundation
 
 public enum VoiceAnswerState: String, Codable, Sendable {
-    case captured, transcribing, awaitingMarking, marking, completed, needsAttention, cancelled
+    case captured, transcribing, awaitingConfirmation, awaitingMarking, marking, completed, needsAttention, cancelled
     public var unresolved: Bool { self != .completed && self != .cancelled }
 }
 public enum VoiceReviewMode: String, Codable, Sendable { case continueProcessing, waitForFeedback }
@@ -35,6 +35,9 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     /// version authorizes only the reconciled scheduling projection.
     public var reconciliationCardVersion: Int?
     public var reviewRevision: Int?
+    public var requiresConfirmation: Bool?
+    public var confirmedAt: Date?
+    public var movedToDeferred: Bool?
     public var reviewID: String {
         let base = "answer-" + attempt.presentationID
         return (reviewRevision ?? 0) == 0 ? base : base + "-voice-revision-" + String(reviewRevision ?? 0)

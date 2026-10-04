@@ -8,7 +8,7 @@ extension StudyService {
     @discardableResult public func captureVoiceAnswer(recordingID: UUID, deviceID: String, ownerID: String,
         provider: String, transcriptionModel: String, gradingModel: String, billingPath: VoiceBillingPath,
         mode: VoiceReviewMode, sessionID: String, presentationID: String, evidence: [AttemptEvidence],
-        appAccountID: String? = nil, localTranscript: String? = nil, now: Date = Date()) async throws -> VoiceAnswerJob {
+        appAccountID: String? = nil, localTranscript: String? = nil, requireConfirmation: Bool = false, now: Date = Date()) async throws -> VoiceAnswerJob {
         if let localTranscript {
             guard provider == "local", billingPath == .local, !localTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   localTranscript.utf8.count <= 16_000 else { throw EngramError.invalid("Check the on-device transcript before submitting.") }
@@ -37,10 +37,11 @@ extension StudyService {
             transcriptionModel: transcriptionModel, billingPath: billingPath, mode: mode, note: note,
             card: item.card, settings: settings, attempt: attempt)
         job.appAccountID = appAccountID
-        if let localTranscript { job.attempt.originalAnswer = localTranscript; job.state = .awaitingMarking; job.recordingCleanupPending = true }
+        job.requiresConfirmation = requireConfirmation
+        if let localTranscript { job.attempt.originalAnswer = localTranscript; job.state = requireConfirmation ? .awaitingConfirmation : .awaitingMarking; job.recordingCleanupPending = true }
         try job.validate()
         library.voiceJobs = (library.voiceJobs ?? []) + [job]
-        if mode == .continueProcessing {
+        if mode == .continueProcessing && !requireConfirmation {
             session.queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
                 .filter { !(session.skippedCardIDs ?? []).contains($0.id) }.map(\.id)
             session.current = session.queue.first.flatMap { id in library.liveCards.first { $0.id == id }.map(ReviewPresentation.init) }
@@ -76,7 +77,7 @@ extension StudyService {
         guard jobs[index].state == .transcribing else { throw EngramError.conflict }
         jobs[index].attempt.originalAnswer = text; jobs[index].usageJSON = usageJSON
         jobs[index].recordingCleanupPending = true
-        jobs[index].state = .awaitingMarking; jobs[index].generation += 1
+        jobs[index].state = jobs[index].requiresConfirmation == true ? .awaitingConfirmation : .awaitingMarking; jobs[index].generation += 1
         library.voiceJobs = jobs
         try Task.checkCancellation(); try await repository.commit(library, expectedRevision: library.revision)
     }
@@ -108,7 +109,7 @@ extension StudyService {
         var library = try await repository.read(); var jobs = library.voiceJobs ?? []
         guard let index = jobs.firstIndex(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID }),
               jobs[index].state == .needsAttention else { throw EngramError.conflict }
-        jobs[index].state = jobs[index].attempt.originalAnswer.isEmpty ? .captured : .awaitingMarking
+        jobs[index].state = jobs[index].attempt.originalAnswer.isEmpty ? .captured : (jobs[index].requiresConfirmation == true && jobs[index].confirmedAt == nil ? .awaitingConfirmation : .awaitingMarking)
         jobs[index].generation += 1; jobs[index].error = nil
         library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision)
     }
@@ -124,7 +125,8 @@ extension StudyService {
         if let assessment = jobs[index].attempt.assessment { jobs[index].attempt.revisions.append(assessment) }
         jobs[index].attempt.originalAnswer = text; jobs[index].attempt.assessment = nil
         jobs[index].attempt.annotations = []; jobs[index].attempt.additions = []
-        jobs[index].state = .awaitingMarking; jobs[index].generation += 1; jobs[index].error = nil
+        jobs[index].state = jobs[index].requiresConfirmation == true ? .awaitingConfirmation : .awaitingMarking
+        jobs[index].confirmedAt = nil; jobs[index].generation += 1; jobs[index].error = nil
         library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision)
     }
     /// Removing the prior grade and journalling recognition correction is one
@@ -252,11 +254,23 @@ extension StudyService {
         var review = ReviewEvent(id: reviewID, cardID: job.card.id, deckID: job.card.deckID, sessionID: job.attempt.sessionID,
             rating: rating, reviewedAt: job.attempt.createdAt, committedAt: now, before: before, after: outcome)
         review.settingsSnapshot = job.settings; review.assessment = assessment; library.reviews.append(review)
+        library.reviews[library.reviews.count - 1].questionType = job.note.canonicalQuestionType
+        library.reviews[library.reviews.count - 1].subject = job.note.declaredSubject
+        library.reviews[library.reviews.count - 1].questionSubtype = job.note.declaredQuestionSubtype
+        library.reviews[library.reviews.count - 1].questionSchemaVersion = 1
+        library.reviews[library.reviews.count - 1].inputModality = "voice"
         if job.reconciliationCardVersion == nil { library.cards[cardIndex].schedule = outcome }
         else { library.cards[cardIndex].schedule = try ReviewReconciliation.replay(card: job.card, allEvents: library.reviews, corrections: library.corrections, settings: library.settings, scheduler: scheduler) }
         library.cards[cardIndex].version += 1
         jobs[index].attempt.committedAt = now; jobs[index].state = .completed; jobs[index].generation += 1
         library.voiceJobs = jobs
+        if jobs[index].requiresConfirmation == true {
+            jobs[index].attempt.deferredCard = job.card; jobs[index].attempt.deferredNote = job.note
+            jobs[index].attempt.deferredSettings = job.settings; jobs[index].attempt.processingState = "finished"
+            jobs[index].attempt.questionType = job.note.canonicalQuestionType; jobs[index].attempt.questionSchemaVersion = 1
+            jobs[index].attempt.subject = job.note.declaredSubject; jobs[index].attempt.questionSubtype = job.note.declaredQuestionSubtype
+            jobs[index].attempt.inputModality = "voice"
+        }
         var attempts = library.answerAttempts ?? []; attempts.removeAll { $0.id == job.attempt.id }; attempts.append(jobs[index].attempt); library.answerAttempts = attempts
         if var session = library.session, session.id == job.attempt.sessionID {
             session.completed += 1

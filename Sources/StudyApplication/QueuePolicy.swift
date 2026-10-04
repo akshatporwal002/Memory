@@ -38,6 +38,7 @@ public enum QueuePolicy {
         let supportedNotes = Set(library.liveNotes.filter { $0.kind != .unsupported }.map(\.id))
         let liveDecks = Set(library.liveDecks.map(\.id))
         let pending = Set((library.voiceJobs ?? []).filter { $0.state.unresolved }.map { $0.attempt.cardID })
+            .union((library.answerAttempts ?? []).filter { $0.deferredCard != nil && $0.committedAt == nil && $0.processingState != "cancelled" }.map(\.cardID))
         let selectedName = library.decks.first { $0.id == deckID && !$0.deleted }?.name
         let selectedDecks = Set(library.liveDecks.filter { $0.id == deckID || (selectedName != nil && $0.name.hasPrefix(selectedName! + "::")) }.map(\.id))
         return library.cards.filter {

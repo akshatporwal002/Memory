@@ -42,6 +42,9 @@ import AIInfrastructure
         busy = true; error = nil; defer { busy = false }
         do {
             guard question.utf8.count <= 16_000 else { throw EngramError.invalid("Keep grading discussions under 16 KB.") }
+            if attempt.deferredCard != nil {
+                guard attempt.providerAccountID == model.aiMarker.gradingIdentity(model.chatGPT) else { throw EngramError.invalid("Restore the grading connection used for this answer before disputing it.") }
+            }
             if model.aiMarker.catalogAccountID != model.aiMarker.connectionStamp(model.chatGPT) { await model.aiMarker.loadModels(connection: model.chatGPT) }
             // An offline exact match has no AI model to retain. Its first discussion
             // deliberately uses the learner's grading selection; AI attempts keep theirs.
@@ -61,7 +64,9 @@ import AIInfrastructure
             next.modelID = discussionModel
             next.providerAccountID = model.aiMarker.gradingIdentity(model.chatGPT)
             next.assessment = assessment; next.annotations = next.validatedAnnotations(assessment.annotations ?? []); next.additions = assessment.additions ?? []
-            try await model.service.saveAnswerAttempt(next)
+            if attempt.deferredCard != nil {
+                try await model.service.reviseDeferredAssessment(id: attempt.id, assessment: assessment, providerAccountID: attempt.providerAccountID)
+            } else { try await model.service.saveAnswerAttempt(next) }
             let cid = "grading:" + attempt.id
             var conversation = model.library.assistantState?.conversations.first(where: { $0.id == cid }) ?? LearningConversation(id:cid)
             conversation.messages.append(LearningChatMessage(role:"user",text:question))

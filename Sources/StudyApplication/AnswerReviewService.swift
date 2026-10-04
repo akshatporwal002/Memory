@@ -31,6 +31,9 @@ extension StudyService {
         var event = ReviewEvent(id: mutationID, cardID: item.card.id, deckID: item.card.deckID, sessionID: sessionID,
             rating: rating, reviewedAt: now, committedAt: now, before: item.card.schedule, after: outcome)
         event.settingsSnapshot = library.settings
+        event.questionType = note.canonicalQuestionType; event.questionSchemaVersion = 1
+        event.subject = note.declaredSubject; event.questionSubtype = note.declaredQuestionSubtype
+        event.inputModality = note.mcq == nil ? "typed" : "choice"
         event.assessment = assessment; library.reviews.append(event)
         item.revealedAt = now; item.outcomes = outcomes; item.assessment = assessment
         session.current = item; session.completed += 1; library.session = session

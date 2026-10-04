@@ -160,6 +160,11 @@ public struct MathEntryDocument: Equatable, Sendable {
     public var latex: String { Self.render(nodes) }
     public var canUndo: Bool { !undoStates.isEmpty }
     public var canRedo: Bool { !redoStates.isEmpty }
+    /// Continue outside the completed template, e.g. a fraction followed by +x.
+    public mutating func appendExpression() -> UUID? {
+        guard slots.count < 100, latex.utf8.count < 12_000 else { return nil }
+        let id = UUID(); var candidate = nodes; candidate.append(.text(id, "")); accept(candidate); return id
+    }
     public mutating func undo() {
         guard let previous = undoStates.popLast() else { return }
         redoStates.append(nodes); nodes = previous
@@ -184,7 +189,9 @@ public struct MathEntryDocument: Equatable, Sendable {
     /// Nested insertion retains both sides of the selected character offset. The
     /// default is the end of a slot; positions use graphemes, not UTF-16 indices.
     public mutating func insert(_ template: MathEntryTemplate, at id: UUID, offset: Int? = nil) -> UUID? {
-        insert(Definition(kind: template, labels: template.labels, pattern: template.pattern), at: id, offset: offset)
+        if template == .matrix { return insert(Self.matrixDefinition(rows: 2, columns: 2), at: id, offset: offset) }
+        if template == .piecewise { return insert(Self.piecewiseDefinition(cases: 2), at: id, offset: offset) }
+        return insert(Definition(kind: template, labels: template.labels, pattern: template.pattern), at: id, offset: offset)
     }
     public mutating func insert(_ template: MathEntryTemplate, at id: UUID, selection: MathEntryTextSelection) -> UUID? {
         guard slots.first(where: { $0.id == id })?.value == selection.source else { return nil }

@@ -1,109 +1,160 @@
 import SwiftUI
 import LearningCore
-import PersistenceAdapters
 import DesignSystem
 
-/// Local authoring shell; invitations and shared student data remain unavailable until backend activation.
 struct TutorWorkspaceView: View {
     @Bindable var model: EngramModel
-    @State private var workspaces: [TutorWorkspace] = []
-    @State private var title = ""
-    @State private var error: String?
-    @State private var saving = false
-    @State private var ownerID: UUID?
-    @FocusState private var editingName: Bool
-    private var accountKey: String { model.cloud.userID?.uuidString ?? model.cloud.localProfileID ?? "local" }
-    private static let repository: TutorWorkspaceRepository = {
-        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return TutorWorkspaceRepository(directory: root.appendingPathComponent("Engram/TutorDrafts", isDirectory: true))
-    }()
-
+    @State private var query = ""
+    @State private var adding = false
+    @State private var subject = ""
+    @State private var deckID = ""
+    @State private var inviting = false
+    private var workspace: TutorWorkspace? { model.tutor.workspace }
+    private var subjects: [String] { Array(Set((workspace?.drafts ?? []).map(\.subject))).sorted() }
     var body: some View {
         List {
-            EngramListSection {
-                Text("A workspace for your students.").engramSecondaryText()
-            } footer: { Text("Student invitations and progress sharing are not enabled yet.") }
-            EngramListSection("Workspaces") {
-                ForEach(workspaces) { workspace in
-                    NavigationLink {
-                        TutorWorkspaceDetail(workspace: workspace)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(workspace.title)
-                            Text("Local draft · \(workspace.assignments.count) assignments")
-                                .font(model.theme.font(.metadata)).engramSecondaryText()
-                        }.padding(.vertical, 4)
+            if !model.tutor.activated {
+                EngramListSection {
+                    Text("A workspace for your teaching.").font(.title2)
+                    Text("Organize subjects and assignments, then follow shared student progress.").engramSecondaryText()
+                    Button("Activate tutor workspace") { Task { await model.tutor.activate(model) } }.frame(minHeight: 44)
+                } footer: { Text("Creating and exploring your workspace is free. Payment is required only when inviting students.") }
+            } else if let workspace {
+                EngramListSection {
+                    NavigationLink { TutorStudentsView(workspace: workspace, title: "All students") } label: { Text("All students") }
+                    Button("Invite student", systemImage: "person.badge.plus") { inviting = true }
+                }
+                EngramListSection("Subjects") {
+                    ForEach(subjects.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }, id: \.self) { name in
+                        NavigationLink {
+                            List {
+                                EngramListSection("Notebooks") {
+                                    ForEach((workspace.drafts ?? []).filter { $0.subject == name }) { draft in
+                                        NavigationLink { TutorStudentsView(workspace: workspace, title: draft.title, deckID: draft.sourceDeckID) } label: { Label(draft.title, systemImage: "book.closed") }
+                                    }
+                                }
+                            }.modifier(UtilityListStyle()).navigationTitle(name)
+                        } label: { Label(name, systemImage: "folder") }
                     }
+                    if subjects.isEmpty { Text("Add your first teaching notebook.").engramSecondaryText() }
+                    Button("Add notebook", systemImage: "plus") { adding = true }
                 }
-                if workspaces.isEmpty { Text("Your tutor workspaces will appear here.").engramSecondaryText() }
-            }
-            EngramListSection("New workspace") {
-                TextField("Workspace name", text: $title)
-                    .focused($editingName).onSubmit { Task { await create() } }
-                    .accessibilityIdentifier("tutor-workspace-name")
-                Button { Task { await create() } } label: {
-                    Label("Create workspace", systemImage: "plus").frame(minHeight: 44)
-                }
-                .disabled(saving || ownerID == nil || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("tutor-create-workspace")
             }
             EngramListSection("Sharing") {
-                Text("Tutors see assigned progress and accepted misconception summaries.")
-                    .engramSecondaryText().fixedSize(horizontal: false, vertical: true)
-                Text("Answers, recordings and chats stay private.")
-                    .engramSecondaryText().fixedSize(horizontal: false, vertical: true)
-                Text("Guardian consent is required before a minor’s progress is shared.")
-                    .engramSecondaryText().fixedSize(horizontal: false, vertical: true)
+                Text("Students choose whether to share assigned progress and misconception summaries. Their answers, recordings and chats stay private.").engramSecondaryText()
             }
-            if let error { EngramListSection { Text(error).accessibilityLabel("Tutor workspace error: \(error)") } }
+            if let error = model.tutor.error { EngramListSection { Text(error).engramErrorText() } }
+        }.modifier(UtilityListStyle()).navigationTitle("Tutor").searchable(text: $query, prompt: "Find a subject")
+        .task(id: model.cloud.userID?.uuidString ?? model.cloud.localProfileID ?? "local") { await model.tutor.configure(model) }
+        .sheet(isPresented: $adding) { teachingNotebookForm }
+        .sheet(isPresented: $inviting) {
+            NavigationStack {
+                List {
+                    EngramListSection {
+                        Text("Invite students when your tutor plan is ready.")
+                        Text("Invitations require a server-verified purchase and accepted sharing consent. Your draft workspace remains free.").engramSecondaryText()
+                        Text("Purchase verification and hosted invitations are awaiting configuration. No payment has been taken.").font(.caption).engramSecondaryText()
+                    }
+                }.modifier(UtilityListStyle()).navigationTitle("Invite student")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { inviting = false } } }
+            }.presentationDetents([.medium])
         }
-        .modifier(UtilityListStyle()).navigationTitle("Tutor")
-        .task(id: accountKey) { await load() }
     }
-
-    @MainActor private func load() async {
-        let account = accountKey
-        workspaces = []; ownerID = nil; error = nil
-        let key = "engram.tutor.draftOwner." + account
-        let id = model.cloud.userID ?? UserDefaults.standard.string(forKey: key).flatMap(UUID.init(uuidString:)) ?? UUID()
-        UserDefaults.standard.set(id.uuidString, forKey: key)
-        do {
-            let values = try await Self.repository.load(ownerID: id)
-            guard account == accountKey else { return }
-            ownerID = id; workspaces = values
-        } catch { if account == accountKey { self.error = error.localizedDescription } }
-    }
-
-    @MainActor private func create() async {
-        let account = accountKey
-        guard !saving, let ownerID else { return }
-        let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, name.count <= 120 else { error = "Use a name with 1–120 characters."; return }
-        saving = true; error = nil; defer { saving = false }
-        do {
-            let workspace = TutorWorkspace(ownerID: ownerID, title: name)
-            try await Self.repository.save(workspace, expectedVersion: nil)
-            guard account == accountKey else { return }
-            workspaces.append(workspace); title = ""; editingName = false
-        } catch { if account == accountKey { self.error = error.localizedDescription } }
+    private var teachingNotebookForm: some View {
+        NavigationStack {
+            List {
+                EngramListSection {
+                    TextField("Subject", text: $subject).textFieldStyle(.plain)
+                    Picker("Notebook", selection: $deckID) {
+                        Text("Choose notebook").tag("")
+                        ForEach(model.library.liveDecks) { Text($0.name).tag($0.id) }
+                    }
+                } footer: { Text("A teaching draft does not add student assignments to your personal review queue.") }
+            }.modifier(UtilityListStyle()).navigationTitle("Teaching notebook")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { adding = false } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        guard var next = workspace, let deck = model.library.liveDecks.first(where: { $0.id == deckID }) else { return }
+                        next.drafts = (next.drafts ?? []).filter { $0.sourceDeckID != deckID } + [TutorDeckDraft(sourceDeckID: deckID, title: deck.name, subject: subject.trimmingCharacters(in: .whitespacesAndNewlines))]
+                        Task { await model.tutor.save(next); if model.tutor.error == nil { adding = false } }
+                    }.disabled(deckID.isEmpty || subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || subject.count > 120)
+                }
+            }
+        }.presentationDetents([.medium, .large])
     }
 }
 
-private struct TutorWorkspaceDetail: View {
+private struct TutorStudentsView: View {
     let workspace: TutorWorkspace
+    let title: String
+    var deckID: String? = nil
+    @State private var query = ""
+    private var students: [TutorStudentMembership] {
+        workspace.memberships.filter { member in
+            member.consent == .granted && (query.isEmpty || (member.displayName ?? "Student").localizedCaseInsensitiveContains(query)) &&
+            (deckID == nil || workspace.assignments.contains { $0.studentID == member.studentID && $0.sourceDeckID == deckID && !$0.withdrawn })
+        }.sorted { ($0.displayName ?? "").localizedStandardCompare($1.displayName ?? "") == .orderedAscending }
+    }
     var body: some View {
         List {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Find a student", text: $query).textFieldStyle(.plain).accessibilityIdentifier("tutor-student-search")
+            }.frame(minHeight: 44)
             EngramListSection("Students") {
-                Text("No students connected yet.")
-                Text("Invitation links will appear here once authenticated sharing and consent are ready.").engramSecondaryText()
+                ForEach(students) { student in
+                    NavigationLink { studentDetail(student) } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(student.displayName ?? "Student")
+                            if let progress = progress(student.studentID) {
+                                ProgressView(value: Double(progress.reviewed), total: Double(max(1, assignments(student.studentID).reduce(0) { $0 + $1.questionIDs.count })))
+                                    .tint(.primary).accessibilityLabel("Assigned questions reviewed")
+                            } else { Text("No shared activity yet").font(.caption).engramSecondaryText() }
+                        }.padding(.vertical, 6)
+                    }
+                }
+                if students.isEmpty { Text(query.isEmpty ? "Students appear here after accepting an invitation and progress sharing." : "No matching students").engramSecondaryText() }
+            }
+        }.modifier(UtilityListStyle()).navigationTitle(title)
+    }
+    private func assignments(_ student: UUID) -> [TutorAssignment] {
+        Dictionary(grouping: workspace.assignments, by: \.id).values.compactMap { $0.max { $0.revision < $1.revision } }
+            .filter { $0.studentID == student && !$0.withdrawn && (deckID == nil || $0.sourceDeckID == deckID) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+    private struct StudentProgress { let reviewed: Int; let correct: Int; let lastActivity: Date?; let misconceptions: [String] }
+    private func progress(_ student: UUID) -> StudentProgress? {
+        let scoped = assignments(student).compactMap { assignment -> (TutorAssignment, TutorProgressSummary)? in
+            workspace.progress[assignment.id].map { (assignment, $0) }
+        }
+        guard !scoped.isEmpty else { return nil }
+        return StudentProgress(reviewed: scoped.reduce(0) { $0 + $1.1.reviewedQuestionIDs.intersection($1.0.questionIDs).count },
+            correct: scoped.reduce(0) { $0 + $1.1.correctCount }, lastActivity: scoped.compactMap { $0.1.lastActivity }.max(),
+            misconceptions: Array(Set(scoped.flatMap { $0.1.sharedMisconceptions })).sorted())
+    }
+    private func assigned(_ student: UUID) -> Set<UUID> { Set(assignments(student).flatMap(\.questionIDs)) }
+    private func studentDetail(_ student: TutorStudentMembership) -> some View {
+        List {
+            if let progress = progress(student.studentID) {
+                EngramListSection("Learning progress") {
+                    LabeledContent("Assignment questions reviewed", value: String(progress.reviewed))
+                    LabeledContent("Correct answers", value: String(progress.correct))
+                    if let last = progress.lastActivity { LabeledContent("Last activity", value: last.formatted(date: .abbreviated, time: .shortened)) }
+                }
+                EngramListSection("Shared misconceptions") {
+                    ForEach(progress.misconceptions, id: \.self) { Text($0) }
+                    if progress.misconceptions.isEmpty { Text("No shared concerns").engramSecondaryText() }
+                }
             }
             EngramListSection("Assignments") {
-                Text("No assignments published yet.").engramSecondaryText()
+                ForEach(assignments(student.studentID)) { assignment in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(assignment.title)
+                        if let due = assignment.dueAt { Text("Due " + due.formatted(date: .abbreviated, time: .omitted)).font(.caption).engramSecondaryText() }
+                    }
+                }
             }
-            EngramListSection("Progress & misconceptions") {
-                Text("Assigned-work summaries will appear here after a student accepts sharing. This workspace does not have access to anyone's private learning data.")
-                    .engramSecondaryText()
-            }
-        }.modifier(UtilityListStyle()).navigationTitle(workspace.title)
+        }.modifier(UtilityListStyle()).navigationTitle(student.displayName ?? "Student")
     }
 }

@@ -34,6 +34,19 @@ public struct AnswerAttempt: Codable, Equatable, Identifiable, Sendable {
     public var createdAt: Date
     public var committedAt: Date?
     public var revisions: [AnswerAssessment]
+    /// Optional fields keep existing backups readable. Deferred answers retain their
+    /// own scheduling/content snapshot independently of the active screen.
+    public var deferredCard: StudyCard?
+    public var deferredSettings: StudySettings?
+    public var deferredNote: Note?
+    public var processingState: String?
+    public var processingError: String?
+    public var summaryViewedAt: Date?
+    public var questionType: String?
+    public var questionSchemaVersion: Int?
+    public var subject: String?
+    public var questionSubtype: String?
+    public var inputModality: String?
     public init(sessionID: String, item: ReviewPresentation, noteID: String, answer: String, prompt: String, expected: String, modelID: String, evidence: [AttemptEvidence], now: Date = Date()) {
         id = "attempt-" + item.presentationID; self.sessionID = sessionID; presentationID = item.presentationID
         self.noteID = noteID; cardID = item.card.id; cardVersion = item.card.version

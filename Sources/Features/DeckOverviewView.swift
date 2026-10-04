@@ -86,6 +86,7 @@ struct DeckOverviewView: View {
                             Button("Add PDF or Markdown", systemImage:"doc.badge.plus") { importingDocument = true }
                             Button("Add image from Photos",systemImage:"photo.on.rectangle") { selectedPhoto = nil; choosingPhoto = true }
                             Button("Rename deck", systemImage: "pencil") { model.deckForm = DeckForm(deck: deck) }
+                            NavigationLink { NotebookInputSettings(model: model, deckID: deckID) } label: { Label("Notebook input", systemImage: "function") }
                             if deck.pdfLearning != nil {
                                 Button("PDF source pages", systemImage: "doc.text.magnifyingglass") { showPDFSource = true }
                             }

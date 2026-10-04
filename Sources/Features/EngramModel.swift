@@ -28,6 +28,11 @@ public struct DeckForm: Identifiable {
     let cloud: CloudAccountController
     let assistant = AssistantController()
     let typedAnswer = TypedAnswerController()
+    let deferredReview = DeferredReviewController()
+    let tutor = TutorController()
+    let research = ResearchController()
+    /// Non-production namespace for isolated UI fixtures; never set in release.
+    public var testingScope: String?
     var pendingAttempt: AnswerAttempt? {
         guard let id = library.session?.current?.presentationID else { return nil }
         return library.answerAttempts?.last { $0.presentationID == id && $0.committedAt == nil }

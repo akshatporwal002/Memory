@@ -90,6 +90,10 @@ import CryptoKit
     private(set) var emailResendAfter = Date.distantPast
     var configured: Bool { client != nil }
     var syncEnabled: Bool { engine != nil }
+    func uploadResearch(consent: ResearchConsent, events: [ResearchEvent]) async throws {
+        guard let client, userID != nil else { throw EngramError.conflict }
+        try await client.uploadResearch(consent: consent, events: events)
+    }
     init(repository: SQLiteLibraryRepository? = nil) {
         self.repository = repository
         // Hosted pilot remains disabled until two-device/two-user acceptance is complete.

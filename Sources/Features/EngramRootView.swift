@@ -55,6 +55,14 @@ public struct EngramRootView: View {
         }
         .engramCanvas()
         .engramCaptureSurface()
+        .task {
+            await model.research.configure(model)
+            model.aiMarker.measured = { [weak model] event in
+                guard let model else { return }
+                await model.research.configure(model)
+                await model.research.record(event, key: event.id.uuidString)
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             if model.loaded && !capturingScreenshots && !model.settingsPresented { ContextualAssistant(model: model) }
         }
@@ -99,9 +107,33 @@ public struct EngramRootView: View {
                 guard !Task.isCancelled else { break }
                 await model.refresh()
                 await model.cloud.sync(model:model)
+                await model.research.observeReviews(model)
+                await model.research.upload(model)
             }
         }
+        .task(id: model.activeLibraryID) {
+            guard !capturingScreenshots else { return }
+            while !Task.isCancelled {
+                await model.deferredReview.processReady(model)
+                await model.research.observeActivity(model, active: scenePhase == .active)
+                do { try await Task.sleep(for: .seconds(2)) } catch { break }
+            }
+        }
+        .overlay(alignment: .top) {
+            if model.deferredReview.notificationVisible {
+                HStack(spacing: 12) {
+                    Button { model.deferredReview.openSummary(model) } label: {
+                        Label("Review feedback ready", systemImage: "checkmark").font(.subheadline)
+                    }.buttonStyle(.plain)
+                    Button { model.deferredReview.dismissNotification() } label: { Image(systemName: "xmark").font(.caption) }
+                        .buttonStyle(.plain).frame(width: 44, height: 44).accessibilityLabel("Dismiss feedback notification")
+                }.padding(.leading, 16).background(.regularMaterial, in: Capsule()).padding(.top, 8)
+            }
+        }
+        .sheet(isPresented: Binding(get: { model.deferredReview.summaryPresented }, set: { model.deferredReview.summaryPresented = $0 })) { NavigationStack { ReviewFeedbackSummaryView(model: model) } }
         .onChange(of: scenePhase) { _, phase in
+            model.deferredReview.foreground = phase == .active
+            Task { await model.research.observeActivity(model, active: phase == .active) }
             if phase == .active { Task { await model.refresh(); await model.cloud.sync(model:model); if scenePhase == .active { await model.voiceWork.resume(model: model) } } }
             else { model.voice.stop(); Task { await model.voiceWork.pause() } }
         }

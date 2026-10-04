@@ -90,6 +90,10 @@ public extension CloudTransport {
     func downloadPrivateDocument(path: String) async throws -> Data { throw EngramError.storage("Private document storage is unavailable; try synchronization again.") }
 }
 public actor SupabaseCloudClient: CloudTransport {
+    public func uploadResearch(consent: ResearchConsent, events: [ResearchEvent]) async throws {
+        guard events.count <= 100 else { throw EngramError.invalid("Research batches are limited to 100 events.") }
+        _ = try await client.rpc("engram_research_ingest", params: ["consent": try JSONValue.encode(consent), "events": try JSONValue.encode(events)]).execute()
+    }
     private let client: SupabaseClient
     public init(url: URL,publishableKey: String) throws {
         guard url.scheme == "https" || ["localhost","127.0.0.1"].contains(url.host ?? ""), !publishableKey.hasPrefix("sb_secret_") else { throw EngramError.invalid("Use a project URL and publishable key.") }

@@ -387,8 +387,12 @@ public actor StudyService {
         if let prior, prior.kind != draft.kind { throw EngramError.invalid("Changing a saved note's type needs a migration. Create a new note instead.") }
         let tags = Array(Set(draft.tags.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })).sorted()
         guard tags.count <= 100, tags.allSatisfy({ $0.count <= 100 && !$0.contains(where: \.isWhitespace) }) else { throw EngramError.invalid("Use at most 100 tags, without spaces, and 100 characters per tag.") }
-        let note = Note(id: prior?.id ?? UUID().uuidString, deckID: draft.deckID, kind: draft.kind, front: draft.front,
+        guard draft.questionType.map({ !$0.isEmpty && $0.count <= 80 && !$0.contains(where: \.isWhitespace) }) ?? true else {
+            throw EngramError.invalid("Use a question type identifier of at most 80 characters without spaces.")
+        }
+        var note = Note(id: prior?.id ?? UUID().uuidString, deckID: draft.deckID, kind: draft.kind, front: draft.front,
             back: draft.back, tags: tags, source: draft.source, origin: prior?.origin, modifiedAt: now)
+        note.questionType = draft.questionType ?? prior?.questionType
         if let index = library.notes.firstIndex(where: { $0.id == note.id }) { library.notes[index] = note } else { library.notes.append(note) }
         for i in library.cards.indices where library.cards[i].noteID == note.id {
             library.cards[i].deckID = draft.deckID
@@ -502,6 +506,11 @@ public actor StudyService {
         library.reviews.append(ReviewEvent(id: mutationID, cardID: item.card.id, deckID: item.card.deckID, sessionID: session.id,
             rating: rating, reviewedAt: revealedAt, committedAt: now, before: item.card.schedule, after: outcome))
         library.reviews[library.reviews.count - 1].settingsSnapshot = library.settings
+        library.reviews[library.reviews.count - 1].questionType = library.liveNotes.first { $0.id == item.card.noteID }?.canonicalQuestionType
+        library.reviews[library.reviews.count - 1].subject = library.liveNotes.first { $0.id == item.card.noteID }?.declaredSubject
+        library.reviews[library.reviews.count - 1].questionSubtype = library.liveNotes.first { $0.id == item.card.noteID }?.declaredQuestionSubtype
+        library.reviews[library.reviews.count - 1].questionSchemaVersion = 1
+        library.reviews[library.reviews.count - 1].inputModality = "manual"
         session.completed += 1
         refresh(&session, in: library, now: now); library.session = session
         try await save(library)

@@ -6,6 +6,14 @@ public actor TutorWorkspaceRepository {
     private let directory: URL
     public init(directory: URL) { self.directory = directory }
 
+    /// Actor isolation makes repeated activation idempotent on this device.
+    public func ensureWorkspace(ownerID: UUID) throws -> TutorWorkspace {
+        if let existing = try load(ownerID: ownerID).first { return existing }
+        let workspace = TutorWorkspace(ownerID: ownerID, title: "Tutor")
+        try save(workspace, expectedVersion: nil)
+        return workspace
+    }
+
     public func load(ownerID: UUID) throws -> [TutorWorkspace] {
         let url = file(ownerID)
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }

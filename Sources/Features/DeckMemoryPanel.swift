@@ -209,6 +209,10 @@ struct DeckMemoryPanel: View {
                     Text("Planned · " + (selected?.reviewDates ?? outlook.reviewDates).filter { window.contains($0) }.prefix(3).map { $0.formatted(.dateTime.month(.abbreviated).day()) }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(palette.secondaryText)
                 }
+                if model.library.isDeckSuspended(deck.id) {
+                    Text("This notebook is suspended. Its forecast includes no future reviews until you resume it.")
+                        .font(.caption).foregroundStyle(palette.secondaryText)
+                }
                 Text("Dates use real calendar spacing. Dotted forecast assumes Good at due dates. New and unsupported cards are excluded.")
                     .font(.caption).foregroundStyle(palette.secondaryText)
             }

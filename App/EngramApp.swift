@@ -93,6 +93,19 @@ private struct ApplicationRoot: View {
             Button("OK") { recoveryNotice = nil }
         } message: { Text(recoveryNotice ?? "") }
         .task { if model == nil { await openLibrary() } }
+        #if DEBUG && os(iOS)
+        .task(id: model != nil) {
+            guard model != nil, ProcessInfo.processInfo.arguments.contains("--ui-landscape"), UIDevice.current.userInterfaceIdiom == .pad else { return }
+            // Wait for the SwiftUI root controller to enter the active window.
+            try? await Task.sleep(for: .milliseconds(500))
+            for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+                scene.windows.forEach { $0.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations() }
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeLeft)) { error in
+                    NSLog("Engram landscape fixture: %@", error.localizedDescription)
+                }
+            }
+        }
+        #endif
         #if DEBUG
         .transformEnvironment(\.dynamicTypeSize) { size in
             if ProcessInfo.processInfo.arguments.contains("--ui-testing") && ProcessInfo.processInfo.arguments.contains("--ui-large-text") { size = .accessibility3 }
@@ -182,6 +195,21 @@ private struct ApplicationRoot: View {
                         snapshot.reviews.append(ReviewEvent(id: "ui-review-\(index)-\(day)", cardID: id, deckID: "ui-deck", sessionID: "ui-session", rating: .good, reviewedAt: time, committedAt: time, before: state, after: state))
                     }
                 }
+                if ProcessInfo.processInfo.arguments.contains("--ui-retention-fixture") {
+                    snapshot.decks[0].createdAt = now.addingTimeInterval(-5 * 86400)
+                }
+                if ProcessInfo.processInfo.arguments.contains("--ui-review-polish-fixture") {
+                    UserDefaults.standard.set(1, forKey: "engram.batchSize.review-ui-fixtures")
+                    UserDefaults.standard.set(true, forKey: "engram.revealSubmitted.review-ui-fixtures")
+                    snapshot.notes = Array(snapshot.notes.prefix(2)); snapshot.cards = Array(snapshot.cards.prefix(2)); snapshot.reviews = []
+                    for i in snapshot.cards.indices { snapshot.cards[i].schedule = try scheduler.initialState(now: now, settings: snapshot.settings) }
+                    snapshot.notes[0].front = "What is cloud computing?"; snapshot.notes[0].back = "On-demand access to computing resources."
+                    if ProcessInfo.processInfo.arguments.contains("--ui-inline-maths") {
+                        snapshot.decks[0].mathInputMode = .advanced
+                        snapshot.notes[0].front = "Write one half as a fraction."; snapshot.notes[0].back = #"\(\frac{1}{2}\)"#
+                        snapshot.notes[0].questionType = "equation"
+                    }
+                }
                 if ProcessInfo.processInfo.arguments.contains("--ui-review-mcq-fixture") {
                     snapshot.notes = Array(snapshot.notes.prefix(1))
                     snapshot.cards = Array(snapshot.cards.prefix(1))
@@ -202,6 +230,7 @@ private struct ApplicationRoot: View {
                     }
                 }
                 model = EngramModel(service: StudyService(repository: MemoryRepository(initial: snapshot), scheduler: scheduler), defaults: defaults)
+                model?.testingScope = "review-ui-fixtures"
                 return
             }
             #endif

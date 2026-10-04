@@ -94,7 +94,7 @@ private struct RichMarkdownBlock: View {
         if markup is Strong { return result.bold() }
         if markup is Emphasis { return result.italic() }
         if markup is Strikethrough { return result.strikethrough() }
-        if let link = markup as? Markdown.Link, let url = link.destination.flatMap(URL.init(string:)), ["https","http"].contains(url.scheme?.lowercased() ?? "") {
+        if let link = markup as? Markdown.Link, let url = link.destination.flatMap(URL.init(string:)), ["https","http","engram-citation"].contains(url.scheme?.lowercased() ?? "") {
             var text = AttributedString((link as? PlainTextConvertibleMarkup)?.plainText ?? link.destination ?? "Link")
             text.link = url
             return SwiftUI.Text(text)

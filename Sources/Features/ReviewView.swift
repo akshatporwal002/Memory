@@ -15,6 +15,7 @@ struct ReviewView: View {
     @AccessibilityFocusState private var answerFocused: Bool
     @State private var completionVisible = false
     @State private var optionsPresented = false
+    @State private var submitted: AnswerAttempt?
     var body: some View {
         EngramTaskContainer(embedded: embedded) {
             GeometryReader { geometry in
@@ -26,6 +27,14 @@ struct ReviewView: View {
                         Button("\(unresolved) pending", systemImage: "waveform") { model.voiceWork.summaryPresented = true }
                             .font(.caption).buttonStyle(.plain).padding(8)
                     }
+                    if let confirmation = model.voiceWork.jobs(model).first(where: { $0.state == .awaitingConfirmation }) {
+                        VoiceTranscriptConfirmationView(model: model, job: confirmation) { attempt in
+                            if model.deferredReview.revealAfterAnswer { submitted = attempt }
+                        }.id(confirmation.id)
+                    } else if let submitted {
+                        SubmittedAnswerReveal(attempt: submitted) { self.submitted = nil; typing = true }
+                            .frame(maxWidth: EngramShape.readingWidth).frame(maxWidth: .infinity)
+                    } else {
                     if model.markingAnswer { ProgressView("Checking your answer…").padding(8) }
                     if let feedback = model.answerFeedback { Text(feedback).font(.subheadline).padding(8) }
                     if let session = model.library.session, let item = session.current,
@@ -54,6 +63,7 @@ struct ReviewView: View {
                             }
                         }
                     } else { completion }
+                    }
                 }
             }
             .navigationTitle(reviewTitle)
@@ -97,7 +107,8 @@ struct ReviewView: View {
         .interactiveDismissDisabled(model.busy)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.library.session?.current?.presentationID)
         .onAppear { model.voice.present(model: model) }
-        .onDisappear { model.voice.stop() }
+        .onDisappear { model.voice.stop(); model.deferredReview.referenceVisible = false; model.deferredReview.requestFlush() }
+        .onChange(of: submitted?.id) { _, value in model.deferredReview.referenceVisible = value != nil }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { model.voice.stop() }
             else if phase == .active { model.voice.present(model: model) }
@@ -116,7 +127,10 @@ struct ReviewView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .contain).accessibilityLabel("Question")
                 if (typing && item.revealedAt == nil) || model.pendingAttempt?.assessment != nil {
-                    TypedAnswerView(model:model,item:item)
+                    TypedAnswerView(model:model,item:item) { attempt in
+                        if model.deferredReview.revealAfterAnswer { submitted = attempt }
+                        typing = true
+                    }
                 } else if item.revealedAt == nil {
                     Button("Type answer",systemImage:"keyboard") { typing = true }
                         .buttonStyle(EngramButtonStyle(.secondary))
@@ -133,7 +147,6 @@ struct ReviewView: View {
                 }
             }
             .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
-            .engramSurface()
             .animation(EngramMotion.reveal(reduceMotion: reduceMotion), value: item.revealedAt)
         case .failure(let error): EngramInlineError(message: error.localizedDescription)
         }

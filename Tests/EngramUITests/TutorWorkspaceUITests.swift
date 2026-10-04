@@ -7,21 +7,18 @@ final class TutorWorkspaceUITests: XCTestCase {
     @MainActor private func exercise(landscape: Bool) {
         if landscape { XCUIDevice.shared.orientation = .landscapeLeft }
         defer { XCUIDevice.shared.orientation = .portrait }
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + (landscape ? ["--ui-landscape"] : []); app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15)); app.buttons["Settings"].tap()
         openTutor(app)
-        let field = app.textFields["tutor-workspace-name"]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        if app.buttons["Activate tutor workspace"].waitForExistence(timeout: 2) { app.buttons["Activate tutor workspace"].tap() }
+        XCTAssertTrue(app.buttons["All students"].waitForExistence(timeout: 5))
         capture("Tutor-\(landscape ? "iPad" : "iPhone")-Empty", app)
-        let name = "AWS UI \(UUID().uuidString.prefix(6))"
-        field.tap(); field.typeText(name)
-        app.buttons["tutor-create-workspace"].tap()
-        XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
         capture("Tutor-\(landscape ? "iPad" : "iPhone")-Created", app)
         app.terminate(); app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15)); app.buttons["Settings"].tap()
         openTutor(app)
-        XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["All students"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Activate tutor workspace"].exists)
         capture("Tutor-\(landscape ? "iPad" : "iPhone")-Reopened", app)
         if landscape { XCTAssertGreaterThan(app.frame.width, app.frame.height) }
     }
@@ -37,7 +34,7 @@ final class TutorWorkspaceUITests: XCTestCase {
         if tutor.exists { tutor.tap() }
     }
     @MainActor private func capture(_ name: String, _ app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
 }

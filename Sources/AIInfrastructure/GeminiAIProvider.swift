@@ -206,6 +206,7 @@ public struct GeminiStreamDecoder {
               let candidates = root["candidates"] as? [[String: Any]], candidates.count == 1 else { throw AIProviderError.incomplete }
         let candidate = candidates[0]
         var events: [AIEvent] = []
+        if let raw = root["usageMetadata"] as? [String: Any], let usage = AIUsage.gemini(raw) { events.append(.usage(usage)) }
         if let content = candidate["content"] as? [String: Any], let next = content["parts"] as? [[String: Any]] {
             for part in next {
                 guard Set(part.keys).isSubset(of: ["text", "thought", "thoughtSignature", "functionCall"]) else { throw AIProviderError.incomplete }

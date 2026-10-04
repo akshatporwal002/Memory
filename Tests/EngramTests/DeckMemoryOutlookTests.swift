@@ -110,6 +110,23 @@ final class DeckMemoryOutlookTests: XCTestCase {
         XCTAssertTrue(paused.reviewDates.isEmpty)
     }
 
+    func testRecentAndOverdueCardsKeepFutureReviewBumps() throws {
+        let now = Date(timeIntervalSince1970: 1_791_000_000)
+        let scheduler = FSRSScheduler()
+        for stability in [0.1, 0.5, 1.0, 3.0, 20.0] {
+            var library = LibrarySnapshot()
+            library.settings.desiredRetention = 0.8
+            let deck = Deck(id: "d", name: "Forecast", createdAt: now.addingTimeInterval(-5 * 86400))
+            library.notes = [Note(id: "n", deckID: "d", kind: .basic, front: "Q", back: "A")]
+            let state = try scheduler.importState(due: now.addingTimeInterval(-300), phase: .review,
+                sourceValues: ["s": String(stability), "d": "9", "lrt": String(now.addingTimeInterval(-86400).timeIntervalSince1970)], settings: library.settings)
+            library.cards = [StudyCard(id: "c", noteID: "n", deckID: "d", schedule: state)]
+            let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: scheduler, scheduler: scheduler)
+            XCTAssertFalse(outlook.reviewDates.isEmpty, "No planned dates for stability \(stability)")
+            XCTAssertGreaterThan(outlook.projection.last?.probability ?? 0, outlook.average.last ?? 1)
+        }
+    }
+
     func testHistoryBeginsWithRecordedEvidence() throws {
         let now = Date()
         let created = now.addingTimeInterval(-30 * 86_400)
@@ -123,8 +140,11 @@ final class DeckMemoryOutlookTests: XCTestCase {
         library.reviews = [ReviewEvent(id: "r", cardID: "c", deckID: deck.id, sessionID: "s", rating: .good, reviewedAt: reviewedAt, committedAt: reviewedAt, before: state, after: state)]
         let outlook = DeckMemoryOutlook.make(deck: deck, library: library, now: now, estimator: ConstantEstimator())
         XCTAssertEqual(outlook.startDate, created)
-        XCTAssertEqual(outlook.history.map(\.date), [reviewedAt])
+        XCTAssertEqual(outlook.history.map(\.date), [reviewedAt, now])
+        XCTAssertEqual(outlook.history.last?.probability, outlook.average.first)
         XCTAssertEqual(outlook.cards.first?.history.first?.date, reviewedAt)
+        XCTAssertEqual(outlook.cards.first?.history.last?.date, now)
+        XCTAssertEqual(outlook.cards.first?.history.last?.probability, outlook.cards.first?.probabilities.first)
         XCTAssertEqual(outlook.sampleDates.first, now)
     }
     func testRollingYearAndCreationStart() throws {

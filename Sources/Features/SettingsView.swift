@@ -111,7 +111,7 @@ struct SettingsView: View {
                                 Image(systemName: page.symbol).font(.body.weight(.medium))
                                     .dynamicTypeSize(.large)
                                     .foregroundStyle(palette.primaryText).frame(width: 32, height: 32)
-                                    .background(palette.selection, in: RoundedRectangle(cornerRadius: 8)).accessibilityHidden(true)
+                                    .accessibilityHidden(true)
                                 if typeSize.isAccessibilitySize {
                                     VStack(alignment: .leading, spacing: EngramSpacing.micro) {
                                         Text(page.rawValue)
@@ -127,6 +127,9 @@ struct SettingsView: View {
                         .accessibilityIdentifier("settings-\(page.rawValue)")
                     }
                   } footer: { if search.isEmpty && index == groups.count - 1 { Text("Your library is stored on this device. Changes save automatically.") } }
+                }
+                if search.isEmpty || "Research privacy".localizedCaseInsensitiveContains(search) {
+                    EngramListSection { NavigationLink { ResearchSettingsView(model: model) } label: { Label("Research privacy", systemImage: "hand.raised") } }
                 }
                 if let screenshotAction, search.isEmpty || "Screenshot all pages".localizedCaseInsensitiveContains(search) {
                     EngramListSection {

@@ -131,7 +131,7 @@ public actor SQLiteLibraryRepository: LibraryRepository {
     }
 }
 
-private final class SQLiteConnection: @unchecked Sendable {
+final class SQLiteConnection: @unchecked Sendable {
     private var handle: OpaquePointer?
     init(url: URL) throws {
         guard sqlite3_open_v2(url.path,&handle,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,nil) == SQLITE_OK else { throw EngramError.storage("Cannot open library database.") }

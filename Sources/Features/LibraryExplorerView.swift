@@ -68,6 +68,7 @@ struct LibraryExplorerView: View {
             } else { explorerContent }
         }
         .scrollDismissesKeyboard(.interactively)
+        .task(id: model.cloud.userID?.uuidString ?? model.cloud.localProfileID ?? "local") { await model.tutor.configure(model) }
         .sheet(isPresented: $testingSamplesPresented) { TestingLibraryImportView(model: model) }
         .onChange(of: model.libraryPresentationEpoch) { _, _ in openedDeck = nil; openedDocument = nil; expanded = []; query = "" }
         .refreshable { await model.refresh() }
@@ -143,6 +144,11 @@ struct LibraryExplorerView: View {
                     addMenu
                 }
                 LibrarySpacePicker(model: model)
+                if model.tutor.activated {
+                    NavigationLink { TutorWorkspaceView(model: model) } label: {
+                        Label("Tutor", systemImage: "folder").frame(minHeight: 44)
+                    }.buttonStyle(.plain).accessibilityIdentifier("library-tutor-folder")
+                }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(workspace ? "" : "FILES").font(.caption2.weight(.semibold)).tracking(1.5).foregroundStyle(palette.secondaryText)

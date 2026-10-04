@@ -54,6 +54,7 @@ public struct Deck: Codable, Identifiable, Equatable, Sendable {
     public var studySuspended: Bool?
     /// Missing means the original arrow-only document format.
     public var documentFormatVersion: Int?
+    public var mathInputMode: MathInputMode?
     public init(id: String = UUID().uuidString, name: String, deleted: Bool = false,
                 createdAt: Date? = nil, modifiedAt: Date? = nil, coverMediaName: String? = nil, sourceDocument: String? = nil) {
         self.id = id; self.name = name; self.deleted = deleted
@@ -75,6 +76,7 @@ public struct ImportOrigin: Codable, Equatable, Sendable {
 }
 public struct Note: Codable, Identifiable, Equatable, Sendable {
     public var multipleChoice: MultipleChoiceQuestion?
+    public var questionType: String?
     public var mcq: MultipleChoiceQuestion? { kind == .basic ? multipleChoice ?? MultipleChoiceQuestion.parse(front: front, back: back) : nil }
     public var id: String
     public var deckID: String
@@ -93,6 +95,7 @@ public struct Note: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct NoteDraft: Codable, Equatable, Sendable {
+    public var questionType: String?
     public var id: String?
     public var deckID: String
     public var kind: NoteKind
@@ -103,7 +106,10 @@ public struct NoteDraft: Codable, Equatable, Sendable {
     public init(id: String? = nil, deckID: String, kind: NoteKind = .basic, front: String = "", back: String = "", tags: [String] = [], source: String = "") {
         self.id = id; self.deckID = deckID; self.kind = kind; self.front = front; self.back = back; self.tags = tags; self.source = source
     }
-    public init(note: Note) { self.init(id: note.id, deckID: note.deckID, kind: note.kind, front: note.front, back: note.back, tags: note.tags, source: note.source) }
+    public init(note: Note) {
+        self.init(id: note.id, deckID: note.deckID, kind: note.kind, front: note.front, back: note.back, tags: note.tags, source: note.source)
+        self.questionType = note.questionType
+    }
 }
 public struct StudyCard: Codable, Identifiable, Equatable, Sendable {
     public var id: String
@@ -123,6 +129,12 @@ public struct StudyCard: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct ReviewEvent: Codable, Identifiable, Equatable, Sendable {
+    public var subject: String?
+    public var questionSubtype: String?
+    public var gradingMethod: String?
+    public var questionType: String?
+    public var questionSchemaVersion: Int?
+    public var inputModality: String?
     public var settingsSnapshot: StudySettings?
     public var assessment: AnswerAssessment?
     public var id: String
