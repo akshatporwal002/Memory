@@ -101,7 +101,7 @@ import LearningCore
     }
     func present(model: EngramModel) {
         guard enabled, ready, !preparing else { return }
-        guard model.voiceWork.localAvailable(model) else { stop(); error = "Configure voice access in Settings before starting voice review."; return }
+        guard model.voiceWork.captureAvailable(model) else { stop(); error = "Configure voice access in Settings before starting voice review."; return }
         stop(); let token = generation
         task = Task { [weak self, weak model] in
             guard let self, let model else { return }
@@ -137,6 +137,12 @@ import LearningCore
     }
     private func questionText(_ model: EngramModel) throws -> String {
         guard let item = model.library.session?.current, let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) else { return "Review complete. Say stop to finish." }
+        if model.voiceWork.usesPersonalTranscription {
+            if let assessment = item.assessment { return assessment.outcome.rawValue + ". " + assessment.reason }
+            if let mcq = note.mcq?.ordered(for: item.presentationID) { return mcq.prompt + ". " + mcq.choices.map { "Option \(mcq.displayLetter(for: $0.id)). \($0.text)" }.joined(separator: ". ") }
+            let rendered = try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil)
+            return item.revealedAt == nil ? rendered.prompt : rendered.answer ?? ""
+        }
         if let assessment = item.assessment { return assessment.outcome.rawValue + ". " + (note.mcq?.ordered(for: item.presentationID).displayedExplanation ?? assessment.reason) + ". Say next, repeat, or stop." }
         if let mcq = note.mcq?.ordered(for: item.presentationID) { return mcq.prompt + ". " + mcq.choices.map { "Option \(mcq.displayLetter(for: $0.id)). \($0.text)" }.joined(separator: ". ") + ". Say the option letter or answer." }
         let rendered = try CardRenderer.render(note: note, card: item.card, revealed: item.revealedAt != nil)
@@ -170,6 +176,7 @@ import LearningCore
         let converter = AudioConverter(sampleRate: 16000)
         var state = VadStreamState.initial(), pending: [Float] = [], preRoll: [Float] = []
         var answering = false
+        let personalTranscription = model.voiceWork.usesPersonalTranscription
         var utteranceAudio: [Float] = []
         speak(try questionText(model))
         for await incoming in stream {
@@ -184,7 +191,7 @@ import LearningCore
                     utteranceAudio = preRoll
                     requestedEndpoint = false; await asr.reset(); answering = true
                     let currentUtterance = utteranceID
-                    await asr.setPartialCallback { [weak self] text in
+                    if !personalTranscription { await asr.setPartialCallback { [weak self] text in
                         Task { @MainActor in
                             guard let self, self.generation == token, self.utteranceID == currentUtterance else { return }
                             self.transcript = text
@@ -192,20 +199,22 @@ import LearningCore
                             if words.last == "done" { self.requestedEndpoint = true }
                         }
                     }
-                    if !preRoll.isEmpty { _ = try await asr.process(audioBuffer: Self.pcm(preRoll)) }
+                    if !preRoll.isEmpty { _ = try await asr.process(audioBuffer: Self.pcm(preRoll)) } }
                 }
                 if answering {
                     guard utteranceAudio.count + samples.count <= 16000 * 120 else { throw EngramError.invalid("This voice answer is too long. Keep recordings under two minutes.") }
                     utteranceAudio += samples
-                    _ = try await asr.process(audioBuffer: Self.pcm(samples))
+                    if !personalTranscription { _ = try await asr.process(audioBuffer: Self.pcm(samples)) }
                 }
                 preRoll = samples
                 if answering, detection.event?.isEnd == true || requestedEndpoint {
                     answering = false
                     requestedEndpoint = false
-                    let recognized = try await asr.finish()
+                    let recognized: String
+                    if personalTranscription { recognized = "" }
+                    else { recognized = try await asr.finish() }
                     let text = (prefix + " " + recognized).trimmingCharacters(in: .whitespacesAndNewlines); prefix = ""; transcript = text
-                    guard !text.isEmpty else { continue }
+                    guard personalTranscription || !text.isEmpty else { continue }
                     let turn = utteranceID
                     let recording = utteranceAudio; utteranceAudio = []
                     markingTask = Task { [weak self, weak model] in
@@ -219,6 +228,18 @@ import LearningCore
     }
     private func respond(_ text: String, samples: [Float], model: EngramModel, token: UUID, turn: UUID) async {
         guard generation == token, utteranceID == turn else { return }
+        if model.voiceWork.usesPersonalTranscription {
+            guard let session = model.library.session, let item = session.current,
+                  item.assessment == nil, item.revealedAt == nil else { return }
+            // Local recognition must not rewrite or classify a cloud answer.
+            // Use onscreen pause/repeat/Next controls in this development path.
+            status = "Saving recording…"
+            await model.voiceWork.submitRecording(samples: samples, model: model, sessionID: session.id, presentationID: item.presentationID)
+            guard !Task.isCancelled, generation == token, utteranceID == turn else { return }
+            if let error = model.voiceWork.error { self.error = error; status = "Check pending answers." }
+            else { status = model.voiceWork.mode == .continueProcessing ? "Answer saved." : "Waiting for feedback…" }
+            return
+        }
         let command = text.lowercased().trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
         if ["stop", "pause"].contains(command) { enabled = false; return }
         if ["repeat", "repeat question", "repeat answer"].contains(command) { if let text = try? questionText(model) { speak(text) }; return }

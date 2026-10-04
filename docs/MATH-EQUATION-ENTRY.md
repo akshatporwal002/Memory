@@ -22,3 +22,5 @@ Insert produces inline portable LaTeX in the existing answer. It does not create
 - All new numeric/ordering/multiple-select/debugging question formats still await explicit individual approval.
 
 Ten foundation package tests passed in the Mac run, covering fraction output, Unicode cursor preservation and nested entry, all template slots, command/recipe-marker isolation plus oversized-edit rejection, undo/redo/removal, matrix/piecewise dimensions, coordinate-preserving resize, shrink consent with Undo restoration, nearest nested resizing and the overall slot limit. Three additional selection tests are written but unexecuted. iPhone fraction insertion/matrix resizing UI flows passed; screenshots are retained under current_ui/iphone. iPad tests remain failed on screenshot aspect, without weakening that assertion.
+
+Update 4 October 2026: all three native selection regression tests passed in the isolated Mac package run (274 tests, one skipped, zero failures). Latest iPhone/iPad runtime validation remains pending because SSH became unreachable before the iOS build launched; existing captures predate this selection extension.

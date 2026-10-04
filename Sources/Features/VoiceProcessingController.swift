@@ -9,6 +9,9 @@ import AIInfrastructure
     enum Selection: String, CaseIterable, Identifiable {
         case managedMini, managedFull, managedChirp, personalMini, personalFull, localParakeet, localWhisper
         var id: String { rawValue }
+        var personalModel: String? {
+            switch self { case .personalMini: "gpt-4o-mini-transcribe"; case .personalFull: "gpt-4o-transcribe"; default: nil }
+        }
         var title: String {
             switch self {
             case .managedMini: "Mini Transcribe · app credits"
@@ -28,6 +31,7 @@ import AIInfrastructure
     private(set) var capturing = false
     #if DEBUG
     var developmentLocalPreview = false
+    var developmentPersonalPreview = false
     #endif
     @ObservationIgnored private var worker: VoiceWorkProcessor?
     @ObservationIgnored private var storage: VoiceRecordingStore?
@@ -56,6 +60,7 @@ import AIInfrastructure
         mode = defaults.string(forKey: "engram.voice.mode." + account).flatMap(VoiceReviewMode.init(rawValue:)) ?? .continueProcessing
         #if DEBUG
         developmentLocalPreview = false
+        developmentPersonalPreview = false
         #endif
         preferenceAccount = account
     }
@@ -84,8 +89,15 @@ import AIInfrastructure
         }
     }
     func retry(_ job: VoiceAnswerJob, model: EngramModel) async {
-        guard !job.attempt.originalAnswer.isEmpty, jobs(model).contains(where: { $0.id == job.id }) else { return }
-        if await model.perform({ try await $0.retryVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }) { await worker?.start() }
+        guard jobs(model).contains(where: { $0.id == job.id }) else { return }
+        do {
+            try await prepare(model: model)
+            if job.attempt.originalAnswer.isEmpty {
+                guard job.provider == "openai", job.billingPath == .personalKey else { throw EngramError.invalid("This audio provider is not configured.") }
+                try authorizePersonal(model, operationID: job.id, transcriptionModel: job.transcriptionModel)
+            }
+            if await model.perform({ try await $0.retryVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }) { await worker?.start() }
+        } catch { self.error = error.localizedDescription }
     }
     func cancel(_ job: VoiceAnswerJob, model: EngramModel) async {
         guard historyJobs(model).contains(where: { $0.id == job.id && $0.state.unresolved }) else { return }
@@ -125,6 +137,27 @@ import AIInfrastructure
             keyAvailable: false, reservation: nil)
     }
     func localAvailable(_ model: EngramModel) -> Bool { (try? authorizeLocal(model)) != nil }
+    var usesPersonalTranscription: Bool { selection.personalModel != nil }
+    func captureAvailable(_ model: EngramModel) -> Bool {
+        if let transcriptionModel = selection.personalModel { return (try? authorizePersonal(model, operationID: "personal-capture", transcriptionModel: transcriptionModel)) != nil }
+        return localAvailable(model)
+    }
+    private func authorizePersonal(_ model: EngramModel, operationID: String, transcriptionModel: String) throws {
+        guard foreground, ["gpt-4o-mini-transcribe", "gpt-4o-transcribe"].contains(transcriptionModel) else { throw EngramError.conflict }
+        let account = model.aiMarker.personal.accountID
+        #if DEBUG
+        let policy = VoiceAccessPolicy(environment: .sandbox)
+        let entitlement = developmentPersonalPreview ? VoiceEntitlement(accountID: account, environment: .sandbox, expiresAt: .distantFuture) : nil
+        let disclosure = developmentPersonalPreview ? VoiceAudioDisclosure(accountID: account, provider: "openai", purpose: .transcription, revision: 1) : nil
+        #else
+        let policy = VoiceAccessPolicy(environment: .production)
+        let entitlement: VoiceEntitlement? = nil
+        let disclosure: VoiceAudioDisclosure? = nil
+        #endif
+        try policy.authorize(VoiceAccessRequest(accountID: account, operationID: operationID, provider: "openai",
+            model: transcriptionModel, billingPath: .personalKey), entitlement: entitlement, disclosure: disclosure,
+            keyAvailable: model.aiMarker.personal.configured.contains(.openai), reservation: nil)
+    }
     func pause() async {
         foreground = false
         preparationEpoch = UUID()
@@ -161,9 +194,15 @@ import AIInfrastructure
                 try await MainActor.run {
                     guard self.foreground, self.scope == identity,
                           self.currentScope(model) == identity, job.ownerID == owner else { throw EngramError.conflict }
-                    if stage == .transcription { throw EngramError.invalid("Cloud transcription is not connected to recording yet. No audio was uploaded.") }
+                    if stage == .transcription {
+                        guard job.provider == "openai", job.billingPath == .personalKey else { throw EngramError.invalid("This audio provider is not configured.") }
+                        try self.authorizePersonal(model, operationID: job.id, transcriptionModel: job.transcriptionModel)
+                    }
                 }
-            }, transcribe: { _, _ in throw EngramError.invalid("This audio provider is not configured.") },
+            }, transcribe: { [weak self, weak model] job, audio in
+                guard let self, let model else { throw EngramError.conflict }
+                return try await self.transcribe(job, audio: audio, model: model, identity: identity)
+            },
             assess: { [weak self, weak model] job in
                 guard let self, let model else { throw EngramError.conflict }
                 return try await self.assess(job, model: model, identity: identity)
@@ -186,13 +225,36 @@ import AIInfrastructure
         guard foreground, scope == identity, currentScope(model) == identity else { throw EngramError.conflict }
         return result
     }
+    private func transcribe(_ job: VoiceAnswerJob, audio: Data, model: EngramModel, identity: String) async throws -> VoiceTranscriptResult {
+        guard foreground, scope == identity, currentScope(model) == identity,
+              job.provider == "openai", job.billingPath == .personalKey else { throw EngramError.conflict }
+        try authorizePersonal(model, operationID: job.id, transcriptionModel: job.transcriptionModel)
+        let token = try model.aiMarker.personal.token(for: "openai")
+        let result = try await OpenAISpeechProvider().transcribe(audio: audio, format: .wav,
+            model: job.transcriptionModel, token: token, requestID: UUID())
+        guard foreground, scope == identity, currentScope(model) == identity else { throw EngramError.conflict }
+        return VoiceTranscriptResult(text: result.text, usageJSON: result.usageJSON)
+    }
     func submitLocal(_ text: String, samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {
+        await submit(text, samples: samples, model: model, sessionID: sessionID, presentationID: presentationID)
+    }
+    func submitRecording(samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {
+        await submit(nil, samples: samples, model: model, sessionID: sessionID, presentationID: presentationID)
+    }
+    private func submit(_ text: String?, samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {
         guard !capturing else { return }
         capturing = true; error = nil; defer { capturing = false }
         let identity = currentScope(model), recordingID = UUID()
         var captured = false
         do {
-            try authorizeLocal(model); try await prepare(model: model)
+            let personal = text == nil
+            let transcriptionModel: String
+            if personal {
+                guard let selectedModel = selection.personalModel else { throw EngramError.conflict }
+                transcriptionModel = selectedModel
+                try authorizePersonal(model, operationID: recordingID.uuidString, transcriptionModel: selectedModel)
+            } else { transcriptionModel = "parakeet"; try authorizeLocal(model) }
+            try await prepare(model: model)
             guard let storage, let item = model.library.session?.current, item.presentationID == presentationID,
                   let note = model.library.liveNotes.first(where: { $0.id == item.card.noteID }) else { throw EngramError.conflict }
             try await storage.save(VoiceWAV.encode(samples), id: recordingID)
@@ -202,18 +264,18 @@ import AIInfrastructure
                 let evidence = LocalAnswerEvidence.retrieve(note: note, prompt: prompt, library: model.library)
                     .map { AttemptEvidence(id: $0.id, text: $0.text, version: $0.version) }
                 let saved = try await model.service.captureVoiceAnswer(recordingID: recordingID, deviceID: deviceID,
-                    ownerID: model.aiMarker.gradingIdentity(model.chatGPT), provider: "local", transcriptionModel: "parakeet",
-                    gradingModel: model.aiMarker.selectedModel, billingPath: .local, mode: mode,
+                    ownerID: model.aiMarker.gradingIdentity(model.chatGPT), provider: personal ? "openai" : "local", transcriptionModel: transcriptionModel,
+                    gradingModel: model.aiMarker.selectedModel, billingPath: personal ? .personalKey : .local, mode: mode,
                     sessionID: sessionID, presentationID: presentationID, evidence: evidence,
                     appAccountID: model.aiMarker.personal.accountID, localTranscript: text)
                 captured = true
                 // Recognition is already local and durably saved. Cleanup does
                 // not repeat capture or erase the accepted transcript on failure.
-                do {
+                if !personal { do {
                     try await storage.remove(recordingID)
                     try await model.service.acknowledgeVoiceRecordingDeletion(id: saved.id, deviceID: deviceID, ownerID: saved.ownerID)
                 }
-                catch { self.error = "Answer saved, but its recording needs cleanup." }
+                catch { self.error = "Answer saved, but its recording needs cleanup." } }
                 await worker?.start(); await model.refresh()
             } catch {
                 if !captured { try? await storage.remove(recordingID) }

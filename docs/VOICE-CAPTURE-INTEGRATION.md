@@ -23,3 +23,11 @@ Two WAV and two local-transcript service tests are written, not executed. Earlie
 Three additional correction/reconciliation tests are written, not executed: removing the first review preserves the original baseline; completed correction retains/replays a later review and rejects stale workers; another account or edited reference cannot remove a grade. Cloud synchronization now uses all review events plus correction records to select the preserved baseline rather than starting from a later event's obsolete before-state.
 
 Three cleanup/ownership tests are also written but unexecuted: untranscribed-file protection and idempotent acknowledgement; same-account old-connection visibility with account/device separation; failed recording deletion followed by cleanup without another provider call or review event.
+
+## Personal-key integration status — 4 October 2026
+
+Personal Mini/Full now connects protected WAV capture to OpenAISpeechProvider and the durable worker. Debug preview requires a configured personal key and explicit audio/billing disclosure; it resets on account changes/restart. Production remains disabled pending entitlement/configuration. No live request was made during validation. Cloud capture uses on-screen controls instead of the local spoken-command parser; it still requires local VAD/Kokoro preparation.
+
+Failed transcription exposes an explicit retry with potential duplicate-charge warning. Failed marking reuses the persisted transcript. Managed capture, Google native transport, cloud speech playback and production purchases remain unconnected.
+
+The current isolated Mac package run passed 274 tests, one skipped, zero failures, including the WAV and native selection extensions. SSH then timed out before iOS build launch; latest device/UI validation is pending. Earlier evidence above remains revision-specific.

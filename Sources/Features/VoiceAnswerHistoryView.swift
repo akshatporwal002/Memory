@@ -5,6 +5,7 @@ import DesignSystem
 /// Results stay separate from the next answer: no unsolicited speech or focus changes.
 struct VoiceAnswerHistoryView: View {
     @Bindable var model: EngramModel
+    @State private var transcriptionRetry: VoiceAnswerJob?
     var body: some View {
         Form {
             let jobs = model.voiceWork.historyJobs(model)
@@ -30,6 +31,11 @@ struct VoiceAnswerHistoryView: View {
                         if job.state == .needsAttention, !job.attempt.originalAnswer.isEmpty, model.voiceWork.canProcess(job, model: model) {
                             Button("Retry marking") { Task { await model.voiceWork.retry(job, model: model) } }.disabled(model.busy)
                         }
+                        if job.state == .needsAttention, job.attempt.originalAnswer.isEmpty,
+                           job.provider == "openai", job.billingPath == .personalKey,
+                           model.voiceWork.canProcess(job, model: model) {
+                            Button("Retry transcription") { transcriptionRetry = job }.disabled(model.busy)
+                        }
                         Button("Cancel pending answer", role: .destructive) { Task { await model.voiceWork.cancel(job, model: model) } }.disabled(model.busy)
                     }
                     if job.state == .completed && !gradeRemoved { Text("Saved once at the original answer time.").font(.footnote).foregroundStyle(.secondary) }
@@ -46,6 +52,17 @@ struct VoiceAnswerHistoryView: View {
                 }
             }
         }.modifier(UtilityListStyle()).navigationTitle("Voice answers")
+            .confirmationDialog("Send this recording again?", isPresented: Binding(
+                get: { transcriptionRetry != nil }, set: { if !$0 { transcriptionRetry = nil } })) {
+                Button("Retry transcription") {
+                    guard let job = transcriptionRetry else { return }
+                    transcriptionRetry = nil
+                    Task { await model.voiceWork.retry(job, model: model) }
+                }
+                Button("Cancel", role: .cancel) { transcriptionRetry = nil }
+            } message: {
+                Text("OpenAI may have processed and charged for the earlier request. Retrying sends the recording again using your personal API key.")
+            }
     }
     private func title(_ state: VoiceAnswerState) -> String {
         switch state {

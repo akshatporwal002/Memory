@@ -157,14 +157,17 @@ struct AISettingsPage: View {
 
 struct VoiceSettingsPage: View {
     @Bindable var model: EngramModel
+    #if DEBUG
+    @State private var confirmPersonalPreview = false
+    #endif
     var body: some View {
         Form {
-            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.localAvailable(model)) }
+            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.captureAvailable(model)) }
             EngramListSection("Listening") {
                 Picker("Speech recognition", selection: Binding(get: { model.voiceWork.selection }, set: { model.voiceWork.selection = $0 })) {
                     ForEach(VoiceProcessingController.Selection.allCases) { Text($0.title).tag($0) }
                 }
-                LabeledContent("Access", value: model.voiceWork.localAvailable(model) ? "Development preview" : "Not configured")
+                LabeledContent("Access", value: model.voiceWork.captureAvailable(model) ? "Development preview" : "Not configured")
                 Picker("After answering", selection: Binding(get: { model.voiceWork.mode }, set: { model.voiceWork.mode = $0 })) {
                     Text("Continue while processing").tag(VoiceReviewMode.continueProcessing)
                     Text("Wait for feedback").tag(VoiceReviewMode.waitForFeedback)
@@ -172,6 +175,12 @@ struct VoiceSettingsPage: View {
                 #if DEBUG
                 Toggle("Enable local development preview", isOn: Binding(get: { model.voiceWork.developmentLocalPreview }, set: { model.voiceWork.developmentLocalPreview = $0 }))
                 Text("Preview uses on-device recognition. AI marking uses your selected AI connection; provider charges may apply. Production voice access is not configured.").font(.footnote).foregroundStyle(.secondary)
+                if model.voiceWork.usesPersonalTranscription {
+                    Toggle("Personal-key development preview", isOn: Binding(get: { model.voiceWork.developmentPersonalPreview }, set: { value in
+                        if value { confirmPersonalPreview = true } else { model.voiceWork.developmentPersonalPreview = false }
+                    })).disabled(!model.aiMarker.personal.configured.contains(.openai))
+                    Text("Recordings are sent to OpenAI using your device's key. OpenAI bills your account; no app credits are used. Pause, repeat and Next use onscreen controls in this preview.").font(.footnote).foregroundStyle(.secondary)
+                }
                 #endif
                 NavigationLink("Pending answers & results") { VoiceAnswerHistoryView(model: model) }
                 NavigationLink("Test microphone") { MicrophoneTestPage().onAppear { model.voice.enabled = false; model.voice.stopPreview() } }
@@ -190,6 +199,11 @@ struct VoiceSettingsPage: View {
             .onChange(of: model.voiceWork.selection) { _, _ in model.voice.enabled = false }
             #if DEBUG
             .onChange(of: model.voiceWork.developmentLocalPreview) { _, _ in model.voice.enabled = false }
+            .onChange(of: model.voiceWork.developmentPersonalPreview) { _, _ in model.voice.enabled = false }
+            .confirmationDialog("Send voice answers to OpenAI?", isPresented: $confirmPersonalPreview, titleVisibility: .visible) {
+                Button("Enable personal-key preview") { model.voiceWork.developmentPersonalPreview = true }
+                Button("Cancel", role: .cancel) { }
+            } message: { Text("Your personal OpenAI account pays for transcription. Recordings leave this device; grading uses your separately selected model. Production subscriptions and managed credits are not enabled.") }
             #endif
     }
 }
