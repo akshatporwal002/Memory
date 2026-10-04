@@ -215,3 +215,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Physical iPhone is paired and available. Initial device build encountered Apple entitlement/profile mismatch; preview already has EngramAppleSignInEnabled=false. A temporary /tmp/engram-preview.entitlements omitting only com.apple.developer.applesignin allowed device compilation with the existing wildcard profile. Source entitlement remains unchanged; this preview does not enable Apple login.
 - Device compilation reached codesign, which failed with errSecInternalComponent. Waiting for user to unlock login keychain/approve codesign; no latest phone installation occurred. Retry the existing preview build after unlock instead of rebuilding a different source snapshot.
 - Stay-awake helper remains off. Other task's dirty files are excluded.
+
+## Latest phone installation — 4 October 2026
+
+- Latest application source a862263 (validation-only documentation commit 9fe91e0 adds no app code) signed successfully through the Mac's local Terminal login session after SSH codesign continued to fail. Build status 0 and BUILD SUCCEEDED recorded in /tmp/engram-local-session-build.log.
+- devicectl confirmed installation of dev.engram.study on iPhone 13777C05-01CF-5583-AAD8-65CB3653FA07 and then confirmed launch. The preview uses /tmp/engram-preview.entitlements; disabled/unprovisioned Apple sign-in is not enabled.
+- Installation proves delivery/launch, not live voice quality, provider credentials, billing or iPad visual acceptance. Those gates remain open. PC wake helper remains off.
