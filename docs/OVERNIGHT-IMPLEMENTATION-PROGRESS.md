@@ -1,6 +1,6 @@
 # Overnight implementation progress
 
-Goal: implement the complete requirements in OVERNIGHT-IMPLEMENTATION-REQUIREMENTS.md for iPhone and iPad, including the subsequently requested ordering questions. Configuration-dependent work must be recorded and deferred while independent implementation continues.
+Goal: implement the approved requirements in OVERNIGHT-IMPLEMENTATION-REQUIREMENTS.md for iPhone and iPad. The latest instruction requires individual approval of every new question type, including ordering; retain those as proposals rather than implement them. Configuration-dependent work must be recorded and deferred while independent implementation continues.
 
 ## Delivery checklist
 
@@ -16,7 +16,7 @@ Goal: implement the complete requirements in OVERNIGHT-IMPLEMENTATION-REQUIREMEN
 - [ ] Provide repeatable AWS MCQ, short-answer and maths sample imports.
 - [ ] Implement full equation-entry palette, numeric response metadata and deck calculator policies.
 - [ ] Specify five-student tutor tier, permissions and capped insight workflows.
-- [ ] Implement ordering questions, editor, review controls and samples.
+- [ ] Obtain individual approval before implementing any new question type, including ordering or numeric-response metadata. Not authorized for implementation yet.
 - [ ] Validate stages, capture iPhone/iPad changes and publish reviewable commits.
 - [ ] Audit every requirement against evidence before declaring completion.
 
@@ -61,3 +61,12 @@ These do not block local implementation, fixtures or configuration instructions.
 - No automatic retries or billing-path fallbacks. A network interruption reports uncertain delivery because personal audio requests are not assumed idempotent.
 - The provider source plus initial speech fixtures passed 226 Mac package tests (one skipped, zero failures). No live audio request or audio-quality claim is made.
 - These adapters are not yet connected to recording/settings. Durable jobs, capture storage, entitlement checks, provider disclosure, Google audio and managed backend integration still need implementation before cloud voice is usable.
+
+## Durable voice jobs in progress
+
+- Added transactional capture/advance, pending-card exclusion, durable worker claims and capacity limits, transcript persistence, explicit retry/cancel, pending transcript correction and restart recovery.
+- Exactly-once scheduling uses the original submission time independently of the visible card/session. Wait-mode advancement is a separate transaction that cannot add another grade. Stale content/settings/evidence and unsupported/unclear grades are rejected.
+- Protected device recording storage supports immutable saves, retry reads, deletion and seven-day expiry. Raw audio never enters library entities, backups or cloud projection; device metadata is excluded from cloud projection.
+- Pending correction preserves transcript history and invalidates older worker generations. Reconciliation of corrections after a completed grade remains outstanding.
+- Final isolated Mac regression passed 235 package tests (one skipped, zero failures), including the cloud-projection check that pending recording IDs, device IDs and voice ownership metadata are not uploaded.
+- No UI or phone installation changed in this stage. Worker/capture UI integration and entitlement enforcement remain outstanding; no new question types are implemented.

@@ -49,6 +49,7 @@ public actor CloudSyncEngine {
             library.reviews.removeAll { $0.deckID == id }; library.importedReviews.removeAll { cardIDs.contains($0.cardID) }
             library.corrections.removeAll { correction in !library.reviews.contains { $0.id == correction.reviewID } }
             library.answerAttempts?.removeAll { noteIDs.contains($0.noteID) }
+            library.voiceJobs?.removeAll { noteIDs.contains($0.attempt.noteID) }
             library.assistantState?.memory.removeAll { noteIDs.contains($0.noteID) }
             library.assistantState?.conversations.removeAll { conversation in conversation.id.contains(id) || noteIDs.contains(where:conversation.id.contains) || attemptIDs.contains(where:conversation.id.contains) }
             library.assistantState?.runs.removeAll { $0.actions.flatMap(\.changes).contains { $0.deckID == id } }

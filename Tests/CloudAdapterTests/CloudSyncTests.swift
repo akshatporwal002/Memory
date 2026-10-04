@@ -6,6 +6,25 @@ import PersistenceAdapters
 import SchedulingAdapters
 
 final class CloudSyncTests: XCTestCase {
+    func testPendingVoiceJobsNeverEnterTheCloudProjection() async throws {
+        let service = StudyService(repository: MemoryRepository(), scheduler: FSRSScheduler())
+        let now = Date()
+        let deck = try await service.createDeck(name: "Voice privacy")
+        _ = try await service.saveNote(NoteDraft(deckID: deck.id, front: "Energy carrier?", back: "ATP"), now: now)
+        let session = try await service.startSession(deckID: deck.id, now: now)
+        let item = try XCTUnwrap(session.current)
+        let recordingID = UUID()
+        _ = try await service.captureVoiceAnswer(recordingID: recordingID, deviceID: "private-device", ownerID: "private-voice-owner",
+            provider: "openai", transcriptionModel: "gpt-4o-mini-transcribe", gradingModel: "chatgpt:fixture",
+            billingPath: .personalKey, mode: .continueProcessing, sessionID: session.id, presentationID: item.presentationID, evidence: [], now: now)
+        let snapshot = try await service.snapshot()
+        let entities = try CloudProjection.entities(snapshot, userID: UUID(), ownedDecks: [deck.id])
+        let data = try JSONEncoder().encode(entities)
+        let text = String(decoding: data, as: UTF8.self)
+        XCTAssertFalse(text.contains(recordingID.uuidString))
+        XCTAssertFalse(text.contains("private-voice-owner"))
+        XCTAssertFalse(text.contains("private-device"))
+    }
     func testNamedLibrariesSyncWithoutDuplicatingDecksOrUploadingDeviceOnlyFiles() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

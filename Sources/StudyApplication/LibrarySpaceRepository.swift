@@ -50,6 +50,7 @@ actor LibrarySpaceRepository: LibraryRepository {
         root.corrections = try merge(root.corrections, before.corrections, snapshot.corrections)
         root.importedReviews = try merge(root.importedReviews, before.importedReviews, snapshot.importedReviews)
         root.answerAttempts = try merge(root.answerAttempts ?? [], before.answerAttempts ?? [], snapshot.answerAttempts ?? [])
+        root.voiceJobs = try merge(root.voiceJobs ?? [], before.voiceJobs ?? [], snapshot.voiceJobs ?? [])
         root.folderDocuments = try merge(root.folderDocuments ?? [], before.folderDocuments ?? [], snapshot.folderDocuments ?? [])
         // Media is immutable, content-addressed and shared locally between libraries.
         let addedMedia = snapshot.media.filter { item in !root.media.contains { $0.name == item.name } }

@@ -50,6 +50,11 @@ public enum LibraryValidation {
             try unique(attempts.map(\.id),"answer attempt")
             guard attempts.count <= 500_000,attempts.allSatisfy({ notes.contains($0.noteID) && cards.contains($0.cardID) && $0.originalAnswer.utf8.count <= 16_000 && $0.evidence.count <= 20 && $0.createdAt.timeIntervalSince1970.isFinite }) else { throw EngramError.invalid("Answer attempts contain invalid references or exceeded limits.") }
         }
+        if let jobs = library.voiceJobs {
+            try unique(jobs.map(\.id), "voice answer")
+            guard jobs.count <= 500_000, jobs.allSatisfy({ notes.contains($0.attempt.noteID) && cards.contains($0.attempt.cardID) }) else { throw EngramError.invalid("Voice answers have invalid references or exceeded limits.") }
+            for job in jobs { try job.validate() }
+        }
         guard library.notes.allSatisfy({ decks.contains($0.deckID) }),
               library.cards.allSatisfy({ notes.contains($0.noteID) && decks.contains($0.deckID) && $0.schedule.due.timeIntervalSince1970.isFinite }),
               library.reviews.allSatisfy({ cards.contains($0.cardID) }),

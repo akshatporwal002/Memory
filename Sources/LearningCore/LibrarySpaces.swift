@@ -48,6 +48,7 @@ public enum LibrarySpaceScope {
         result.corrections = source.corrections.filter { reviews.contains($0.reviewID) }
         result.importedReviews = source.importedReviews.filter { cards.contains($0.cardID) }
         result.answerAttempts = source.answerAttempts?.filter { notes.contains($0.noteID) }
+        result.voiceJobs = source.voiceJobs?.filter { notes.contains($0.attempt.noteID) }
         result.folderDocuments = source.folderDocuments?.filter { includes("file:" + $0.id) }
         if let session = source.session, !includes("session:" + session.id) { result.session = nil }
         if source.librarySpaces != nil {

@@ -37,10 +37,11 @@ public enum QueuePolicy {
     public static func eligibleCards(in library: LibrarySnapshot, deckID: String?) -> [StudyCard] {
         let supportedNotes = Set(library.liveNotes.filter { $0.kind != .unsupported }.map(\.id))
         let liveDecks = Set(library.liveDecks.map(\.id))
+        let pending = Set((library.voiceJobs ?? []).filter { $0.state.unresolved }.map { $0.attempt.cardID })
         let selectedName = library.decks.first { $0.id == deckID && !$0.deleted }?.name
         let selectedDecks = Set(library.liveDecks.filter { $0.id == deckID || (selectedName != nil && $0.name.hasPrefix(selectedName! + "::")) }.map(\.id))
         return library.cards.filter {
-            !$0.retired && !$0.suspended && !library.isDeckSuspended($0.deckID) && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
+            !$0.retired && !$0.suspended && !pending.contains($0.id) && !library.isDeckSuspended($0.deckID) && supportedNotes.contains($0.noteID) && liveDecks.contains($0.deckID) &&
             (deckID == nil || selectedDecks.contains($0.deckID))
         }
     }

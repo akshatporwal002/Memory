@@ -23,3 +23,15 @@ Status: transport implemented and tested with fixtures, not wired into study cap
 7. Live recording benchmarks and correct landscape captures before claiming audio/UI acceptance.
 
 Contracts checked against [OpenAI file transcription](https://developers.openai.com/api/docs/guides/speech-to-text) and [OpenAI text to speech](https://developers.openai.com/api/docs/guides/text-to-speech). These establish request formats; they do not establish this app's live recognition quality or entitlement readiness.
+
+## Durable review implementation
+
+The library now has backward-compatible, optional device-local voice jobs. The capture transaction saves the job and advances Continue mode together. Pending cards are excluded from the queue; at most ten unresolved submissions and two transcription/one marking claims are allowed. Jobs retain the original question, settings, evidence and submission time.
+
+Worker generations reject cancelled/superseded results. Pending transcript edits retain recognition history and invalidate the old marking lease. A marking retry reuses the transcript. Restart recovery pauses uncertain audio uploads for explicit retry and resumes marking from the saved transcript.
+
+Scheduling commits once even after the learner exits review, with no focus change to another question. Wait mode retains the assessed question until a separate advance operation, avoiding a second grade. Stale cards/evidence/settings and unsupported assessments cannot commit. Unclear feedback persists as needs-attention without a grade.
+
+`VoiceRecordingStore` writes immutable UUID-named files to an account-specific directory chosen by its caller. Files/directories are backup-excluded on Apple platforms and use complete file protection on iOS. Seven-day expiry deletes owned recordings only; successful transcription deletion remains the future worker's responsibility. Jobs contain no raw audio or file paths, and cloud projection ignores them.
+
+Still required: connect recording/settings to these operations; implement actual worker dispatch/account and library pause handling; delete audio after durable transcription; reconcile corrections to already completed reviews; enforce entitlements/disclosure and integrate managed/Google services. No new question type was added.

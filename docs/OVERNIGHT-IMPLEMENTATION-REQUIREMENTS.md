@@ -4,6 +4,8 @@ Recorded: 4 October 2026, Australia/Sydney.
 
 Status: agreed requirements and implementation plan, not a claim that these features have been implemented. This document consolidates the latest UI, accounts, voice, billing, test-deck, tutor and maths requests. Later explicit user instructions take precedence.
 
+**Latest approval boundary:** the user requires individual manual approval before implementing any new question type. Ordering, multiple-select, new numeric question schemas, code/grammar debugging and every catalogue type below are proposals only until explicitly approved. Continue the approved UI/account/voice/billing/test-content work. The mathematical keyboard remains a separately requested input-tool design; do not use it to introduce unapproved question types.
+
 ## 1. Goal and delivery order
 
 Preserve Engram's clean, minimalist quiz aesthetic while improving account usability, voice review and advanced mathematical input. Design for both iPhone and iPad landscape. Minimalism means coherent, purposeful controls and readable content, not removing useful functionality.
@@ -15,7 +17,7 @@ Delivery order:
 3. Billing foundations with production charging disabled.
 4. Testing decks available to the user.
 5. Early maths-input implementation and tutor-feature specification.
-6. Add ordering questions: learners rearrange shuffled steps into the correct sequence.
+6. Propose ordering and additional question types for individual approval; do not implement them yet.
 
 Keep implementation on a review branch; preserve unrelated changes from other tasks. Validate and commit stages independently, push changes for review, and record actual completion and remaining limitations. Avoid repeated reviews that produce no meaningful improvement.
 
@@ -125,7 +127,7 @@ Latest clarification: provide the full range of mathematical input controls, inc
 - Equation entry does **not** solve or evaluate an answer and does not itself count as calculator assistance.
 - Keep optional evaluative calculators separate. Deck settings select **Off / Basic / Scientific**, with input appropriate to each question's level.
 - The user explicitly chose **normal grades when calculator use is allowed by the deck**. Record tool use; AI answer reveals remain assisted.
-- Begin with backward-compatible numeric response metadata, explicit tolerances and deterministic grading of supported numeric responses. Retain equation submissions for manual/evidence-backed feedback when automatic equivalence is unsupported.
+- Propose backward-compatible numeric response metadata, explicit tolerances and deterministic grading for approval before implementing that new question type. Existing text-answer submissions may use the separately requested equation-entry tool, with manual/evidence-backed feedback when automatic equivalence is unsupported.
 - Do not implement or promise a Symbolab/CAS solving engine or unrestricted expression execution. Full symbolic-equivalence grading is not required by this goal.
 
 ## 8. Tutor feature: plan before full implementation
@@ -163,7 +165,7 @@ The user explicitly authorizes launching a temporary PowerShell stay-awake helpe
 
 ## 11. Ordering questions (additional user requirement)
 
-User intent: present jumbled steps and let the learner put them in order. Add this after the preceding implementation stages; it is an explicit requested feature, not merely a catalogue suggestion.
+User intent: present jumbled steps and let the learner put them in order. This proposal now awaits individual manual approval before implementation, including its editor, metadata and testing deck.
 
 - Add a question type with a jumbled sequence of steps that the learner rearranges into the correct order.
 - Store canonical step identities and the expected order separately from the shuffled presentation. Retain that presentation during an attempt so it does not reshuffle while editing.
@@ -275,7 +277,7 @@ User intent: present jumbled steps and let the learner put them in order. Add th
 
 ### Suggested delivery waves
 
-The ordering feature is committed scope for the end of this goal. Multiple-select, code debugging and grammar correction are explicitly requested follow-on priorities. The remaining catalogue is proposed support, to be implemented incrementally rather than presented as already available.
+All waves, including ordering, multiple-select, code debugging and grammar correction, await individual manual approval. They are not implementation scope until approved; the catalogue records possible future support rather than features already available.
 
 1. **Reusable objective types:** ordering, multiple-select, matching, classification, multi-blank cloze and numeric/units input.
 2. **Rich response types:** full maths input, error spotting/correction, code output/completion, image occlusion and diagram labeling.
