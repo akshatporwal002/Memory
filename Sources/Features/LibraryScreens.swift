@@ -75,6 +75,7 @@ struct LibraryView: View {
     @Environment(\.colorScheme) private var scheme
     private var palette: EngramPalette { theme.palette(for: scheme) }
     @State private var retention: [String:Double] = [:]
+    @State private var testingSamplesPresented = false
     private var decks: [Deck] {
         guard !model.search.isEmpty else { return model.library.liveDecks }
         return model.library.liveDecks.filter { deck in
@@ -124,11 +125,15 @@ struct LibraryView: View {
                 .searchable(text: $model.search, prompt: "Search decks or questions")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button { model.creationPresented = true } label: { Label("New deck", systemImage: "folder.badge.plus") }
+                        Menu {
+                            Button("New deck", systemImage: "folder.badge.plus") { model.creationPresented = true }
+                            Button("Testing samples", systemImage: "checklist") { testingSamplesPresented = true }
+                        } label: { Label("Add to Library", systemImage: "plus") }
                     }
                 }
             }
         }
+        .sheet(isPresented: $testingSamplesPresented) { TestingLibraryImportView(model: model) }
         .onChange(of: model.libraryDeckRequest) { _, id in
             if let id { model.selectedDeckID = id; model.libraryDeckRequest = nil }
         }

@@ -30,6 +30,7 @@ struct LibraryExplorerView: View {
     @State private var photoDeckID: String?
     @State private var photoFolderPath: String?
     @State private var rootDropTargeted = false
+    @State private var testingSamplesPresented = false
     private var palette: EngramPalette { theme.palette(for: scheme) }
     private var summaries: [LibraryDeckSummary] {
         LibraryDeckSummary.sorted(LibraryDeckSummary.make(in:model.library,now:model.now),by:.alphabetical,query:query)
@@ -67,6 +68,7 @@ struct LibraryExplorerView: View {
             } else { explorerContent }
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $testingSamplesPresented) { TestingLibraryImportView(model: model) }
         .onChange(of: model.libraryPresentationEpoch) { _, _ in openedDeck = nil; openedDocument = nil; expanded = []; query = "" }
         .refreshable { await model.refresh() }
         .navigationDestination(item:Binding(get:{ workspace ? nil : openedDeck },set:{ openedDeck = $0 })) { id in LibraryDeckDestination(model:model,deckID:id) }
@@ -206,6 +208,7 @@ struct LibraryExplorerView: View {
         Menu {
             Button("New folder",systemImage:"folder.badge.plus") { beginFolder(in:"") }
             Button("New notebook",systemImage:"book.closed.badge.plus",action:newNotebook)
+            Button("Testing samples", systemImage: "checklist") { testingSamplesPresented = true }
             Button("Add source file to Library",systemImage:"doc.badge.plus") { beginFolderImport("") }
             Button("Add image to Library",systemImage:"photo.on.rectangle") { beginFolderPhoto("") }
             if !model.library.liveDecks.isEmpty {
@@ -221,7 +224,7 @@ struct LibraryExplorerView: View {
                 }
             }
         } label: { Image(systemName:"plus").font(.body.weight(.medium)).frame(width:44,height:44).contentShape(Rectangle()) }
-            .buttonStyle(.plain).accessibilityLabel("Add notebook or source file")
+            .buttonStyle(.plain).accessibilityLabel("Add notebook or source file").accessibilityIdentifier("library-add-menu")
     }
     private func newNotebook() { model.creationPresented = true }
     private func beginFolder(in parent: String) { folderParent = parent; folderName = ""; showingFolderPrompt = true }

@@ -1,6 +1,42 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testTestingSamplesImportAndReimport() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["tab-library"].waitForExistence(timeout: 15)); app.buttons["tab-library"].tap()
+        capture("iPhone-Library-Before-Testing-Import", app)
+        exerciseTestingImport(app, prefix: "iPhone")
+    }
+    @MainActor func testIPadTestingSamplesLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch()
+        let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
+        expectation(for: landscape, evaluatedWith: app); waitForExpectations(timeout: 10)
+        let sidebar = app.collectionViews["Sidebar"]
+        XCTAssertTrue(sidebar.waitForExistence(timeout: 15)); sidebar.staticTexts["Library"].tap()
+        capture("iPad-Library-Before-Testing-Import", app)
+        exerciseTestingImport(app, prefix: "iPad")
+        let screenshot = app.screenshot()
+        XCTAssertGreaterThan(screenshot.image.size.width, screenshot.image.size.height)
+    }
+    @MainActor private func exerciseTestingImport(_ app: XCUIApplication, prefix: String) {
+        XCTAssertTrue(app.buttons["library-add-menu"].waitForExistence(timeout: 5)); app.buttons["library-add-menu"].tap()
+        app.buttons["Testing samples"].tap()
+        let add = app.buttons["import-testing-samples"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        capture(prefix + "-Testing-Samples", app)
+        add.tap()
+        let result = app.staticTexts["testing-samples-result"]
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        XCTAssertTrue(result.label.contains("Added 13 questions in 3 notebooks"))
+        capture(prefix + "-Testing-Samples-Imported", app)
+        add.tap()
+        let preserved = NSPredicate(format: "label CONTAINS %@", "Preserved 13 existing questions")
+        expectation(for: preserved, evaluatedWith: result); waitForExpectations(timeout: 10)
+        app.buttons["Done"].tap()
+        capture(prefix + "-Library-After-Testing-Import", app)
+    }
     @MainActor func testPersonalProviderKeyEntry() {
         let app = launch(extra: ["--ui-monochrome"])
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))

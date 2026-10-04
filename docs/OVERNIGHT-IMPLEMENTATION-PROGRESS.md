@@ -85,3 +85,11 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added account/environment-bound subscription, provider/purpose disclosure and job/rate-bound reservation checks. Production remains disabled by default. These are not yet wired into the existing local voice UI.
 - Added inactive StoreKit product/purchase/restore/update handling with app-account binding, verified transaction/environment checks and server acknowledgement before finish. No products/backend are configured and no purchase was attempted.
 - Isolated Mac package run passed 246 tests, one skipped, zero failures; StoreKit code compiled. Live purchase/ledger and device capture validation remain outstanding. See VOICE-PURCHASE-AND-ACCESS-FOUNDATION.md.
+
+## Testing samples implemented, validation pending
+
+- Added a Library import sheet for iPhone/iPad and Mac: Testing folder with four AWS MCQs, six short answers and three mathematical notation examples using existing text-answer cards. No new question types were added.
+- Import is one transaction with library-scoped stable IDs. Reimports preserve edits, scheduling and deletions; unrelated name collisions fail without partial changes.
+- Official AWS references were inspected. The configured Supabase project's read-only auth count is still zero, so authenticated account import remains deferred; no hosted writes were made.
+- Three package tests and iPhone/iPad import/capture flows are written but unexecuted. SSH to mac.modem timed out during transfer and test attempts; no claim of compilation, screenshot acceptance or phone installation is made. The last passing 246-test run predates these changes.
+- See TESTING-LIBRARY.md for variants and pending acceptance gates. Existing current_ui images are retained until new validated captures can be obtained.
