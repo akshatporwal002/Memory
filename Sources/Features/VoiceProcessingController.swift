@@ -33,6 +33,7 @@ import AIInfrastructure
     @ObservationIgnored private var storage: VoiceRecordingStore?
     @ObservationIgnored private var scope: String?
     @ObservationIgnored private var foreground = true
+    @ObservationIgnored private var preparationEpoch = UUID()
     private let deviceID: String
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var preferenceAccount: String?
@@ -67,8 +68,11 @@ import AIInfrastructure
         _ = await model.perform { try await $0.advanceCompletedVoiceAnswer(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID) }
     }
     func revise(_ job: VoiceAnswerJob, text: String, model: EngramModel) async {
-        guard jobs(model).contains(where: { $0.id == job.id && $0.state.unresolved }) else { return }
-        if await model.perform({ try await $0.correctPendingVoiceTranscript(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID, text: text) }) {
+        guard let current = jobs(model).first(where: { $0.id == job.id }), current.state != .cancelled else { return }
+        if await model.perform({ service in
+            if current.state == .completed { try await service.correctCompletedVoiceTranscript(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID, text: text) }
+            else { try await service.correctPendingVoiceTranscript(id: job.id, deviceID: self.deviceID, ownerID: job.ownerID, text: text) }
+        }) {
             await worker?.start()
         }
     }
@@ -104,6 +108,7 @@ import AIInfrastructure
     func localAvailable(_ model: EngramModel) -> Bool { (try? authorizeLocal(model)) != nil }
     func pause() async {
         foreground = false
+        preparationEpoch = UUID()
         let active = worker; worker = nil; scope = nil; storage = nil
         await active?.stopAndWait()
     }
@@ -111,14 +116,16 @@ import AIInfrastructure
         foreground = true
         loadPreferences(model)
         do { try await prepare(model: model); await worker?.start() }
+        catch EngramError.conflict { } // A newer lifecycle transition owns preparation.
         catch { self.error = error.localizedDescription }
     }
     private func prepare(model: EngramModel) async throws {
         let identity = currentScope(model)
         if scope == identity, worker != nil { return }
+        let epoch = UUID(); preparationEpoch = epoch
         let previous = worker; worker = nil; scope = nil
         await previous?.stopAndWait()
-        guard foreground, identity == currentScope(model) else { throw EngramError.conflict }
+        guard foreground, preparationEpoch == epoch, identity == currentScope(model) else { throw EngramError.conflict }
         let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         func component(_ value: String) -> String { Data(value.utf8).base64EncodedString().replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "=", with: "") }
         let directory = root.appendingPathComponent("Engram/VoiceRecordings", isDirectory: true)
@@ -126,7 +133,7 @@ import AIInfrastructure
             .appendingPathComponent(component(model.activeLibraryID), isDirectory: true)
         let recordingStore = try VoiceRecordingStore(directory: directory)
         _ = try await recordingStore.removeExpired()
-        guard foreground, identity == currentScope(model) else { throw EngramError.conflict }
+        guard foreground, preparationEpoch == epoch, identity == currentScope(model) else { throw EngramError.conflict }
         storage = recordingStore; scope = identity
         let owner = model.aiMarker.gradingIdentity(model.chatGPT)
         worker = VoiceWorkProcessor(service: model.service, storage: recordingStore, deviceID: deviceID, ownerID: owner,

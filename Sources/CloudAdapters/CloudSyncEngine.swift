@@ -117,7 +117,7 @@ public actor CloudSyncEngine {
         var adjustments = 0
         for index in library.cards.indices {
             let card = library.cards[index]
-            let state = try ReviewReconciliation.replay(card:card,events:library.activeReviews,settings:library.settings,scheduler:scheduler)
+            let state = try ReviewReconciliation.replay(card:card,allEvents:library.reviews,corrections:library.corrections,settings:library.settings,scheduler:scheduler)
             if state != card.schedule { library.cards[index].schedule = state; library.cards[index].version += 1; adjustments += 1 }
         }
         if let item = library.session?.current {

@@ -115,6 +115,56 @@ extension StudyService {
         jobs[index].state = .awaitingMarking; jobs[index].generation += 1; jobs[index].error = nil
         library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision)
     }
+    /// Removing the prior grade and journalling recognition correction is one
+    /// transaction. Subsequent reviews survive and replay from the original
+    /// imported baseline; a replacement grade keeps the original answer time.
+    public func correctCompletedVoiceTranscript(id: String, deviceID: String, ownerID: String, text: String, now: Date = Date()) async throws {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf8.count <= 16_000 else { throw EngramError.invalid("Enter a transcript under 16 KB.") }
+        var library = try await repository.read(); var jobs = library.voiceJobs ?? []
+        guard let index = jobs.firstIndex(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID }),
+              jobs[index].state == .completed, let committed = jobs[index].attempt.committedAt,
+              now >= committed, (jobs[index].transcriptRevisions?.count ?? 0) < 100,
+              (jobs[index].reviewRevision ?? 0) < 100,
+              let ci = library.cards.firstIndex(where: { $0.id == jobs[index].card.id && !$0.retired && !$0.suspended }),
+              !library.isDeckSuspended(jobs[index].card.deckID),
+              library.liveNotes.first(where: { $0.id == jobs[index].note.id }) == jobs[index].note,
+              jobs[index].attempt.evidence.allSatisfy({ EvidenceRetrieval.isCurrent($0, in: library) }),
+              library.activeReviews.contains(where: { $0.id == jobs[index].reviewID }) else { throw EngramError.conflict }
+        guard (library.voiceJobs ?? []).filter({ $0.state.unresolved }).count < 10,
+              !(library.voiceJobs ?? []).contains(where: { $0.card.id == jobs[index].card.id && $0.state.unresolved }) else {
+            throw EngramError.invalid("Finish pending answers for this card before correcting it.")
+        }
+        let card = library.cards[ci]
+        let prior = try ReviewReconciliation.replay(card: card, allEvents: library.reviews, corrections: library.corrections, settings: library.settings, scheduler: scheduler)
+        guard prior == card.schedule else { throw EngramError.invalid("This schedule changed outside its review history. Resolve it before correcting the transcript.") }
+        let removed = jobs[index].reviewID
+        library.corrections.append(ReviewCorrection(id: "transcript-" + removed, reviewID: removed, createdAt: now))
+        library.cards[ci].schedule = try ReviewReconciliation.replay(card: card, allEvents: library.reviews, corrections: library.corrections, settings: library.settings, scheduler: scheduler)
+        library.cards[ci].version += 1
+        jobs[index].reconciliationCardVersion = library.cards[ci].version
+        jobs[index].reviewRevision = (jobs[index].reviewRevision ?? 0) + 1
+        jobs[index].transcriptRevisions = (jobs[index].transcriptRevisions ?? []) + [jobs[index].attempt.originalAnswer]
+        if let assessment = jobs[index].attempt.assessment { jobs[index].attempt.revisions.append(assessment) }
+        jobs[index].attempt.originalAnswer = text; jobs[index].attempt.assessment = nil; jobs[index].attempt.committedAt = nil
+        jobs[index].attempt.annotations = []; jobs[index].attempt.additions = []
+        jobs[index].state = .awaitingMarking; jobs[index].generation += 1; jobs[index].error = nil
+        library.voiceJobs = jobs
+        var attempts = library.answerAttempts ?? []; attempts.removeAll { $0.id == jobs[index].attempt.id }; attempts.append(jobs[index].attempt); library.answerAttempts = attempts
+        if var session = library.session {
+            if session.id == jobs[index].attempt.sessionID { session.completed = max(0, session.completed - 1) }
+            if var current = session.current, current.card.id == card.id {
+                if current.presentationID == jobs[index].attempt.presentationID {
+                    current.card = library.cards[ci]; current.assessment = nil; current.revealedAt = nil; current.outcomes = [:]; session.current = current
+                } else {
+                    let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
+                        .filter { !(session.skippedCardIDs ?? []).contains($0.id) }
+                    session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
+                }
+            }
+            library.session = session
+        }
+        try Task.checkCancellation(); try await repository.commit(library, expectedRevision: library.revision)
+    }
     public func advanceCompletedVoiceAnswer(id: String, deviceID: String, ownerID: String, now: Date = Date()) async throws {
         var library = try await repository.read()
         guard let job = library.voiceJobs?.first(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID && $0.state == .completed }),
@@ -149,7 +199,7 @@ extension StudyService {
         let job = jobs[index]
         guard job.generation == generation, job.state == .marking, !job.attempt.assisted,
               let cardIndex = library.cards.firstIndex(where: { $0.id == job.card.id && !$0.retired && !$0.suspended }),
-              library.cards[cardIndex].version == job.card.version, !library.isDeckSuspended(job.card.deckID),
+              library.cards[cardIndex].version == (job.reconciliationCardVersion ?? job.card.version), !library.isDeckSuspended(job.card.deckID),
               library.liveNotes.first(where: { $0.id == job.note.id }) == job.note,
               library.settings.version == job.settings.version,
               job.attempt.evidence.allSatisfy({ EvidenceRetrieval.isCurrent($0, in: library) }) else { throw EngramError.conflict }
@@ -177,14 +227,22 @@ extension StudyService {
             jobs[index].state = .needsAttention; jobs[index].error = String(decoding: assessment.reason.utf8.prefix(1900), as: UTF8.self); jobs[index].generation += 1
             library.voiceJobs = jobs; try await repository.commit(library, expectedRevision: library.revision); return
         }
-        let outcomes = try scheduler.outcomes(state: job.card.schedule, history: library.activeReviews.filter { $0.cardID == job.card.id }, now: job.attempt.createdAt, settings: job.settings)
+        let baseline = library.reviews.filter { $0.cardID == job.card.id }
+            .min { $0.reviewedAt == $1.reviewedAt ? $0.id < $1.id : $0.reviewedAt < $1.reviewedAt }?.before ?? job.card.schedule
+        let reviewID = job.reviewID
+        let earlier = library.activeReviews.filter { $0.cardID == job.card.id && ($0.reviewedAt < job.attempt.createdAt || ($0.reviewedAt == job.attempt.createdAt && $0.id < reviewID)) }
+        let before: ScheduleState
+        if job.reconciliationCardVersion == nil { before = job.card.schedule }
+        else { before = try ReviewReconciliation.replay(card: job.card, events: earlier, settings: library.settings, scheduler: scheduler, baseline: baseline) }
+        let outcomes = try scheduler.outcomes(state: before, history: earlier, now: job.attempt.createdAt, settings: job.settings)
         guard let outcome = outcomes[rating], now >= job.attempt.createdAt else { throw EngramError.conflict }
-        let reviewID = "answer-" + job.attempt.presentationID
         guard !library.reviews.contains(where: { $0.id == reviewID }) else { throw EngramError.conflict }
-        library.cards[cardIndex].schedule = outcome; library.cards[cardIndex].version += 1
         var review = ReviewEvent(id: reviewID, cardID: job.card.id, deckID: job.card.deckID, sessionID: job.attempt.sessionID,
-            rating: rating, reviewedAt: job.attempt.createdAt, committedAt: now, before: job.card.schedule, after: outcome)
+            rating: rating, reviewedAt: job.attempt.createdAt, committedAt: now, before: before, after: outcome)
         review.settingsSnapshot = job.settings; review.assessment = assessment; library.reviews.append(review)
+        if job.reconciliationCardVersion == nil { library.cards[cardIndex].schedule = outcome }
+        else { library.cards[cardIndex].schedule = try ReviewReconciliation.replay(card: job.card, allEvents: library.reviews, corrections: library.corrections, settings: library.settings, scheduler: scheduler) }
+        library.cards[cardIndex].version += 1
         jobs[index].attempt.committedAt = now; jobs[index].state = .completed; jobs[index].generation += 1
         library.voiceJobs = jobs
         var attempts = library.answerAttempts ?? []; attempts.removeAll { $0.id == job.attempt.id }; attempts.append(jobs[index].attempt); library.answerAttempts = attempts

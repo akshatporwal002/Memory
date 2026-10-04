@@ -137,6 +137,78 @@ final class VoiceAnswerJobTests: XCTestCase {
         XCTAssertNotEqual(advanced.session?.current?.presentationID, captured.attempt.presentationID)
         XCTAssertEqual(advanced.reviews.count, 1)
     }
+    func testCompletedCorrectionReplaysLaterReviewsAndRegradesAtOriginalTimeOnce() async throws {
+        let service = try await fixture(count: 1)
+        let initial = try await service.snapshot()
+        let session = try XCTUnwrap(initial.session), item = try XCTUnwrap(session.current)
+        let note = try XCTUnwrap(initial.liveNotes.first)
+        let evidence = LocalAnswerEvidence.retrieve(note: note, prompt: note.front, library: initial)
+            .map { AttemptEvidence(id: $0.id, text: $0.text, version: $0.version) }
+        let job = try await service.captureVoiceAnswer(recordingID: UUID(), deviceID: "device", ownerID: "account-revision",
+            provider: "local", transcriptionModel: "parakeet", gradingModel: "fixture", billingPath: .local,
+            mode: .continueProcessing, sessionID: session.id, presentationID: item.presentationID,
+            evidence: evidence, localTranscript: "ATP", now: now)
+        let claim = try await service.claimVoiceAnswer(stage: .marking, deviceID: "device", ownerID: "account-revision")
+        let firstWorker = try XCTUnwrap(claim)
+        let correct = AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact")
+        try await service.commitVoiceAnswer(id: job.id, generation: firstWorker.generation, deviceID: "device", ownerID: "account-revision", assessment: correct, now: now.addingTimeInterval(1))
+        let laterTime = now.addingTimeInterval(2 * 86_400)
+        let laterSession = try await service.startSession(deckID: note.deckID, now: laterTime)
+        let laterItem = try XCTUnwrap(laterSession.current)
+        _ = try await service.reveal(sessionID: laterSession.id, presentationID: laterItem.presentationID, now: laterTime)
+        try await service.grade(sessionID: laterSession.id, presentationID: laterItem.presentationID, rating: .good, mutationID: "later-review", now: laterTime)
+        let beforeCorrection = try await service.snapshot()
+        let laterEvent = try XCTUnwrap(beforeCorrection.reviews.first { $0.id == "later-review" })
+        try await service.correctCompletedVoiceTranscript(id: job.id, deviceID: "device", ownerID: "account-revision", text: "ADP", now: laterTime.addingTimeInterval(1))
+        let removed = try await service.snapshot()
+        XCTAssertEqual(removed.activeReviews.map(\.id), ["later-review"])
+        XCTAssertEqual(removed.reviews.first { $0.id == "later-review" }, laterEvent)
+        XCTAssertEqual(removed.voiceJobs?.first?.transcriptRevisions, ["ATP"])
+        XCTAssertNil(removed.answerAttempts?.first?.committedAt)
+        let scheduler = FSRSScheduler()
+        let withoutFirst = try XCTUnwrap(scheduler.outcomes(state: job.card.schedule, history: [], now: laterTime, settings: initial.settings)[.good])
+        XCTAssertEqual(removed.cards.first?.schedule, withoutFirst)
+        do {
+            try await service.commitVoiceAnswer(id: job.id, generation: firstWorker.generation, deviceID: "device", ownerID: "account-revision", assessment: correct, now: laterTime.addingTimeInterval(2))
+            XCTFail("Old assessment restored")
+        } catch { }
+        let replacementClaim = try await service.claimVoiceAnswer(stage: .marking, deviceID: "device", ownerID: "account-revision")
+        let replacement = try XCTUnwrap(replacementClaim)
+        var incorrect = AnswerAssessment(outcome: .incorrect, reason: "The reference names ATP, not ADP.", method: "ai")
+        incorrect.evidenceIDs = evidence.map(\.id)
+        try await service.commitVoiceAnswer(id: job.id, generation: replacement.generation, deviceID: "device", ownerID: "account-revision", assessment: incorrect, now: laterTime.addingTimeInterval(3))
+        try await service.commitVoiceAnswer(id: job.id, generation: replacement.generation, deviceID: "device", ownerID: "account-revision", assessment: incorrect, now: laterTime.addingTimeInterval(4))
+        let saved = try await service.snapshot()
+        XCTAssertEqual(saved.reviews.count, 3)
+        XCTAssertEqual(saved.activeReviews.count, 2)
+        let revised = try XCTUnwrap(saved.activeReviews.first { $0.id == replacement.reviewID })
+        XCTAssertEqual(revised.reviewedAt, now)
+        XCTAssertEqual(revised.rating, .again)
+        let expected = try XCTUnwrap(scheduler.outcomes(state: revised.after, history: [revised], now: laterTime, settings: initial.settings)[.good])
+        XCTAssertEqual(saved.cards.first?.schedule, expected)
+        XCTAssertEqual(saved.reviews.first { $0.id == "later-review" }, laterEvent)
+        XCTAssertEqual(saved.answerAttempts?.first?.originalAnswer, "ADP")
+    }
+    func testCompletedCorrectionRejectsOtherOwnerAndEditedQuestionWithoutRemovingGrade() async throws {
+        let service = try await fixture(count: 1)
+        let job = try await capture(service)
+        let worker = try await readyForMarking(service)
+        try await service.commitVoiceAnswer(id: job.id, generation: worker.generation, deviceID: "device", ownerID: "account-revision", assessment: AnswerAssessment(outcome: .correct, reason: "Exact", method: "local-exact"), now: now.addingTimeInterval(1))
+        do {
+            try await service.correctCompletedVoiceTranscript(id: job.id, deviceID: "device", ownerID: "other", text: "ADP", now: now.addingTimeInterval(2))
+            XCTFail("Other owner accepted")
+        } catch { }
+        var draft = NoteDraft(note: job.note); draft.back = "new reference"
+        _ = try await service.saveNote(draft, now: now.addingTimeInterval(3))
+        do {
+            try await service.correctCompletedVoiceTranscript(id: job.id, deviceID: "device", ownerID: "account-revision", text: "ADP", now: now.addingTimeInterval(4))
+            XCTFail("Stale reference accepted")
+        } catch { }
+        let saved = try await service.snapshot()
+        XCTAssertEqual(saved.activeReviews.count, 1)
+        XCTAssertTrue(saved.corrections.isEmpty)
+        XCTAssertEqual(saved.voiceJobs?.first?.state, .completed)
+    }
     func testUnclearFeedbackSavesNoGradeAndRetryDoesNotRetranscribe() async throws {
         let service = try await fixture()
         _ = try await capture(service)

@@ -27,6 +27,14 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     public var error: String?
     public var usageJSON: Data?
     public var transcriptRevisions: [String]?
+    /// Optional for pre-correction jobs/backups. Content remains frozen; this
+    /// version authorizes only the reconciled scheduling projection.
+    public var reconciliationCardVersion: Int?
+    public var reviewRevision: Int?
+    public var reviewID: String {
+        let base = "answer-" + attempt.presentationID
+        return (reviewRevision ?? 0) == 0 ? base : base + "-voice-revision-" + String(reviewRevision ?? 0)
+    }
     public init(deviceID: String, ownerID: String, recordingID: UUID, provider: String, transcriptionModel: String,
                 billingPath: VoiceBillingPath, mode: VoiceReviewMode, note: Note, card: StudyCard,
                 settings: StudySettings, attempt: AnswerAttempt) {
@@ -37,7 +45,9 @@ public struct VoiceAnswerJob: Codable, Equatable, Identifiable, Sendable {
     public func validate() throws {
         guard !deviceID.isEmpty, !ownerID.isEmpty, deviceID.utf8.count <= 200, ownerID.utf8.count <= 500,
               !provider.isEmpty, provider.utf8.count <= 100, transcriptionModel.utf8.count <= 200,
-              generation >= 0, attempt.noteID == note.id, attempt.cardID == card.id, card.noteID == note.id, card.deckID == note.deckID,
+              generation >= 0, (reviewRevision ?? 0) >= 0, (reviewRevision ?? 0) <= 100,
+              reconciliationCardVersion.map({ $0 >= card.version }) ?? true,
+              attempt.noteID == note.id, attempt.cardID == card.id, card.noteID == note.id, card.deckID == note.deckID,
               attempt.modelID.utf8.count <= 300,
               attempt.cardVersion == card.version, attempt.originalAnswer.utf8.count <= 16_000,
               attempt.evidence.count <= 20, attempt.createdAt.timeIntervalSince1970.isFinite,

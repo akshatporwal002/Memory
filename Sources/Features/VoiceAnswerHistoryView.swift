@@ -19,14 +19,23 @@ struct VoiceAnswerHistoryView: View {
                         RichContentView(source: assessment.reason)
                     }
                     if let error = job.error { Text(error).engramErrorText() }
-                    if job.state.unresolved {
+                    if job.state.unresolved || job.state == .completed {
                         NavigationLink("Correct transcript") { VoiceTranscriptCorrectionView(model: model, job: job) }
+                    }
+                    if job.state.unresolved {
                         if job.state == .needsAttention, !job.attempt.originalAnswer.isEmpty {
                             Button("Retry marking") { Task { await model.voiceWork.retry(job, model: model) } }.disabled(model.busy)
                         }
                         Button("Cancel pending answer", role: .destructive) { Task { await model.voiceWork.cancel(job, model: model) } }.disabled(model.busy)
                     }
                     if job.state == .completed { Text("Saved once at the original answer time.").font(.footnote).foregroundStyle(.secondary) }
+                    if let revisions = job.transcriptRevisions, !revisions.isEmpty {
+                        DisclosureGroup("Recognition history") {
+                            ForEach(Array(revisions.enumerated()), id: \.offset) { index, text in
+                                Text("\(index + 1). \(text)").font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 }
             }
         }.modifier(UtilityListStyle()).navigationTitle("Voice answers")
@@ -53,7 +62,7 @@ private struct VoiceTranscriptCorrectionView: View {
             EngramListSection { Text(job.attempt.prompt) }
             EngramListSection("What you actually said") {
                 TextEditor(text: $text).frame(minHeight: 160)
-                Text("Correct recognition errors, preserving mistakes in your original answer. This replaces pending feedback, not a completed grade.").font(.footnote).foregroundStyle(.secondary)
+                Text(job.state == .completed ? "Correct recognition errors, preserving your original mistakes. Saving removes the prior grade and recalculates due dates, then marks the corrected transcript at the original answer time. Later reviews remain in history." : "Correct recognition errors, preserving mistakes in your original answer. This replaces pending feedback.").font(.footnote).foregroundStyle(.secondary)
                 Button("Save correction") { Task { await model.voiceWork.revise(job, text: text, model: model) } }
                     .disabled(model.busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.utf8.count > 16_000)
             }

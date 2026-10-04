@@ -113,3 +113,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added pending-count navigation, results/transcript correction/retry/cancel forms and Wait-mode advancement without duplicate grading. Worker scopes stop on suspension and connection changes.
 - Added four focused tests; none has run. A fresh bounded SSH check still timed out. No new screenshots or phone installation can be claimed. See VOICE-CAPTURE-INTEGRATION.md for remaining production, reconciliation and lifecycle gates.
 - New question types remain proposals awaiting individual user approval. No stay-awake helper was started in this stage.
+
+## Completed transcript correction, validation pending
+
+- Added atomic removal of the previous voice grade, retained recognition/assessment revisions and replay of later reviews from the preserved imported baseline. Replacement grading keeps the original answer time and a stable revision-specific ID.
+- Correcting a completed result is available through the same transcript editor on iPhone/iPad. Its explanation states that saving recalculates due dates. A changed reference, account, unsupported scheduling state or concurrent mutation prevents an automatic overwrite.
+- Cloud reconciliation uses the full review/correction history so a later event cannot resurrect a removed first grade. Three focused tests are written; compilation, tests and simulator/device review remain unexecuted pending Mac access.
