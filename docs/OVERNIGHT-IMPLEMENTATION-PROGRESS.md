@@ -126,3 +126,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Same-account/device pending jobs survive grading-connection changes visibly. Cancel releases their cards; retries/corrections stay tied to the original connection. New jobs carry explicit app-account ownership; legacy format recognition stays inside the account-isolated repository.
 - Removed grades are labelled as previous results rather than claiming they remain scheduled. No question layout or new question type was added.
 - Three focused tests are written, unexecuted. A new bounded Mac SSH check still timed out. Phone/iPad screenshots and installation remain pending; the stay-awake helper remains off.
+
+## Existing equation structure resizing, validation pending
+
+- Added in-place matrix/piecewise resizing through a compact Structure menu. Coordinates, nested expressions and stable field identities survive expansion; removing entered content requires confirmation and remains undoable.
+- Added four core tests plus iPhone/landscape iPad resize and before/after capture flows. Rejected dimension/slot-limit changes preserve the whole document and editing history. All remain unexecuted pending Mac access.
+- This extends the separately approved notation keyboard on existing text-answer cards. It adds no question type or solver. Direct visual/native-caret editing, optional calculators and runtime visual review remain outstanding.

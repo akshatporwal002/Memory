@@ -113,10 +113,20 @@ public enum MathEntryTemplate: String, CaseIterable, Hashable, Sendable {
 
 public struct MathEntryDocument: Equatable, Sendable {
     public struct Slot: Identifiable, Equatable, Sendable { public let id: UUID; public let label: String; public let value: String }
+    public struct Dimensions: Equatable, Sendable {
+        public let kind: MathEntryTemplate
+        public let rows: Int
+        public let columns: Int
+    }
     private struct Definition: Equatable, Sendable {
         let kind: MathEntryTemplate
         let labels: [String]
         let pattern: String
+        let dimensions: Dimensions?
+        init(kind: MathEntryTemplate, labels: [String], pattern: String, dimensions: Dimensions? = nil) {
+            self.kind = kind; self.labels = labels; self.pattern = pattern
+            self.dimensions = dimensions ?? (kind == .matrix ? Dimensions(kind: kind, rows: 2, columns: 2) : kind == .piecewise ? Dimensions(kind: kind, rows: 2, columns: 2) : nil)
+        }
         var title: String { kind.title }
     }
     private indirect enum Node: Equatable, Sendable {
@@ -162,15 +172,80 @@ public struct MathEntryDocument: Equatable, Sendable {
     }
     public mutating func insertMatrix(rows: Int, columns: Int, at id: UUID, offset: Int? = nil) -> UUID? {
         guard (1...6).contains(rows), (1...6).contains(columns) else { return nil }
+        return insert(Self.matrixDefinition(rows: rows, columns: columns), at: id, offset: offset)
+    }
+    private static func matrixDefinition(rows: Int, columns: Int) -> Definition {
         let labels = (0..<rows).flatMap { row in (0..<columns).map { column in "Row \(row + 1) column \(column + 1)" } }
         let entries = (0..<rows).map { row in (0..<columns).map { column in "«\(row * columns + column)»" }.joined(separator: "&") }.joined(separator: #"\\"#)
-        return insert(Definition(kind: .matrix, labels: labels, pattern: #"\begin{pmatrix}"# + entries + #"\end{pmatrix}"#), at: id, offset: offset)
+        return Definition(kind: .matrix, labels: labels, pattern: #"\begin{pmatrix}"# + entries + #"\end{pmatrix}"#, dimensions: Dimensions(kind: .matrix, rows: rows, columns: columns))
     }
     public mutating func insertPiecewise(cases: Int, at id: UUID, offset: Int? = nil) -> UUID? {
         guard (1...6).contains(cases) else { return nil }
+        return insert(Self.piecewiseDefinition(cases: cases), at: id, offset: offset)
+    }
+    private static func piecewiseDefinition(cases: Int) -> Definition {
         let labels = (1...cases).flatMap { ["Case \($0) expression", "Case \($0) condition"] }
         let entries = (0..<cases).map { "«\($0 * 2)»&«\($0 * 2 + 1)»" }.joined(separator: #"\\"#)
-        return insert(Definition(kind: .piecewise, labels: labels, pattern: #"\begin{cases}"# + entries + #"\end{cases}"#), at: id, offset: offset)
+        return Definition(kind: .piecewise, labels: labels, pattern: #"\begin{cases}"# + entries + #"\end{cases}"#, dimensions: Dimensions(kind: .piecewise, rows: cases, columns: 2))
+    }
+    public func dimensions(containing id: UUID) -> Dimensions? {
+        Self.resizable(nodes, id: id)?.0.dimensions
+    }
+    public func resizeWouldDiscardContent(containing id: UUID, rows: Int, columns: Int) -> Bool {
+        guard let (definition, arguments) = Self.resizable(nodes, id: id), let old = definition.dimensions else { return false }
+        return arguments.enumerated().contains { index, argument in
+            (index / old.columns >= rows || index % old.columns >= columns) && Self.hasContent(argument)
+        }
+    }
+    /// Resize the nearest matrix/cases ancestor. Existing coordinates, nested
+    /// expressions and slot identities survive; nonempty removals require consent.
+    @discardableResult public mutating func resize(containing id: UUID, rows: Int, columns: Int, allowDiscardingContent: Bool = false) -> Bool {
+        guard (1...6).contains(rows), (1...6).contains(columns), let old = dimensions(containing: id),
+              old.kind != .piecewise || columns == 2,
+              allowDiscardingContent || !resizeWouldDiscardContent(containing: id, rows: rows, columns: columns) else { return false }
+        var candidate = nodes
+        guard Self.resize(&candidate, id: id, rows: rows, columns: columns),
+              Self.slots(candidate, label: "").count <= 100, Self.render(candidate).utf8.count <= 12_000,
+              (candidate.map(\.depth).max() ?? 0) <= 12 else { return false }
+        accept(candidate); return true
+    }
+    private static func hasContent(_ values: [Node]) -> Bool {
+        values.contains { node in
+            switch node {
+            case .text(_, let text): return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .separator: return false
+            case .template: return true
+            }
+        }
+    }
+    private static func resizable(_ values: [Node], id: UUID) -> (Definition, [[Node]])? {
+        for node in values {
+            guard case .template(let definition, let arguments) = node else { continue }
+            for argument in arguments { if let found = resizable(argument, id: id) { return found } }
+            if definition.dimensions != nil, arguments.contains(where: { slots($0, label: "").contains { $0.id == id } }) { return (definition, arguments) }
+        }
+        return nil
+    }
+    private static func resize(_ values: inout [Node], id: UUID, rows: Int, columns: Int) -> Bool {
+        for index in values.indices {
+            guard case .template(let definition, var arguments) = values[index] else { continue }
+            for ai in arguments.indices {
+                if resize(&arguments[ai], id: id, rows: rows, columns: columns) {
+                    values[index] = .template(definition, arguments); return true
+                }
+            }
+            guard let old = definition.dimensions,
+                  arguments.contains(where: { slots($0, label: "").contains { $0.id == id } }) else { continue }
+            let replacement = old.kind == .matrix ? matrixDefinition(rows: rows, columns: columns) : piecewiseDefinition(cases: rows)
+            let contents: [[Node]] = (0..<rows).flatMap { row in
+                (0..<columns).map { column -> [Node] in
+                    if row < old.rows, column < old.columns { return arguments[row * old.columns + column] }
+                    return [.text(UUID(), "")]
+                }
+            }
+            values[index] = .template(replacement, contents); return true
+        }
+        return false
     }
     private mutating func insert(_ template: Definition, at id: UUID, offset: Int?) -> UUID? {
         guard slots.count + template.labels.count + 1 <= 100, (nodes.map(\.depth).max() ?? 0) < 12 else { return nil }

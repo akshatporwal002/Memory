@@ -14,6 +14,8 @@ struct MathEntryView: View {
     @State private var shape: Shape?
     @State private var rows = 2
     @State private var columns = 2
+    @State private var resizingSlot: UUID?
+    @State private var confirmShrink = false
     @FocusState private var focused: UUID?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.engramTheme) private var theme
@@ -36,9 +38,18 @@ struct MathEntryView: View {
                             Button("Redo", systemImage: "arrow.uturn.forward") { document.redo(); normalizeSelection() }.disabled(!document.canRedo)
                             Spacer()
                             if let selected, document.canRemoveTemplate(containing: selected) {
-                                Button("Remove template") {
-                                    if document.removeTemplate(containing: selected) { normalizeSelection() }
-                                    else { error = "Shorten this expression before removing the template." }
+                                Menu("Structure") {
+                                    if let dimensions = document.dimensions(containing: selected) {
+                                        Button("Resize " + (dimensions.kind == .matrix ? "matrix" : "cases")) {
+                                            resizingSlot = selected; rows = dimensions.rows; columns = dimensions.columns
+                                            focused = nil; error = nil
+                                            shape = dimensions.kind == .matrix ? .matrix : .piecewise
+                                        }.accessibilityIdentifier("math-resize")
+                                    }
+                                    Button("Remove template") {
+                                        if document.removeTemplate(containing: selected) { normalizeSelection() }
+                                        else { error = "Shorten this expression before removing the template." }
+                                    }
                                 }
                             }
                         }.buttonStyle(.plain).font(.subheadline).frame(minHeight: 44)
@@ -67,19 +78,23 @@ struct MathEntryView: View {
             .sheet(item: $shape) { kind in
                 NavigationStack {
                     Form {
-                        Stepper(kind == .matrix ? "Rows: \(rows)" : "Cases: \(rows)", value: $rows, in: 1...6)
-                        if kind == .matrix { Stepper("Columns: \(columns)", value: $columns, in: 1...6) }
-                        Button("Insert " + (kind == .matrix ? "matrix" : "piecewise expression")) {
-                            if let id = selected ?? document.slots.first?.id {
-                                let next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id) : document.insertPiecewise(cases: rows, at: id)
-                                if let next { selected = next; focused = nil; error = nil }
-                                else { error = "This expression has reached its editing limit." }
-                            }
-                            shape = nil
+                        Stepper(kind == .matrix ? "Rows: \(rows)" : "Cases: \(rows)", value: $rows, in: 1...6).accessibilityIdentifier("math-dimension-rows")
+                        if kind == .matrix { Stepper("Columns: \(columns)", value: $columns, in: 1...6).accessibilityIdentifier("math-dimension-columns") }
+                        if let resizingSlot, document.resizeWouldDiscardContent(containing: resizingSlot, rows: rows, columns: columns) {
+                            Text("This removes values outside the new dimensions. Undo can restore them.").font(.footnote).foregroundStyle(palette.secondaryText)
                         }
+                        Button((resizingSlot == nil ? "Insert " : "Resize ") + (kind == .matrix ? "matrix" : "piecewise expression")) {
+                            if let resizingSlot, document.resizeWouldDiscardContent(containing: resizingSlot, rows: rows, columns: columns) { confirmShrink = true }
+                            else { applyDimensions(kind) }
+                        }.accessibilityIdentifier("math-dimensions-apply")
+                        if let error { Text(error).engramErrorText().font(.footnote) }
                     }.modifier(UtilityListStyle()).navigationTitle(kind == .matrix ? "Matrix size" : "Piecewise cases")
                         .engramInlineTitle().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { shape = nil } } }
                 }.presentationDetents([.medium])
+                    .confirmationDialog("Remove values outside the new dimensions?", isPresented: $confirmShrink, titleVisibility: .visible) {
+                        Button("Resize and remove values", role: .destructive) { applyDimensions(kind, allowDiscardingContent: true) }
+                        Button("Keep current dimensions", role: .cancel) { }
+                    }
             }
         }
     }
@@ -108,7 +123,7 @@ struct MathEntryView: View {
                 ForEach(MathEntryTemplate.allCases.filter { $0.category == category }, id: \.self) { template in
                     Button(template.title) {
                         if template == .matrix || template == .piecewise {
-                            rows = 2; columns = 2; focused = nil
+                            rows = 2; columns = 2; focused = nil; resizingSlot = nil; error = nil
                             shape = template == .matrix ? .matrix : .piecewise; return
                         }
                         guard let id = selected ?? document.slots.first?.id else { return }
@@ -136,6 +151,19 @@ struct MathEntryView: View {
         let current = slots.firstIndex { $0.id == (focused ?? selected) } ?? 0
         let next = max(0, min(slots.count - 1, current + direction))
         selected = slots[next].id; focused = slots[next].id
+    }
+    private func applyDimensions(_ kind: Shape, allowDiscardingContent: Bool = false) {
+        if let resizingSlot {
+            guard document.resize(containing: resizingSlot, rows: rows, columns: columns, allowDiscardingContent: allowDiscardingContent) else {
+                error = "These dimensions exceed the expression limits. Your values were kept."; return
+            }
+            normalizeSelection()
+        } else if let id = selected ?? document.slots.first?.id {
+            let next = kind == .matrix ? document.insertMatrix(rows: rows, columns: columns, at: id) : document.insertPiecewise(cases: rows, at: id)
+            guard let next else { error = "This expression has reached its editing limit."; return }
+            selected = next; focused = nil; error = nil
+        }
+        shape = nil
     }
     private func normalizeSelection() {
         focused = nil

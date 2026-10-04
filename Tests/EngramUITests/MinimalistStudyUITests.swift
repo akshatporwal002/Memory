@@ -1,6 +1,42 @@
 import XCTest
 
 final class MinimalistStudyUITests: XCTestCase {
+    @MainActor func testMatrixResizeOnPhone() {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        exerciseMatrixResize(app, prefix: "iPhone")
+    }
+    @MainActor func testMatrixResizeOnIPadLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
+        let landscape = NSPredicate { _, _ in app.frame.width > app.frame.height }
+        expectation(for: landscape, evaluatedWith: app); waitForExpectations(timeout: 10)
+        exerciseMatrixResize(app, prefix: "iPad")
+        XCTAssertGreaterThan(app.screenshot().image.size.width, app.screenshot().image.size.height)
+    }
+    @MainActor private func exerciseMatrixResize(_ app: XCUIApplication, prefix: String) {
+        XCTAssertTrue(app.buttons["Start review"].waitForExistence(timeout: 15)); app.buttons["Start review"].tap()
+        XCTAssertTrue(app.buttons["Type answer"].waitForExistence(timeout: 5)); app.buttons["Type answer"].tap()
+        capture(prefix + "-Typed-Before-Matrix", app)
+        app.buttons["typed-answer-equation"].tap()
+        app.buttons["math-category"].tap(); app.buttons["Matrices"].tap()
+        XCTAssertTrue(app.buttons["math-template-matrix"].waitForExistence(timeout: 5)); app.buttons["math-template-matrix"].tap()
+        app.buttons["math-dimensions-apply"].tap()
+        let first = app.textFields["math-slot-0"]
+        XCTAssertTrue(first.waitForExistence(timeout: 5)); first.tap(); first.typeText("7")
+        if app.keyboards.count > 0 { app.buttons["Done"].tap() }
+        capture(prefix + "-Matrix-Before-Resize", app)
+        app.buttons["Structure"].tap(); app.buttons["math-resize"].tap()
+        let rows = app.steppers["math-dimension-rows"]
+        XCTAssertTrue(rows.waitForExistence(timeout: 5)); rows.buttons["Increment"].tap()
+        app.buttons["math-dimensions-apply"].tap()
+        XCTAssertTrue(app.textFields["math-slot-5"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.textFields["math-slot-0"].value as? String, "7")
+        capture(prefix + "-Matrix-After-Resize", app)
+        app.buttons["Undo"].tap()
+        XCTAssertFalse(app.textFields["math-slot-5"].exists)
+        XCTAssertEqual(app.textFields["math-slot-0"].value as? String, "7")
+    }
     @MainActor func testEquationEntryOnExistingTypedAnswer() {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
         exerciseEquationEntry(app, prefix: "iPhone")
