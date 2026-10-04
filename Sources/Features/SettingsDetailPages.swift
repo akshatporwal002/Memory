@@ -117,11 +117,8 @@ private struct TimeZonePage: View {
 struct AISettingsPage: View {
     @Bindable var model: EngramModel
     var body: some View {
-        Form {
-            EngramListSection { NavigationLink("Engram account") { CloudAccountView(model:model) } }
-            if model.chatGPT.activeAccount != nil {
-                EngramListSection("ChatGPT plan & usage") { ChatGPTConnectionView(connection: model.chatGPT) }
-            }
+        List {
+            AccountSettingsRows(model: model)
             EngramListSection { NavigationLink("Learning memory") { LearningMemoryView(model:model) } }
             EngramListSection {
                 Toggle("AI answer marking", isOn: Binding(get: { model.aiMarker.enabled }, set: { model.aiMarker.enabled = $0 }))

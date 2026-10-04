@@ -29,7 +29,7 @@ struct NativeAppleSignIn: View {
                 if (error as NSError).code != ASAuthorizationError.canceled.rawValue { account.error = error.localizedDescription }
             }
         }
-        .frame(height: 44)
-        .disabled(!account.configured || account.busy)
+        .frame(height: 48)
+        .disabled(!account.configured || !account.appleSignInEnabled || account.busy)
     }
 }

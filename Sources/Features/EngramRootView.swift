@@ -110,6 +110,9 @@ public struct EngramRootView: View {
             if let id = model.sharingDeckID { NavigationStack { DeckSharingView(model:model,deckID:id) } }
         }
         .onOpenURL { url in
+            if url.scheme == "engram", url.host == "app-auth", model.cloud.hasPendingLoginLink {
+                Task { await model.cloud.completeLoginLink(url) }; return
+            }
             guard url.scheme == "engram",url.host == "join",let token = URLComponents(url:url,resolvingAgainstBaseURL:false)?.queryItems?.first(where: { $0.name == "token" })?.value,
                   token.count == 64,token.allSatisfy({ $0.isHexDigit }) else { return }
             model.cloud.pendingJoinToken = token; model.cloudAccountPresented = true

@@ -35,9 +35,6 @@ struct ChatGPTConnectionView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text(account.label)
-                            // Client suffix distinguishes separate registrations/workspaces with the same email.
-                            Text("Connection …" + String(account.clientID.suffix(8)))
-                                .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
                         }
                         Spacer()
                         Button(account.credentials == nil ? "Reconnect" : "Use account") {
@@ -71,9 +68,7 @@ struct ChatGPTConnectionView: View {
                     if let account = connection.activeAccount { Button("Sign in again") { signIn(account.clientID) } }
                 }
             }
-            Text("Connect your AI account separately from Engram sync. Eligible accounts can grant plan usage; requests share your ChatGPT limits. Engram cannot access your ChatGPT conversations.")
-                .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-            Text("AI answer marking can use this connection when you enable it. Audio is processed on your device.")
+                Text("Eligible requests use your ChatGPT plan. Your existing ChatGPT conversations are not imported.")
                 .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
             HStack {
                 Link("Manage usage", destination: ChatGPTOAuth.usageURL)

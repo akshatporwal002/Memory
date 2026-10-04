@@ -23,14 +23,14 @@ public struct EngramButtonStyle: ButtonStyle {
             .padding(.vertical, EngramSpacing.compact)
             .frame(minHeight: EngramShape.touchTarget)
             .foregroundStyle(ink)
-            .background(fill, in: RoundedRectangle(cornerRadius: EngramShape.control, style: .continuous))
+            .background(fill, in: Capsule())
             .overlay {
-                RoundedRectangle(cornerRadius: EngramShape.control, style: .continuous)
+                Capsule()
                     .strokeBorder(palette.controlBorder, lineWidth: 1)
             }
             .overlay {
                 if focused {
-                    RoundedRectangle(cornerRadius: EngramShape.control + 4, style: .continuous)
+                    Capsule()
                         .strokeBorder(palette.accentInk, lineWidth: 3).padding(-4)
                 }
             }
@@ -118,14 +118,14 @@ private struct GradeStyle: ButtonStyle {
         configuration.label.padding(EngramSpacing.compact)
             .frame(minHeight: EngramShape.touchTarget)
             .multilineTextAlignment(.center).foregroundStyle(ink)
-            .background(fill, in: RoundedRectangle(cornerRadius: EngramShape.control, style: .continuous))
+            .background(fill, in: Capsule())
             .overlay {
-                RoundedRectangle(cornerRadius: EngramShape.control, style: .continuous)
+                Capsule()
                     .strokeBorder(theme.palette(for: scheme).controlBorder, lineWidth: 1)
             }
             .overlay {
                 if focused {
-                    RoundedRectangle(cornerRadius: EngramShape.control + 4, style: .continuous)
+                    Capsule()
                         .strokeBorder(theme.palette(for: scheme).accentInk, lineWidth: 3).padding(-4)
                 }
             }
@@ -162,12 +162,10 @@ public struct EngramInlineError: View {
     public init(message: String) { self.message = message }
     public var body: some View {
         Label(message, systemImage: "exclamationmark.circle")
-            .font(theme.font(.body)).fixedSize(horizontal: false, vertical: true)
+            .font(theme.font(.metadata)).fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(theme.palette(for: scheme).againInk)
-            .padding(EngramSpacing.compact)
+            .padding(.vertical, EngramSpacing.small)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.palette(for: scheme).againFill,
-                        in: RoundedRectangle(cornerRadius: EngramShape.control, style: .continuous))
             .accessibilityElement(children: .combine)
     }
 }

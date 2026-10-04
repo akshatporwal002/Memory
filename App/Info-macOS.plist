@@ -5,6 +5,7 @@
 	<key>EngramSupabaseURL</key><string>https://heedprsusmrwxasdixbt.supabase.co</string>
 	<key>EngramSupabasePublishableKey</key><string>sb_publishable_n_N8rBBpowlhHHEgJwCUow_zm-3Gcj0</string>
 	<key>EngramCloudPilotEnabled</key><false/>
+	<key>EngramAppleSignInEnabled</key><false/>
 	<key>CFBundleURLTypes</key>
 	<array><dict><key>CFBundleURLName</key><string>dev.engram.links</string><key>CFBundleURLSchemes</key><array><string>engram</string></array></dict></array>
 	<key>NSMicrophoneUsageDescription</key>

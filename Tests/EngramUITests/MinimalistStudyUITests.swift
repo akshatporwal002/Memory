@@ -15,7 +15,7 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         app.buttons["Settings"].tap()
         app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
-        app.buttons["Engram account"].tap()
+        XCTAssertFalse(app.buttons["Engram account"].exists)
         XCTAssertTrue(app.buttons["account-chatgpt"].waitForExistence(timeout: 5))
         capture("Account-Unified-Light", app)
     }
@@ -39,7 +39,7 @@ final class MinimalistStudyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["library-deck-ui-deck"].waitForExistence(timeout: 5))
         app.buttons["Settings"].tap()
         app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
-        app.buttons["Engram account"].tap()
+        XCTAssertFalse(app.buttons["Engram account"].exists)
         for id in ["account-chatgpt", "account-google", "account-apple", "account-email"] {
             XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5))
         }
@@ -47,6 +47,20 @@ final class MinimalistStudyUITests: XCTestCase {
         app.buttons["account-email"].tap()
         XCTAssertTrue(app.textFields["you@example.com"].waitForExistence(timeout: 5))
         capture("Account-Email-Dark", app)
+    }
+    @MainActor func testIPadInlineAccountCapture() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch()
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
+        app.buttons["Settings"].tap()
+        app.buttons.containing(.staticText, identifier: "AI & Connections").firstMatch.tap()
+        XCTAssertTrue(app.buttons["account-chatgpt"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Engram account"].exists)
+        capture("iPad-Inline-Account", app)
+        app.buttons["account-email"].tap()
+        XCTAssertTrue(app.textFields["you@example.com"].waitForExistence(timeout: 5))
+        capture("iPad-Inline-Email", app)
     }
     @MainActor func testMemoryGraphWindows() {
         let app = launch()

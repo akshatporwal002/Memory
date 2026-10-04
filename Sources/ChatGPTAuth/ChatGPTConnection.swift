@@ -50,6 +50,7 @@ public enum ChatGPTConnectionState: String,Sendable { case disconnected,connecti
         self.storage = storage; self.client = client; self.makeListener = makeListener; self.makeAttempt = makeAttempt
         do {
             vault = try storage.load() ?? ChatGPTVault()
+            vault.normalizeRegistrations()
             try storage.save(vault)
             storageReady = true; publish()
         } catch { self.error = ChatGPTAuthError.secureStorageUnavailable.localizedDescription }
@@ -76,13 +77,7 @@ public enum ChatGPTConnectionState: String,Sendable { case disconnected,connecti
                 let registration = try await client.exchange(callback, attempt: attempt)
                 try Task.checkCancellation()
                 var updated = vault
-                if let index = updated.registrations.firstIndex(where: { $0.clientID == registration.clientID }) {
-                    guard updated.registrations[index].subject == registration.subject else { throw ChatGPTAuthError.invalidIdentity }
-                    var replacement = registration
-                    replacement.acknowledgedPlanUsage = updated.registrations[index].acknowledgedPlanUsage
-                    updated.registrations[index] = replacement
-                } else { updated.registrations.append(registration) }
-                updated.activeClientID = registration.clientID
+                try updated.accept(registration)
                 try persist(updated)
                 showPlanConfirmation = activeAccount?.planUsageEnabled == true && activeAccount?.acknowledgedPlanUsage == false
                 if !registration.planUsageEnabled { notice = "Account connected. ChatGPT plan usage was not granted." }
@@ -117,9 +112,7 @@ public enum ChatGPTConnectionState: String,Sendable { case disconnected,connecti
         }
         do {
             var updated = vault
-            if let index = updated.registrations.firstIndex(where: { $0.clientID == account.clientID }) {
-                updated.registrations[index].credentials = nil
-            }
+            updated.registrations.removeAll { $0.subject == account.subject }
             updated.activeClientID = nil
             try persist(updated)
             notice = revoked ? "Signed out of ChatGPT on this device." :

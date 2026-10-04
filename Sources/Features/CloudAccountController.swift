@@ -16,6 +16,51 @@ import CryptoKit
     private(set) var localProfileID: String?
     var pendingChatGPTProfile: ChatGPTRegistration?
     var signedIn: Bool { userID != nil || localProfileID != nil }
+    private(set) var loginIdentities: [AppLoginIdentity] = []
+    private(set) var pendingLinkUserID: UUID?
+    private static let pendingLinkKey = "engram.pendingIdentityLink"
+    var hasPendingLoginLink: Bool {
+        pendingLinkUserID != nil || UserDefaults.standard.data(forKey: Self.pendingLinkKey) != nil
+    }
+    private func savePendingLink(_ id: UUID?) {
+        pendingLinkUserID = id
+        if let id, let data = try? JSONEncoder().encode(PendingIdentityLink(userID: id)) {
+            UserDefaults.standard.set(data, forKey: Self.pendingLinkKey)
+        } else { UserDefaults.standard.removeObject(forKey: Self.pendingLinkKey) }
+    }
+    private func restoredPendingLink(for id: UUID) -> PendingIdentityLink? {
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingLinkKey),
+              let link = try? JSONDecoder().decode(PendingIdentityLink.self, from: data),
+              link.isValid(for: id) else { return nil }
+        return link
+    }
+    var appleSignInEnabled: Bool { Bundle.main.object(forInfoDictionaryKey: "EngramAppleSignInEnabled") as? Bool == true }
+    func refreshLoginIdentities() async {
+        guard let client, userID != nil else { loginIdentities = []; return }
+        do { loginIdentities = try await client.loginIdentities() }
+        catch { self.error = error.localizedDescription }
+    }
+    func linkLoginMethod(_ provider: String) async {
+        guard let client, let id = userID, !busy, pendingLinkUserID == nil else { return }
+        busy = true; error = nil; savePendingLink(id); defer { busy = false }
+        do { try await client.linkProvider(provider, expectedUserID: id) }
+        catch { savePendingLink(nil); self.error = error.localizedDescription }
+    }
+    func cancelLoginLink() { savePendingLink(nil) }
+    func completeLoginLink(_ url: URL) async {
+        guard let client, !busy else { return }
+        do {
+            let id = try await client.currentUserID()
+            guard restoredPendingLink(for: id) != nil, userID == nil || userID == id else {
+                savePendingLink(nil); error = "This linking request expired. Try linking the account again."; return
+            }
+            pendingLinkUserID = id
+        } catch { savePendingLink(nil); self.error = error.localizedDescription; return }
+        guard let id = pendingLinkUserID else { return }
+        busy = true; defer { busy = false; savePendingLink(nil) }
+        do { try await client.completeIdentityLink(url, expectedUserID: id); await refreshLoginIdentities() }
+        catch { self.error = error.localizedDescription }
+    }
     func useChatGPTProfile(_ account: ChatGPTRegistration, upload: Bool, model: EngramModel) async {
         guard let repository, account.credentials != nil, !busy, !model.busy, !model.typedAnswer.busy, !model.markingAnswer else { return }
         busy = true; defer { busy = false }
@@ -63,7 +108,10 @@ import CryptoKit
     func signInWithApple(idToken: String, nonce: String) async {
         guard let client, !busy else { return }
         busy = true; error = nil; defer { busy = false }
-        do { finishSignIn(try await client.signInWithApple(idToken: idToken, nonce: nonce)) }
+        do {
+            if let id = userID { try await client.linkApple(idToken: idToken, nonce: nonce, expectedUserID: id); await refreshLoginIdentities() }
+            else { finishSignIn(try await client.signInWithApple(idToken: idToken, nonce: nonce)) }
+        }
         catch { self.error = error.localizedDescription }
     }
     func sendEmailCode(_ email: String) async {
@@ -72,7 +120,11 @@ import CryptoKit
         guard address.count <= 254, address.contains("@"), !address.contains(where: { $0.isWhitespace }) else { error = "Enter a valid email address."; return }
         guard Date() >= emailResendAfter else { error = "Please wait a minute before requesting another code."; return }
         busy = true; error = nil; defer { busy = false }
-        do { try await client.sendEmailCode(email: address); emailCodeAddress = address; emailResendAfter = Date().addingTimeInterval(60) }
+        do {
+            if let id = userID { try await client.requestEmailLink(address, expectedUserID: id) }
+            else { try await client.sendEmailCode(email: address) }
+            emailCodeAddress = address; emailResendAfter = Date().addingTimeInterval(60)
+        }
         catch { self.error = error.localizedDescription }
     }
     func verifyEmailCode(_ code: String) async {
@@ -80,7 +132,12 @@ import CryptoKit
         let value = code.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (6...10).contains(value.count), value.allSatisfy({ $0.isASCII && $0.isNumber }) else { error = "Enter the verification code from your email."; return }
         busy = true; error = nil; defer { busy = false }
-        do { finishSignIn(try await client.verifyEmailCode(email: email, code: value)); emailCodeAddress = nil }
+        do {
+            if let id = userID {
+                if try await client.verifyEmailLink(email, code: value, expectedUserID: id) { emailCodeAddress = nil; await refreshLoginIdentities() }
+                else { error = "Confirm the code from your other inbox too to finish linking email." }
+            } else { finishSignIn(try await client.verifyEmailCode(email: email, code: value)); emailCodeAddress = nil }
+        }
         catch { self.error = error.localizedDescription }
     }
     func changeEmail() { emailCodeAddress = nil; error = nil }
@@ -125,6 +182,7 @@ import CryptoKit
         guard !model.busy, !model.typedAnswer.busy, !model.markingAnswer else {
             error = "Finish the current edit or answer review before switching accounts."; return
         }
+        savePendingLink(nil); loginIdentities = []; emailCodeAddress = nil
         if localProfileID != nil, let repository {
             guard !busy, !model.busy, !model.typedAnswer.busy else { return }
             do {

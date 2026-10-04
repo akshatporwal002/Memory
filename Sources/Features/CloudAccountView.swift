@@ -5,21 +5,36 @@ import DesignSystem
 
 struct CloudAccountView: View {
     @Bindable var model: EngramModel
+    var body: some View {
+        List { AccountSettingsRows(model: model) }
+            .modifier(UtilityListStyle()).navigationTitle("Engram account")
+    }
+}
+
+struct AccountSettingsRows: View {
+    @Bindable var model: EngramModel
     @State private var confirmSignOut = false
     @State private var token = ""
     var body: some View {
-        Form {
+        Group {
             if model.cloud.signedIn {
                 EngramListSection {
                     Label("Connected",systemImage:"person.crop.circle.badge.checkmark")
                     Text(model.cloud.status).font(.caption).engramSecondaryText()
                     if model.cloud.syncEnabled && model.cloud.userID != nil { Button("Sync now") { Task { await model.cloud.sync(model:model) } } }
                     Button("Sign out",role:.destructive) { confirmSignOut = true }
-                    if model.chatGPT.activeAccount == nil { EngramAccountSignIn(model: model, linkingAIOnly: true) }
-                    else { LabeledContent("AI access", value: model.chatGPT.activeAccount?.label ?? "ChatGPT") }
                 } header: { Text("Account") } footer: { Text("Your libraries belong to your Engram profile. Eligible AI requests use your connected ChatGPT plan.") }
                 EngramListSection { LibrarySpacePicker(model: model) }
-            } else { EngramAccountSignIn(model: model) }
+            }
+            EngramAccountSignIn(model: model, compact: true)
+            if model.cloud.userID != nil {
+                ForEach(model.cloud.loginIdentities) { identity in
+                    Label(identity.provider.capitalized + " linked", systemImage: "checkmark").font(.caption).engramSecondaryText()
+                }
+            }
+            if model.cloud.pendingLinkUserID != nil {
+                HStack { Text("Finish linking in your browser").font(.caption); Spacer(); Button("Cancel") { model.cloud.cancelLoginLink() } }
+            }
             if model.cloud.userID != nil && model.cloud.syncEnabled {
                 EngramListSection("Join a shared deck") {
                     TextField("Invitation link",text:$token).textContentType(.URL)
@@ -36,7 +51,8 @@ struct CloudAccountView: View {
             }
             if let error = model.cloud.error { EngramInlineError(message:error) }
             if model.cloud.busy { ProgressView() }
-        }.modifier(UtilityListStyle()).navigationTitle("Engram account").disabled(model.cloud.busy)
+        }.disabled(model.cloud.busy)
+            .task(id: model.cloud.userID) { await model.cloud.refreshLoginIdentities() }
             .confirmationDialog("Choose your ChatGPT profile's starting library", isPresented: Binding(get: { model.cloud.pendingChatGPTProfile != nil && !model.chatGPT.showPlanConfirmation }, set: { if !$0 { model.cloud.pendingChatGPTProfile = nil } })) {
                 if let account = model.cloud.pendingChatGPTProfile {
                     Button("Use this device's local library") { Task { await model.cloud.useChatGPTProfile(account, upload: true, model: model) } }

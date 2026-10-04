@@ -24,13 +24,13 @@ struct UtilityListStyle: ViewModifier {
     func body(content: Content) -> some View {
         let palette = theme.palette(for: scheme)
         #if os(iOS)
-        content.listStyle(.insetGrouped).scrollContentBackground(.hidden)
+        content.listStyle(.plain).scrollContentBackground(.hidden)
             .foregroundStyle(palette.primaryText).font(theme.font(.body))
             .frame(maxWidth: EngramShape.readingWidth + EngramSpacing.section * 2).frame(maxWidth: .infinity)
             .tint(palette.accentInk).background(palette.canvas.ignoresSafeArea())
             .toolbar(.visible, for: .navigationBar)
         #else
-        content.listStyle(.inset).formStyle(.grouped).scrollContentBackground(.hidden)
+        content.listStyle(.plain).formStyle(.columns).scrollContentBackground(.hidden)
             .foregroundStyle(palette.primaryText).font(theme.font(.body))
             .frame(maxWidth: EngramShape.readingWidth + EngramSpacing.section * 2).frame(maxWidth: .infinity)
             .tint(palette.accentInk).background(palette.canvas.ignoresSafeArea())

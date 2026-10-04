@@ -107,6 +107,36 @@ public actor SupabaseCloudClient: CloudTransport {
         return session.user.id
     }
     public func signOut() async throws { try await client.auth.signOut() }
+    public func loginIdentities() async throws -> [AppLoginIdentity] {
+        try await client.auth.userIdentities().map { AppLoginIdentity(id: $0.identityId, provider: $0.provider) }
+    }
+    public func linkProvider(_ provider: String, expectedUserID: UUID) async throws {
+        guard ["google", "apple"].contains(provider), try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        try await client.auth.linkIdentity(provider: provider == "google" ? .google : .apple, redirectTo: URL(string: "engram://app-auth"))
+    }
+    public func completeIdentityLink(_ url: URL, expectedUserID: UUID) async throws {
+        guard url.scheme == "engram", url.host == "app-auth", try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        let session = try await client.auth.session(from: url)
+        guard session.user.id == expectedUserID else {
+            try? await client.auth.signOut()
+            throw EngramError.invalid("This login belongs to another account. Sign in explicitly to switch; libraries were not merged.")
+        }
+    }
+    public func linkApple(idToken: String, nonce: String, expectedUserID: UUID) async throws {
+        guard try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        let session = try await client.auth.linkIdentityWithIdToken(credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce))
+        guard session.user.id == expectedUserID else { try? await client.auth.signOut(); throw EngramError.conflict }
+    }
+    public func requestEmailLink(_ email: String, expectedUserID: UUID) async throws {
+        guard try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        _ = try await client.auth.update(user: UserAttributes(email: email), redirectTo: URL(string: "engram://app-auth"))
+    }
+    public func verifyEmailLink(_ email: String, code: String, expectedUserID: UUID) async throws -> Bool {
+        guard try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        let response = try await client.auth.verifyOTP(email: email, token: code, type: .emailChange)
+        guard response.user.id == expectedUserID else { try? await client.auth.signOut(); throw EngramError.conflict }
+        return response.user.email?.caseInsensitiveCompare(email) == .orderedSame
+    }
     public func sendEmailCode(email: String) async throws {
         try await client.auth.signInWithOTP(email: email, redirectTo: URL(string: "engram://app-auth"))
     }

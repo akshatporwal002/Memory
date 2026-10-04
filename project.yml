@@ -37,6 +37,7 @@ targets:
         EngramSupabaseURL: https://heedprsusmrwxasdixbt.supabase.co
         EngramSupabasePublishableKey: sb_publishable_n_N8rBBpowlhHHEgJwCUow_zm-3Gcj0
         EngramCloudPilotEnabled: false
+        EngramAppleSignInEnabled: false
         CFBundleDisplayName: Engram
         CFBundleURLTypes: &engramURLTypes
           - CFBundleURLName: dev.engram.links
@@ -105,6 +106,7 @@ targets:
         EngramSupabaseURL: https://heedprsusmrwxasdixbt.supabase.co
         EngramSupabasePublishableKey: sb_publishable_n_N8rBBpowlhHHEgJwCUow_zm-3Gcj0
         EngramCloudPilotEnabled: false
+        EngramAppleSignInEnabled: false
         CFBundleDisplayName: Engram
         UTExportedTypeDeclarations: *engramTypes
         CFBundleURLTypes: *engramURLTypes

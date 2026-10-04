@@ -31,7 +31,7 @@ public struct EngramListSection<Content: View, Header: View, Footer: View>: View
         } footer: {
             footer.foregroundStyle(palette.secondaryText)
         }
-        .listRowBackground(palette.surface)
+        .listRowBackground(palette.canvas)
         .listRowSeparatorTint(palette.hairline)
     }
 }
