@@ -157,7 +157,7 @@ struct ReviewView: View {
                     if let error = model.error { EngramInlineError(message: error) }
                 }
                 Section("Voice") {
-                    VoiceModeSettings(voice: model.voice).disabled(!model.voiceWork.captureAvailable(model))
+                    VoiceModeSettings(voice: model.voice).disabled(!model.voiceWork.captureAvailable(model) || !model.voiceWork.outputAvailable(model))
                     NavigationLink("Voice settings") { VoiceSettingsPage(model: model) }
                     NavigationLink("Voice answers") { VoiceAnswerHistoryView(model: model) }
                 }

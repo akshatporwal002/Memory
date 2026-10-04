@@ -25,6 +25,14 @@ import AIInfrastructure
         }
     }
     var selection: Selection = .managedMini { didSet { savePreferences() } }
+    enum Output: String, CaseIterable, Identifiable {
+        case localKokoro, personalOpenAI
+        var id: String { rawValue }
+        var title: String { self == .localKokoro ? "Kokoro · on device" : "OpenAI · personal key" }
+    }
+    var output: Output = .localKokoro { didSet { savePreferences() } }
+    var outputModel = "gpt-4o-mini-tts" { didSet { savePreferences() } }
+    var outputVoice = "coral" { didSet { savePreferences() } }
     var mode: VoiceReviewMode = .continueProcessing { didSet { savePreferences() } }
     var summaryPresented = false
     var error: String?
@@ -32,6 +40,7 @@ import AIInfrastructure
     #if DEBUG
     var developmentLocalPreview = false
     var developmentPersonalPreview = false
+    var developmentSpeechPreview = false
     #endif
     @ObservationIgnored private var worker: VoiceWorkProcessor?
     @ObservationIgnored private var storage: VoiceRecordingStore?
@@ -51,6 +60,9 @@ import AIInfrastructure
         guard let preferenceAccount else { return }
         defaults.set(selection.rawValue, forKey: "engram.voice.provider." + preferenceAccount)
         defaults.set(mode.rawValue, forKey: "engram.voice.mode." + preferenceAccount)
+        defaults.set(output.rawValue, forKey: "engram.voice.output." + preferenceAccount)
+        defaults.set(outputModel, forKey: "engram.voice.outputModel." + preferenceAccount)
+        defaults.set(outputVoice, forKey: "engram.voice.outputVoice." + preferenceAccount)
     }
     private func loadPreferences(_ model: EngramModel) {
         let account = model.aiMarker.personal.accountID
@@ -58,9 +70,13 @@ import AIInfrastructure
         preferenceAccount = nil
         selection = defaults.string(forKey: "engram.voice.provider." + account).flatMap(Selection.init(rawValue:)) ?? .managedMini
         mode = defaults.string(forKey: "engram.voice.mode." + account).flatMap(VoiceReviewMode.init(rawValue:)) ?? .continueProcessing
+        output = defaults.string(forKey: "engram.voice.output." + account).flatMap(Output.init(rawValue:)) ?? .localKokoro
+        outputModel = defaults.string(forKey: "engram.voice.outputModel." + account) ?? "gpt-4o-mini-tts"
+        outputVoice = defaults.string(forKey: "engram.voice.outputVoice." + account) ?? "coral"
         #if DEBUG
         developmentLocalPreview = false
         developmentPersonalPreview = false
+        developmentSpeechPreview = false
         #endif
         preferenceAccount = account
     }
@@ -144,19 +160,45 @@ import AIInfrastructure
     }
     private func authorizePersonal(_ model: EngramModel, operationID: String, transcriptionModel: String) throws {
         guard foreground, ["gpt-4o-mini-transcribe", "gpt-4o-transcribe"].contains(transcriptionModel) else { throw EngramError.conflict }
+        try authorizePersonal(model, operationID: operationID, providerModel: transcriptionModel, purpose: .transcription)
+    }
+    private func authorizePersonal(_ model: EngramModel, operationID: String, providerModel: String, purpose: VoiceAudioPurpose) throws {
+        guard foreground else { throw EngramError.conflict }
         let account = model.aiMarker.personal.accountID
         #if DEBUG
         let policy = VoiceAccessPolicy(environment: .sandbox)
-        let entitlement = developmentPersonalPreview ? VoiceEntitlement(accountID: account, environment: .sandbox, expiresAt: .distantFuture) : nil
-        let disclosure = developmentPersonalPreview ? VoiceAudioDisclosure(accountID: account, provider: "openai", purpose: .transcription, revision: 1) : nil
+        let approved = purpose == .transcription ? developmentPersonalPreview : developmentSpeechPreview
+        let entitlement = approved ? VoiceEntitlement(accountID: account, environment: .sandbox, expiresAt: .distantFuture) : nil
+        let disclosure = approved ? VoiceAudioDisclosure(accountID: account, provider: "openai", purpose: purpose, revision: 1) : nil
         #else
         let policy = VoiceAccessPolicy(environment: .production)
         let entitlement: VoiceEntitlement? = nil
         let disclosure: VoiceAudioDisclosure? = nil
         #endif
         try policy.authorize(VoiceAccessRequest(accountID: account, operationID: operationID, provider: "openai",
-            model: transcriptionModel, billingPath: .personalKey), entitlement: entitlement, disclosure: disclosure,
+            model: providerModel, purpose: purpose, billingPath: .personalKey), entitlement: entitlement, disclosure: disclosure,
             keyAvailable: model.aiMarker.personal.configured.contains(.openai), reservation: nil)
+    }
+    private func authorizeOutput(_ model: EngramModel, operationID: String) throws {
+        guard output == .personalOpenAI, OpenAISpeechProvider.outputModels.contains(outputModel),
+              OpenAISpeechProvider.voices.contains(outputVoice),
+              outputModel == "gpt-4o-mini-tts" || ["alloy", "echo", "fable", "onyx", "nova", "shimmer"].contains(outputVoice) else { throw SpeechServiceError.unsupported }
+        try authorizePersonal(model, operationID: operationID, providerModel: outputModel, purpose: .speechOutput)
+    }
+    func outputAvailable(_ model: EngramModel) -> Bool {
+        output == .localKokoro || (try? authorizeOutput(model, operationID: "speech-preview")) != nil
+    }
+    func speechAudio(_ text: String, model: EngramModel) async throws -> Data {
+        let identity = currentScope(model), credentials = model.aiMarker.personal.runtimeStamp
+        let selectedModel = outputModel, selectedVoice = outputVoice, requestID = UUID()
+        try authorizeOutput(model, operationID: requestID.uuidString)
+        let token = try model.aiMarker.personal.token(for: "openai")
+        let audio = try await OpenAISpeechProvider().synthesize(text: text, model: selectedModel, voice: selectedVoice, token: token, requestID: requestID)
+        try Task.checkCancellation()
+        guard foreground, identity == currentScope(model), credentials == model.aiMarker.personal.runtimeStamp, output == .personalOpenAI,
+              outputModel == selectedModel, outputVoice == selectedVoice else { throw EngramError.conflict }
+        try authorizeOutput(model, operationID: requestID.uuidString)
+        return audio
     }
     func pause() async {
         foreground = false
@@ -229,10 +271,12 @@ import AIInfrastructure
         guard foreground, scope == identity, currentScope(model) == identity,
               job.provider == "openai", job.billingPath == .personalKey else { throw EngramError.conflict }
         try authorizePersonal(model, operationID: job.id, transcriptionModel: job.transcriptionModel)
+        let credentials = model.aiMarker.personal.runtimeStamp
         let token = try model.aiMarker.personal.token(for: "openai")
         let result = try await OpenAISpeechProvider().transcribe(audio: audio, format: .wav,
             model: job.transcriptionModel, token: token, requestID: UUID())
-        guard foreground, scope == identity, currentScope(model) == identity else { throw EngramError.conflict }
+        guard foreground, scope == identity, currentScope(model) == identity,
+              credentials == model.aiMarker.personal.runtimeStamp else { throw EngramError.conflict }
         return VoiceTranscriptResult(text: result.text, usageJSON: result.usageJSON)
     }
     func submitLocal(_ text: String, samples: [Float], model: EngramModel, sessionID: String, presentationID: String) async {

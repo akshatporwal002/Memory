@@ -31,3 +31,9 @@ Personal Mini/Full now connects protected WAV capture to OpenAISpeechProvider an
 Failed transcription exposes an explicit retry with potential duplicate-charge warning. Failed marking reuses the persisted transcript. Managed capture, Google native transport, cloud speech playback and production purchases remain unconnected.
 
 The current isolated Mac package run passed 274 tests, one skipped, zero failures, including the WAV and native selection extensions. SSH then timed out before iOS build launch; latest device/UI validation is pending. Earlier evidence above remains revision-specific.
+
+## Optional speech output integration — unvalidated extension
+
+Output selection now offers default local Kokoro or personal-key OpenAI, with independent model/voice settings and debug-only speech disclosure. Speech preview and study narration use the selected path. No automatic provider fallback or retry is performed; cloud request results reject changed accounts, credentials or settings. Existing playback generation/cancellation and echo processing remain in use. A validated WAV is decoded to mono 24 kHz for study playback; temporary protected files are removed afterwards.
+
+Transcription opt-in cannot grant output opt-in. Both approvals reset on account changes/restart; production stays disabled. A consent regression test is written but unexecuted. The 274 passing package tests above predate this extension; latest Mac SSH attempts timed out. Compile/runtime, iPhone/iPad captures, real provider speech/interrupt behavior and installation are pending. Google native output and combined audio transport remain separate unfinished integrations.

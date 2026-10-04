@@ -159,10 +159,11 @@ struct VoiceSettingsPage: View {
     @Bindable var model: EngramModel
     #if DEBUG
     @State private var confirmPersonalPreview = false
+    @State private var confirmSpeechPreview = false
     #endif
     var body: some View {
         Form {
-            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.captureAvailable(model)) }
+            EngramListSection { Toggle("Voice mode", isOn: Binding(get: { model.voice.enabled }, set: { model.voice.enabled = $0 })).disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.captureAvailable(model) || !model.voiceWork.outputAvailable(model)) }
             EngramListSection("Listening") {
                 Picker("Speech recognition", selection: Binding(get: { model.voiceWork.selection }, set: { model.voiceWork.selection = $0 })) {
                     ForEach(VoiceProcessingController.Selection.allCases) { Text($0.title).tag($0) }
@@ -186,8 +187,28 @@ struct VoiceSettingsPage: View {
                 NavigationLink("Test microphone") { MicrophoneTestPage().onAppear { model.voice.enabled = false; model.voice.stopPreview() } }
             }
             EngramListSection("Speaking") {
-                LabeledContent("Voice", value: "Kokoro · on device")
-                Button(model.voice.previewing ? "Stop preview" : "Preview voice") { Task { await model.voice.preview() } }.disabled(!model.voice.ready || model.voice.preparing)
+                Picker("Speech output", selection: Binding(get: { model.voiceWork.output }, set: { model.voiceWork.output = $0 })) {
+                    ForEach(VoiceProcessingController.Output.allCases) { Text($0.title).tag($0) }
+                }
+                if model.voiceWork.output == .personalOpenAI {
+                    Picker("Speech model", selection: Binding(get: { model.voiceWork.outputModel }, set: { model.voiceWork.outputModel = $0 })) {
+                        ForEach(OpenAISpeechProvider.outputModels, id: \.self) { Text($0).tag($0) }
+                    }
+                    Picker("Voice", selection: Binding(get: { model.voiceWork.outputVoice }, set: { model.voiceWork.outputVoice = $0 })) {
+                        ForEach(OpenAISpeechProvider.voices, id: \.self) { Text($0.capitalized).tag($0) }
+                    }
+                    if model.voiceWork.outputModel != "gpt-4o-mini-tts" {
+                        Text("Older speech models support Alloy, Echo, Fable, Onyx, Nova and Shimmer.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    LabeledContent("Access", value: model.voiceWork.outputAvailable(model) ? "Development preview" : "Not configured")
+                    #if DEBUG
+                    Toggle("Cloud speech development preview", isOn: Binding(get: { model.voiceWork.developmentSpeechPreview }, set: { value in
+                        if value { confirmSpeechPreview = true } else { model.voiceWork.developmentSpeechPreview = false }
+                    })).disabled(!model.aiMarker.personal.configured.contains(.openai))
+                    #endif
+                    Text("AI-generated voice. Question and feedback text is sent to OpenAI; your personal key pays for speech generation, separately from transcription. No app credits are used.").font(.footnote).foregroundStyle(.secondary)
+                }
+                Button(model.voice.previewing ? "Stop preview" : "Preview voice") { Task { await model.voice.preview(model: model) } }.disabled(!model.voice.ready || model.voice.preparing || !model.voiceWork.outputAvailable(model))
             }
             EngramListSection("Offline models") { VoiceDownloadRows(voice: model.voice) }
             EngramListSection {
@@ -197,13 +218,21 @@ struct VoiceSettingsPage: View {
             if let error = model.voiceWork.error { EngramListSection { Text(error).engramErrorText() } }
         }.modifier(UtilityListStyle()).navigationTitle("Voice").onDisappear { model.voice.stopPreview() }
             .onChange(of: model.voiceWork.selection) { _, _ in model.voice.enabled = false }
+            .onChange(of: model.voiceWork.output) { _, _ in model.voice.enabled = false; model.voice.stopPreview() }
+            .onChange(of: model.voiceWork.outputModel) { _, _ in model.voice.enabled = false; model.voice.stopPreview() }
+            .onChange(of: model.voiceWork.outputVoice) { _, _ in model.voice.enabled = false; model.voice.stopPreview() }
             #if DEBUG
             .onChange(of: model.voiceWork.developmentLocalPreview) { _, _ in model.voice.enabled = false }
             .onChange(of: model.voiceWork.developmentPersonalPreview) { _, _ in model.voice.enabled = false }
+            .onChange(of: model.voiceWork.developmentSpeechPreview) { _, _ in model.voice.enabled = false; model.voice.stopPreview() }
             .confirmationDialog("Send voice answers to OpenAI?", isPresented: $confirmPersonalPreview, titleVisibility: .visible) {
                 Button("Enable personal-key preview") { model.voiceWork.developmentPersonalPreview = true }
                 Button("Cancel", role: .cancel) { }
             } message: { Text("Your personal OpenAI account pays for transcription. Recordings leave this device; grading uses your separately selected model. Production subscriptions and managed credits are not enabled.") }
+            .confirmationDialog("Generate speech with OpenAI?", isPresented: $confirmSpeechPreview, titleVisibility: .visible) {
+                Button("Enable cloud speech preview") { model.voiceWork.developmentSpeechPreview = true }
+                Button("Cancel", role: .cancel) { }
+            } message: { Text("Question and feedback text leaves this device. Your personal OpenAI account pays for every speech request, including previews and repeats. Stopping a request may not avoid its provider charge. This is an AI-generated voice; no app credits are used.") }
             #endif
     }
 }

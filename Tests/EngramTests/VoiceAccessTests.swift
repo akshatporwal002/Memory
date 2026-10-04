@@ -67,4 +67,19 @@ final class VoiceAccessTests: XCTestCase {
         XCTAssertThrowsError(try VoiceAccessPolicy(environment: .sandbox).authorize(selected, entitlement: subscription(),
             disclosure: nil, keyAvailable: true, reservation: nil, now: now))
     }
+    func testTranscriptionConsentCannotAuthorizeSpeechOutputOrSpendManagedCredits() throws {
+        let selected = VoiceAccessRequest(accountID: "account", operationID: "speech", provider: "openai",
+            model: "gpt-4o-mini-tts", purpose: .speechOutput, billingPath: .personalKey)
+        let policy = VoiceAccessPolicy(environment: .sandbox)
+        XCTAssertThrowsError(try policy.authorize(selected, entitlement: subscription(),
+            disclosure: disclosure, keyAvailable: true, reservation: reservation(), now: now))
+        let outputConsent = VoiceAudioDisclosure(accountID: "account", provider: "openai", purpose: .speechOutput, revision: 1)
+        try policy.authorize(selected, entitlement: subscription(), disclosure: outputConsent,
+            keyAvailable: true, reservation: nil, now: now)
+        XCTAssertThrowsError(try policy.authorize(selected, entitlement: subscription(), disclosure: outputConsent,
+            keyAvailable: false, reservation: reservation(), now: now))
+        XCTAssertThrowsError(try VoiceAccessPolicy(environment: .production).authorize(selected,
+            entitlement: subscription(environment: .production), disclosure: outputConsent,
+            keyAvailable: true, reservation: nil, now: now))
+    }
 }

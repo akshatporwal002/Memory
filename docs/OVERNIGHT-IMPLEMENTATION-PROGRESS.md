@@ -188,3 +188,12 @@ These do not block local implementation, fixtures or configuration instructions.
 - Isolated Mac source (HEAD 8d7ff44 plus the five voice integration files) passed 274 package tests, one skipped, zero failures. This validates the equation selection and stronger WAV regression tests as well. Mac log: /tmp/engram-overnight-current-tests.log.
 - SSH became intermittently unreachable immediately afterwards. The iPhone simulator build command could not connect; no latest iOS compile, fresh screenshot, physical installation or live microphone/provider validation is claimed. Earlier accepted iPhone captures remain unchanged; the iPad screenshot orientation gate remains open.
 - No new question type was added. The PC stay-awake helper remains off.
+
+## Optional personal-key speech output — pending Mac validation
+
+- Added independent output/provider, model and voice selection, persisted per app account. Kokoro stays the default. OpenAI personal-key output uses the existing bounded WAV adapter; managed output and Google native playback remain unconnected.
+- Debug-only speech preview has its own explicit text destination/cost disclosure and reset-on-restart/account-change approval. Transcription consent does not grant speech output. Production remains disabled; no provider request was made during development.
+- Playback and voice preview use the chosen output. Study playback decodes validated WAV into mono 24 kHz audio and uses the existing echo-processing engine/player. Speaking interrupts both queued audio and pending synthesis; request results are checked against playback generation and provider/account/credential/model/voice state. Unsupported/failed output shows an error without silent fallback or automatic retry.
+- Generated speech is not stored in libraries or synchronized. Temporary decoding files are protected on iOS and removed after decode. Provider charges may still apply to interrupted requests or explicit repeats/previews.
+- Added a purpose-bound consent/access regression test; it is unexecuted. The last passing 274-test run predates these changes. Fresh elevated SSH checks timed out; this stage has not compiled or run on iPhone/iPad. Existing screenshots remain revision-specific. Live echo/interruption, preview billing and physical installation are still gates.
+- No new question type was implemented. PC stay-awake helper remains off.
