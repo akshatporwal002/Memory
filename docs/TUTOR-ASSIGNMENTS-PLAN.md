@@ -1,6 +1,6 @@
 # Tutor assignments and evidence-based insights
 
-Status: local domain foundation begun on 5 October 2026. `TutorWorkspace` and `TutorWorkspaceService` implement membership consent, five-student capacity, assignment revisions, restricted progress projections and revocation. They grant no hosted access. Tutor screens, durable workspace storage, authenticated server operations/RLS, invitation verification and subscriptions remain to implement. No student data or billing has been activated.
+Status: local foundation begun on 5 October 2026. `TutorWorkspace` and `TutorWorkspaceService` implement membership consent, five-student capacity, assignment revisions, restricted progress projections and revocation. `TutorWorkspaceRepository` stores account-scoped local drafts and Settings → Tutor lets a learner create and reopen those drafts. They grant no hosted access. Authenticated server operations/RLS, invitation verification, publishing UI and subscription entitlements remain to implement. No student data or billing has been activated.
 
 Latest approval: the pilot includes all ages. Tutors receive progress and explicitly shared misconception summaries only; raw answers, recordings and private chats are excluded. Accounts requiring guardian consent remain unable to share until that workflow is configured. See `OVERNIGHT-APPROVALS-2026-10-05.md` for the current decisions.
 

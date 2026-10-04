@@ -40,7 +40,7 @@ struct UtilityListStyle: ViewModifier {
 
 private enum SettingsPage: String, CaseIterable, Identifiable {
     case appearance = "Appearance", study = "Study", scheduling = "Scheduling", voice = "Voice",
-         ai = "AI & Connections", storage = "Storage & Downloads", backup = "Backup & Restore", about = "About & Help"
+         ai = "AI & Connections", tutor = "Tutor", storage = "Storage & Downloads", backup = "Backup & Restore", about = "About & Help"
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -49,6 +49,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
         case .scheduling: "calendar"
         case .voice: "waveform"
         case .ai: "sparkles"
+        case .tutor: "person.2"
         case .storage: "internaldrive.fill"
         case .backup: "arrow.triangle.2.circlepath"
         case .about: "info.circle.fill"
@@ -61,6 +62,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
         case .scheduling: "fsrs retention memory"
         case .voice: "microphone listening speech speaking kokoro parakeet offline"
         case .ai: "chatgpt account sign in models marking consent"
+        case .tutor: "students assignments progress misconceptions workspace teaching"
         case .storage: "download size models media local"
         case .backup: "import export anki recovery sync"
         case .about: "help commands version acknowledgements license privacy"
@@ -80,7 +82,7 @@ struct SettingsView: View {
     @Environment(\.engramScreenshotAcknowledgements) private var captureAcknowledgements
     @State private var search = ""
     private var groups: [[SettingsPage]] {
-        search.isEmpty ? [[.appearance], [.study, .scheduling], [.voice, .ai], [.storage, .backup], [.about]] : [SettingsPage.allCases]
+        search.isEmpty ? [[.appearance], [.study, .scheduling], [.voice, .ai, .tutor], [.storage, .backup], [.about]] : [SettingsPage.allCases]
     }
 
     var body: some View {
@@ -122,6 +124,7 @@ struct SettingsView: View {
                                 }
                             }.padding(.vertical, 2)
                         }
+                        .accessibilityIdentifier("settings-\(page.rawValue)")
                     }
                   } footer: { if search.isEmpty && index == groups.count - 1 { Text("Your library is stored on this device. Changes save automatically.") } }
                 }
@@ -160,6 +163,7 @@ struct SettingsView: View {
         case .scheduling: model.library.settings.desiredRetention.formatted(.percent.precision(.fractionLength(0)))
         case .voice: model.voice.enabled ? "On" : "Off"
         case .ai: model.aiMarker.enabled ? "Marking on" : "Off"
+        case .tutor: "Workspaces"
         case .storage: model.voice.ready ? "Voice ready" : "On device"
         case .backup: model.lastBackupExport == nil ? "Not exported" : "Exported"
         case .about: "Engram"
@@ -179,6 +183,7 @@ struct SettingsView: View {
         case .scheduling: StudyPreferencesPage(model: model, scheduling: true)
         case .voice: VoiceSettingsPage(model: model)
         case .ai: AISettingsPage(model: model)
+        case .tutor: TutorWorkspaceView(model: model)
         case .storage: StorageSettingsPage(model: model)
         case .backup:
             Form {

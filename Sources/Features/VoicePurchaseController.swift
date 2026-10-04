@@ -20,6 +20,13 @@ import StoreKit
             (environment != .production || productionEnabled)
         }
     }
+    /// App Store Connect draft identifiers. A caller must still supply authenticated
+    /// server verification; this does not grant credits or enable a purchase UI.
+    static let sandboxConfiguration = Configuration(
+        subscriptionID: "dev.engram.study.voice.monthly",
+        topUpID: "dev.engram.study.voice.credits10",
+        environment: .sandbox
+    )
     typealias Verify = @Sendable (VoicePurchaseSubmission) async throws -> VoicePurchaseAcknowledgement
     private(set) var products: [Product] = []
     private(set) var busy = false
