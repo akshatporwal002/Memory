@@ -138,3 +138,9 @@ These do not block local implementation, fixtures or configuration instructions.
 - Added server-only, credential-injected Chirp 3 and Vertex text adapters with disabled-by-default sandbox dispatch and unavailable production. Strict endpoint/configuration/model/language/input limits, no automatic retries, completion checks and secret-safe errors are implemented.
 - Configuration example and setup/integration documentation are in server/google_cloud/README.md. No provider call, hosting/IAM provisioning or credential change was made. Longer Chirp audio, streaming/tools, Google speech output, Gemini Live and hosted accounting remain outstanding.
 - Eleven Python fixture tests passed locally. This is independent of the pending Swift compilation, phone/iPad capture and installation gates. The stay-awake helper remains off.
+
+## Google speech output preparation
+
+- Added server-only speech synthesis with an explicit voice/language allowlist, bounded plain text and validated PCM WAV output. Empty voice configuration disables output; no mobile playback, provider call or production activation occurred.
+- Mandatory authorization now includes the exact serialized payload hash for transcription, speech output and text generation. Durable authenticated dispatch/accounting integration remains outstanding.
+- Fifteen Python fixture tests passed locally, including malformed/truncated audio, voice/language mismatch and payload binding. Swift compilation, iPhone/iPad screenshots and installation remain pending; no new question type was implemented. The stay-awake helper remains off.

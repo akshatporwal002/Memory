@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from dataclasses import replace
 import io
 import json
@@ -49,6 +50,44 @@ class AdapterTests(unittest.TestCase):
         self.operation = str(uuid.uuid4())
         self.authorizations, self.tokens = [], []
 
+    def testSpeechOutputUsesConfiguredVoiceAndReturnsValidatedPCMWithoutPlayback(self):
+        audio = wav(rate=24000)
+        transport = FixtureTransport({"audioContent": base64.b64encode(audio).decode()})
+        config = replace(self.config, speech_output_voices=("en-AU-fixture",))
+        result = self.adapter(transport, config).synthesize_google("A short explanation.", voice="en-AU-fixture", language="en-AU", operation_id=self.operation)
+        self.assertEqual(result, audio)
+        url, _, body, _ = transport.calls[0]
+        self.assertEqual(url, "https://texttospeech.googleapis.com/v1/text:synthesize")
+        self.assertEqual(body, {"input": {"text": "A short explanation."}, "voice": {"languageCode": "en-AU", "name": "en-AU-fixture"}, "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000}})
+        self.assertEqual(self.authorizations[0][:3], (self.operation, "speech-output", "en-AU-fixture"))
+
+    def testSpeechOutputRejectsUnconfiguredVoiceAndUTF8BudgetBeforeDispatch(self):
+        transport = FixtureTransport({})
+        with self.assertRaisesRegex(ProviderError, "unsupported-voice-or-language"):
+            self.adapter(transport).synthesize_google("text", voice="en-AU-fixture", language="en-AU", operation_id=self.operation)
+        adapter = self.adapter(transport, replace(self.config, speech_output_voices=("en-AU-fixture",)))
+        for text in (" ", "α" * 2001, "\ud800"):
+            with self.assertRaises(ProviderError): adapter.synthesize_google(text, voice="en-AU-fixture", language="en-AU", operation_id=self.operation)
+        with self.assertRaises(ProviderError): adapter.synthesize_google("text", voice="en-AU-fixture", language="en-US", operation_id=self.operation)
+        self.assertEqual(self.tokens, []); self.assertEqual(transport.calls, [])
+
+    def testSpeechOutputRejectsFakeTruncatedOrLongAudioWithoutRetry(self):
+        config = replace(self.config, speech_output_voices=("en-AU-fixture",))
+        for encoded in ("!invalid!", base64.b64encode(b"<html>not audio</html>").decode(), base64.b64encode(wav(rate=24000)[:-10]).decode(), base64.b64encode(wav(seconds=121, rate=24000)).decode()):
+            transport = FixtureTransport({"audioContent": encoded})
+            with self.assertRaisesRegex(ProviderError, "invalid-speech-audio"):
+                self.adapter(transport, config).synthesize_google("text", voice="en-AU-fixture", language="en-AU", operation_id=self.operation)
+            self.assertEqual(len(transport.calls), 1)
+
+    def testAuthorizationBindsExactPayloadAndSeparatesInputFromSpeechOutput(self):
+        transport = FixtureTransport({"audioContent": base64.b64encode(wav(rate=24000)).decode()})
+        adapter = self.adapter(transport, replace(self.config, speech_output_voices=("en-AU-fixture",)))
+        for text in ("First", "Different"):
+            adapter.synthesize_google(text, voice="en-AU-fixture", language="en-AU", operation_id=self.operation)
+        self.assertNotEqual(self.authorizations[0][3], self.authorizations[1][3])
+        body = json.dumps(transport.calls[0][2], ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode()
+        self.assertEqual(self.authorizations[0][3], hashlib.sha256(body).hexdigest())
+
     def adapter(self, transport, config=None, authorize=None):
         def token():
             self.tokens.append(True); return "server-fixture-token"
@@ -64,7 +103,7 @@ class AdapterTests(unittest.TestCase):
         self.assertIn("us-speech.googleapis.com/v2/projects/engram-fixture/locations/us/recognizers/_:recognize", url)
         self.assertEqual(body["config"], {"autoDecodingConfig": {}, "languageCodes": ["en-AU"], "model": "chirp_3"})
         self.assertEqual(base64.b64decode(body["content"]), audio)
-        self.assertEqual(self.authorizations, [(self.operation, "transcription", "chirp_3")])
+        self.assertEqual([request[:3] for request in self.authorizations], [(self.operation, "transcription", "chirp_3")])
         self.assertEqual(limits["timeout"], 120)
 
     def testLongTruncatedAndUnsupportedAudioFailBeforeCredentialsOrNetwork(self):

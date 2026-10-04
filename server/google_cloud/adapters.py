@@ -6,6 +6,7 @@ token acquisition. Tests inject fixtures; this module never reads an API key.
 from __future__ import annotations
 
 import base64
+import hashlib
 from dataclasses import dataclass
 import io
 import json
@@ -37,6 +38,7 @@ class Configuration:
     languages: tuple[str, ...] = ("en-AU", "en-US", "en-GB")
     sandbox_enabled: bool = False
     environment: str = "sandbox"
+    speech_output_voices: tuple[str, ...] = ()
 
     def validate(self) -> None:
         if any(not isinstance(value, str) for value in (self.project, self.speech_location, self.vertex_location, self.environment)) or type(self.sandbox_enabled) is not bool:
@@ -53,15 +55,17 @@ class Configuration:
             raise ProviderError("invalid-language-allowlist")
         if self.environment not in ("sandbox", "production"):
             raise ProviderError("invalid-environment")
+        if not isinstance(self.speech_output_voices, tuple) or len(self.speech_output_voices) > 40 or any(not isinstance(voice, str) or not re.fullmatch(r"[A-Za-z0-9-]{1,120}", voice) for voice in self.speech_output_voices):
+            raise ProviderError("invalid-voice-allowlist")
 
     @classmethod
     def from_mapping(cls, values: dict) -> Configuration:
         required = {"project", "speech_location", "vertex_location", "vertex_models"}
-        allowed = required | {"languages", "sandbox_enabled", "environment"}
+        allowed = required | {"languages", "sandbox_enabled", "environment", "speech_output_voices"}
         if not isinstance(values, dict) or not required.issubset(values) or set(values) - allowed:
             raise ProviderError("invalid-configuration")
         data = dict(values)
-        for key in ("vertex_models", "languages"):
+        for key in ("vertex_models", "languages", "speech_output_voices"):
             if key in data:
                 if not isinstance(data[key], list):
                     raise ProviderError("invalid-configuration")
@@ -109,7 +113,7 @@ class BoundedHTTPTransport:
 
 
 class GoogleCloudAdapters:
-    def __init__(self, configuration: Configuration, *, authorize: Callable[[str, str, str], None],
+    def __init__(self, configuration: Configuration, *, authorize: Callable[[str, str, str, str], None],
                  access_token: Callable[[], str], transport: Transport | None = None):
         configuration.validate()
         self.configuration = configuration
@@ -133,7 +137,7 @@ class GoogleCloudAdapters:
         try:
             # Authorization must bind the verified learner, environment, operation,
             # model, disclosure and usage reservation before any billed dispatch.
-            self._authorize(operation_id, purpose, model)
+            self._authorize(operation_id, purpose, model, hashlib.sha256(body).hexdigest())
         except Exception:
             raise ProviderError("access-denied") from None
         try:
@@ -206,6 +210,36 @@ class GoogleCloudAdapters:
         billed = result.get("totalBilledTime")
         usage = {"totalBilledTime": billed} if isinstance(billed, str) and re.fullmatch(r"[0-9]{1,6}(?:\.[0-9]{1,9})?s", billed) else {}
         return {"text": transcript, "usage": usage}
+
+    def synthesize_google(self, text: str, *, voice: str, language: str, operation_id: str) -> bytes:
+        if voice not in self.configuration.speech_output_voices or language not in self.configuration.languages or not voice.startswith(language + "-"):
+            raise ProviderError("unsupported-voice-or-language")
+        if not isinstance(text, str) or not text.strip() or _utf8_size(text) > 4000:
+            raise ProviderError("invalid-speech-text")
+        # Plain text only: no SSML, caller URLs, prompt-controlled voices or effects.
+        result = self._send(operation_id, "speech-output", voice, "https://texttospeech.googleapis.com/v1/text:synthesize", {
+            "input": {"text": text}, "voice": {"languageCode": language, "name": voice},
+            "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000}}, limit=8_100_000)
+        encoded = result.get("audioContent")
+        if not isinstance(encoded, str) or not 1 <= len(encoded) <= 8_000_000:
+            raise ProviderError("invalid-speech-audio")
+        try:
+            audio = base64.b64decode(encoded, validate=True)
+            if not 44 <= len(audio) <= 6_000_000:
+                raise ValueError()
+            with wave.open(io.BytesIO(audio), "rb") as source:
+                rate, count = source.getframerate(), source.getnframes()
+                if source.getnchannels() != 1 or source.getsampwidth() != 2 or source.getcomptype() != "NONE" or rate != 24000 or not 0 < count <= rate * 120:
+                    raise ValueError()
+                frames = source.readframes(count + 1)
+                if len(frames) != count * 2:
+                    raise ValueError()
+            canonical = io.BytesIO()
+            with wave.open(canonical, "wb") as output:
+                output.setnchannels(1); output.setsampwidth(2); output.setframerate(rate); output.writeframes(frames)
+            return canonical.getvalue()
+        except Exception:
+            raise ProviderError("invalid-speech-audio") from None
 
     def generate_vertex_text(self, messages: list[dict], *, model: str, instructions: str, operation_id: str, max_output_tokens: int = 1024) -> dict:
         if model not in self.configuration.vertex_models or type(max_output_tokens) is not int or not 1 <= max_output_tokens <= 4096:

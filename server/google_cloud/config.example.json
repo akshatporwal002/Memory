@@ -4,6 +4,7 @@
   "vertex_location": "global",
   "vertex_models": [],
   "languages": ["en-AU", "en-US", "en-GB"],
+  "speech_output_voices": [],
   "sandbox_enabled": false,
   "environment": "sandbox"
 }
