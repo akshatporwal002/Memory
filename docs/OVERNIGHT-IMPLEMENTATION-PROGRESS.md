@@ -10,12 +10,15 @@ Goal: implement the approved requirements in OVERNIGHT-IMPLEMENTATION-REQUIREMEN
 - [ ] Complete the remaining app-wide shape audit and live linked-account acceptance.
 - [x] Deduplicate ChatGPT registrations and prevent accumulation on reconnect (migration/replacement tests).
 - [x] Add provider-neutral Google/OpenAI chat connections and secure BYOK settings.
-- [ ] Prepare Vertex server integration and validate live provider accounts.
+- [x] Prepare disabled Vertex/Chirp/Google speech and Gemini Live server adapters with fixtures.
+- [ ] Validate live provider accounts and connect managed mobile/server transport.
 - [ ] Implement voice adapters, interruption and durable answer processing.
 - [ ] Implement sandbox billing, authoritative wallet/entitlement interfaces and release guards.
-- [ ] Provide repeatable AWS MCQ, short-answer and maths sample imports.
-- [ ] Implement full equation-entry palette, numeric response metadata and deck calculator policies.
-- [ ] Specify five-student tutor tier, permissions and capped insight workflows.
+- [x] Provide repeatable local AWS MCQ, short-answer and existing-type maths sample imports.
+- [ ] Import samples through the user's authenticated cloud account.
+- [x] Implement equation-entry palettes and structural editing within existing typed answers.
+- [ ] Validate latest native editing on devices; calculator policy remains separate. New numeric question metadata is unapproved.
+- [x] Specify five-student tutor tier, permissions and capped insight workflows.
 - [ ] Obtain individual approval before implementing any new question type, including ordering or numeric-response metadata. Not authorized for implementation yet.
 - [ ] Validate stages, capture iPhone/iPad changes and publish reviewable commits.
 - [ ] Audit every requirement against evidence before declaring completion.
@@ -197,3 +200,10 @@ These do not block local implementation, fixtures or configuration instructions.
 - Generated speech is not stored in libraries or synchronized. Temporary decoding files are protected on iOS and removed after decode. Provider charges may still apply to interrupted requests or explicit repeats/previews.
 - Added a purpose-bound consent/access regression test; it is unexecuted. The last passing 274-test run predates these changes. Fresh elevated SSH checks timed out; this stage has not compiled or run on iPhone/iPad. Existing screenshots remain revision-specific. Live echo/interruption, preview billing and physical installation are still gates.
 - No new question type was implemented. PC stay-awake helper remains off.
+
+## Sandbox refund/revocation handling — 4 October 2026
+
+- Persisted verified revocation events/tombstones bound to account, environment, transaction and product. Repeated/reordered events cannot remove credits twice or resurrect a refunded top-up through restore.
+- Refunds prevent fresh dispatch against lost funds while preserving existing provider usage and uncertain holds. Spent refunded credits can produce a deficit; no automatic purchase or fee is created.
+- Five new regression tests pass; all 39 Google/Live/ledger fixture tests pass. Apple verification/notifications routing, partial-refund/reversal policy, subscription entitlement verification and hosted integration remain unconfigured. No real purchase/refund/provider call was made.
+- Mac SSH remains unreachable; local Xcode tooling also reports missing xcrun on Windows. Latest iOS compilation/captures/installation remain blocked by Mac access. No new question type was added, and the stay-awake helper remains off.

@@ -34,11 +34,21 @@ class VerifiedTopUp:
     credit_units: int
 
 
+@dataclass(frozen=True)
+class VerifiedRevocation:
+    account: str
+    transaction: str
+    product: str
+    environment: str
+    event_id: str
+
+
 class VoiceLedger:
-    def __init__(self, path, *, authenticate, verify_purchase, rates: tuple[Rate, ...], enabled=False, environment="sandbox"):
+    def __init__(self, path, *, authenticate, verify_purchase, rates: tuple[Rate, ...], verify_revocation=None, enabled=False, environment="sandbox"):
         if type(enabled) is not bool or environment != "sandbox":
             raise LedgerError("production-unavailable")
         self.path, self.authenticate, self.verify_purchase = path, authenticate, verify_purchase
+        self.verify_revocation = verify_revocation
         self.enabled, self.environment = enabled, environment
         self.rates = {}
         for rate in rates:
@@ -54,6 +64,8 @@ class VoiceLedger:
                 if existing and existing[0] != rate.credit_units_per_usage_unit: raise LedgerError("rate-version-conflict")
                 connection.execute("INSERT OR IGNORE INTO rates VALUES (?,?,?,?,?)", (*key, rate.credit_units_per_usage_unit))
             connection.execute("CREATE TABLE IF NOT EXISTS purchases (environment TEXT, transaction_id TEXT, account TEXT NOT NULL, product TEXT NOT NULL, credits INTEGER NOT NULL, PRIMARY KEY(environment,transaction_id))")
+            connection.execute("CREATE TABLE IF NOT EXISTS revocations (environment TEXT, event_id TEXT, transaction_id TEXT NOT NULL, account TEXT NOT NULL, product TEXT NOT NULL, PRIMARY KEY(environment,event_id))")
+            connection.execute("CREATE INDEX IF NOT EXISTS revocations_transaction ON revocations(environment,transaction_id)")
             connection.execute("CREATE TABLE IF NOT EXISTS operations (environment TEXT, account TEXT, operation TEXT, provider TEXT NOT NULL, model TEXT NOT NULL, purpose TEXT NOT NULL, rate_version TEXT NOT NULL, unit_rate INTEGER NOT NULL, maximum_usage INTEGER NOT NULL, reserved INTEGER NOT NULL, state TEXT NOT NULL, payload_hash TEXT, actual_usage INTEGER, charged INTEGER, PRIMARY KEY(environment,account,operation))")
 
     @contextmanager
@@ -86,7 +98,7 @@ class VoiceLedger:
             raise LedgerError("invalid-operation") from None
 
     def _available(self, connection, account):
-        purchased = connection.execute("SELECT COALESCE(SUM(credits),0) FROM purchases WHERE environment=? AND account=?", (self.environment, account)).fetchone()[0]
+        purchased = connection.execute("SELECT COALESCE(SUM(p.credits),0) FROM purchases p WHERE p.environment=? AND p.account=? AND NOT EXISTS (SELECT 1 FROM revocations r WHERE r.environment=p.environment AND r.transaction_id=p.transaction_id)", (self.environment, account)).fetchone()[0]
         spent = connection.execute("SELECT COALESCE(SUM(charged),0) FROM operations WHERE environment=? AND account=? AND state='succeeded'", (self.environment, account)).fetchone()[0]
         held = connection.execute("SELECT COALESCE(SUM(reserved),0) FROM operations WHERE environment=? AND account=? AND state IN ('reserved','dispatching','uncertain')", (self.environment, account)).fetchone()[0]
         return purchased - spent - held
@@ -106,6 +118,10 @@ class VoiceLedger:
         if not isinstance(purchase, VerifiedTopUp) or purchase.account != account or purchase.environment != self.environment or not isinstance(purchase.transaction, str) or not re.fullmatch(r"[0-9]{1,40}", purchase.transaction) or not isinstance(purchase.product, str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,150}", purchase.product) or type(purchase.credit_units) is not int or not 0 < purchase.credit_units <= 1_000_000_000_000:
             raise LedgerError("purchase-mismatch")
         with self._database() as connection:
+            revoked = connection.execute("SELECT account,product FROM revocations WHERE environment=? AND transaction_id=? LIMIT 1", (self.environment, purchase.transaction)).fetchone()
+            if revoked:
+                if tuple(revoked) != (account, purchase.product): raise LedgerError("purchase-conflict")
+                raise LedgerError("purchase-revoked")
             existing = connection.execute("SELECT account,product,credits FROM purchases WHERE environment=? AND transaction_id=?", (self.environment, purchase.transaction)).fetchone()
             expected = (account, purchase.product, purchase.credit_units)
             if existing:
@@ -113,6 +129,37 @@ class VoiceLedger:
                 return False
             connection.execute("INSERT INTO purchases VALUES (?,?,?,?,?)", (self.environment, purchase.transaction, *expected))
             return True
+
+    def accept_revocation(self, signed_notification: str):
+        """Host must verify Apple's signature, event type and account binding.
+
+        Tombstones survive notifications arriving before purchase delivery. Spent
+        usage and uncertain dispatches are preserved, even if balance goes below
+        zero; neither refunded credit nor provider charges are silently restored.
+        """
+        account = self._account()
+        if self.verify_revocation is None: raise LedgerError("revocation-not-configured")
+        if not isinstance(signed_notification, str) or not 0 < len(signed_notification) <= 32000:
+            raise LedgerError("invalid-revocation")
+        try:
+            revocation = self.verify_revocation(signed_notification)
+        except Exception:
+            raise LedgerError("revocation-unverified") from None
+        if not isinstance(revocation, VerifiedRevocation) or revocation.account != account or revocation.environment != self.environment or not isinstance(revocation.transaction, str) or not re.fullmatch(r"[0-9]{1,40}", revocation.transaction) or not isinstance(revocation.product, str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,150}", revocation.product):
+            raise LedgerError("revocation-mismatch")
+        self._operation(revocation.event_id)
+        with self._database() as connection:
+            expected = (revocation.transaction, account, revocation.product)
+            event = connection.execute("SELECT transaction_id,account,product FROM revocations WHERE environment=? AND event_id=?", (self.environment, revocation.event_id)).fetchone()
+            if event:
+                if tuple(event) != expected: raise LedgerError("revocation-conflict")
+                return False
+            purchase = connection.execute("SELECT account,product FROM purchases WHERE environment=? AND transaction_id=?", (self.environment, revocation.transaction)).fetchone()
+            prior = connection.execute("SELECT account,product FROM revocations WHERE environment=? AND transaction_id=? LIMIT 1", (self.environment, revocation.transaction)).fetchone()
+            for row in (purchase, prior):
+                if row and tuple(row) != (account, revocation.product): raise LedgerError("revocation-conflict")
+            connection.execute("INSERT INTO revocations VALUES (?,?,?,?,?)", (self.environment, revocation.event_id, *expected))
+            return prior is None
 
     def reserve(self, operation, *, provider, model, purpose, rate_version, maximum_usage):
         account = self._account(); self._operation(operation)
@@ -142,6 +189,10 @@ class VoiceLedger:
         with self._database() as connection:
             row = self._read(connection, account, operation)
             if row["state"] != "reserved": raise LedgerError("dispatch-already-started")
+            # A verified refund may have removed funds after reservation. Do not
+            # dispatch new provider work against those funds. Existing in-flight
+            # work remains reconcilable and cannot be replayed or released.
+            if self._available(connection, account) < 0: raise LedgerError("insufficient-credit")
             connection.execute("UPDATE operations SET state='dispatching',payload_hash=? WHERE environment=? AND account=? AND operation=?", (payload_hash, self.environment, account, operation))
         # Journal commits before the host calls the provider. A crashed dispatch
         # stays held; the host must reconcile rather than silently send again.

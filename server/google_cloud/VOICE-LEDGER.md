@@ -30,3 +30,13 @@ Combined Live sessions need their own bounded session-rate/reservation/settlemen
 Apple JWS verification, Server Notifications/refunds/revocations, subscription entitlements, reservation expiry for provably undispatched work, provider receipt recovery/verified rejection release, immutable hosted rate configuration, authentication/permissions, migrations and backups, hosted wallet endpoints, mobile purchase integration and StoreKit sandbox testing remain outstanding. In particular, a dispatched hold is intentionally conservative; staff reconciliation must resolve it before enabling a user pilot.
 
 Nine local fixture tests pass, including a two-connection reservation race and reopening the database after dispatch. They use temporary databases and fake verified receipts; no real Apple purchase, Supabase write or billed provider call occurred. iPhone/iPad purchase UI and physical-device acceptance remain separate gates.
+
+## Verified revocation contract — 4 October 2026
+
+Optional `verify_revocation` is disabled unless the trusted host supplies it. It must verify the notification JWS chain, bundle/app ID, notification type (an actual refund/revocation), nested transaction, product, environment, account token and event UUID before returning `VerifiedRevocation`. Ordinary renewal/status events must not be mapped to this type. A client cannot submit a credit amount or an unverified notification to remove funds.
+
+`accept_revocation` binds the verified event to the authenticated account and stored transaction/product. It persists a tombstone even before purchase arrival. Duplicate notifications/event IDs are idempotent; conflicting identities reject. Purchase restore cannot regrant revoked funds. Host notifications must execute with a trusted affected-account context; the app-session callback contract is not a Server Notifications endpoint.
+
+Available credit excludes revoked grants. Already spent usage and dispatched/uncertain holds remain intact; a deficit is retained, preventing new reservations/dispatch until valid funds cover it. Undispatched reservations can still be released. Negative balances must be presented as an account adjustment by the host, never silently converted into a new purchase or unlimited usage. This foundation handles full grant revocation; refund reversals and partial refunds need explicit verified adjustment semantics before activation.
+
+Fourteen ledger tests now pass; the full server fixture suite passes 39 tests. These are temporary databases and fake verified receipts, not real refunds. Apple JWS verification, hosted notification routing, subscription entitlement handling and production activation remain outstanding. Earlier nine-test figures describe the pre-revocation revision.

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import uuid
 
-from voice_ledger import LedgerError, Rate, VerifiedTopUp, VoiceLedger
+from voice_ledger import LedgerError, Rate, VerifiedTopUp, VerifiedRevocation, VoiceLedger
 
 
 class LedgerTests(unittest.TestCase):
@@ -32,6 +32,83 @@ class LedgerTests(unittest.TestCase):
     def funded(self):
         ledger = self.ledger(); ledger.accept_purchase("fixture-signed-not-Apple-JWS")
         return ledger
+
+    def revocation_ledger(self, event=None, *, account=None):
+        event = event or VerifiedRevocation(self.account, self.purchase.transaction,
+            self.purchase.product, "sandbox", str(uuid.uuid4()))
+        return VoiceLedger(self.path, authenticate=lambda: account or self.account,
+            verify_purchase=lambda _: self.purchase, verify_revocation=lambda _: event,
+            rates=(self.rate,), enabled=True)
+
+    def testRefundPersistsAndDuplicateEventsCannotRemoveCreditTwice(self):
+        self.funded()
+        event = VerifiedRevocation(self.account, self.purchase.transaction, self.purchase.product, "sandbox", str(uuid.uuid4()))
+        ledger = self.revocation_ledger(event)
+        self.assertTrue(ledger.accept_revocation("fixture-verified-refund"))
+        self.assertFalse(ledger.accept_revocation("duplicate"))
+        self.assertFalse(self.revocation_ledger(replace(event, event_id=str(uuid.uuid4()))).accept_revocation("another-event"))
+        self.assertEqual(self.ledger().available(), 0)
+        with self.assertRaisesRegex(LedgerError, "purchase-revoked"):
+            self.ledger().accept_purchase("restore-old-purchase")
+
+    def testRefundBeforePurchaseCreatesDurableTombstone(self):
+        ledger = self.revocation_ledger()
+        self.assertTrue(ledger.accept_revocation("fixture-out-of-order"))
+        self.assertEqual(ledger.available(), 0)
+        with self.assertRaisesRegex(LedgerError, "purchase-revoked"):
+            self.ledger().accept_purchase("late-purchase")
+
+    def testRefundBlocksUndispatchedWorkButPreservesChargedAndUncertainUsage(self):
+        ledger = self.funded()
+        active = self.reserve(ledger, maximum=10)
+        ledger.begin_dispatch(active, payload_hash="a" * 64)
+        ledger.mark_uncertain(active)
+        pending = self.reserve(ledger, maximum=10)
+        self.revocation_ledger().accept_revocation("fixture-refund")
+        with self.assertRaisesRegex(LedgerError, "insufficient-credit"):
+            ledger.begin_dispatch(pending, payload_hash="b" * 64)
+        ledger.release(pending)
+        with self.assertRaisesRegex(LedgerError, "dispatched-reservation-cannot-release"):
+            ledger.release(active)
+        self.assertEqual(ledger.settle(active, actual_usage=5), 10)
+        self.assertEqual(self.ledger().available(), -10)
+        with self.assertRaisesRegex(LedgerError, "insufficient-credit"):
+            self.reserve(ledger)
+        # Later valid credit pays the deficit; it never recreates refunded funds.
+        self.ledger(purchase=replace(self.purchase, transaction="654321", credit_units=40)).accept_purchase("new-purchase")
+        self.assertEqual(ledger.available(), 30)
+
+    def testUnverifiedMismatchedAndCollidingRevocationsDoNotChangeWallet(self):
+        ledger = self.funded()
+        with self.assertRaisesRegex(LedgerError, "revocation-not-configured"):
+            ledger.accept_revocation("unconfigured")
+        event = VerifiedRevocation(self.account, self.purchase.transaction, self.purchase.product, "sandbox", str(uuid.uuid4()))
+        for invalid in (replace(event, account=str(uuid.uuid4())), replace(event, environment="production"), replace(event, product="different.product")):
+            with self.assertRaises(LedgerError):
+                self.revocation_ledger(invalid).accept_revocation("bad-event")
+        self.assertEqual(ledger.available(), 100)
+        self.revocation_ledger(event).accept_revocation("valid")
+        with self.assertRaisesRegex(LedgerError, "revocation-conflict"):
+            self.revocation_ledger(replace(event, transaction="654321")).accept_revocation("same-id-new-purchase")
+        other = str(uuid.uuid4())
+        with self.assertRaisesRegex(LedgerError, "revocation-conflict"):
+            self.revocation_ledger(replace(event, account=other, event_id=str(uuid.uuid4())), account=other).accept_revocation("wrong-owner")
+
+    def testVerifierFailureAndDisabledLedgerNeverApplyRefund(self):
+        self.funded()
+        calls = []
+        def verify(_):
+            calls.append(True)
+            raise ValueError("private verifier detail")
+        ledger = VoiceLedger(self.path, authenticate=lambda: self.account, verify_purchase=lambda _: self.purchase,
+            verify_revocation=verify, rates=(self.rate,), enabled=False)
+        with self.assertRaisesRegex(LedgerError, "billing-not-configured"):
+            ledger.accept_revocation("fixture")
+        self.assertEqual(calls, [])
+        ledger.enabled = True
+        with self.assertRaisesRegex(LedgerError, "revocation-unverified"):
+            ledger.accept_revocation("fixture")
+        self.assertEqual(ledger.available(), 100)
 
     def testDisabledProductionAndUnauthenticatedCannotMintOrReserve(self):
         ledger = self.ledger(enabled=False)
