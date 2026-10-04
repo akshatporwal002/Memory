@@ -101,6 +101,7 @@ import CryptoKit
         }
     }
     func signIn(_ provider: String) async {
+        if userID != nil { await linkLoginMethod(provider); return }
         guard let client,!busy else { return }; busy = true; error = nil; defer { busy = false }
         do { finishSignIn(try await client.signIn(provider:provider)) }
         catch { self.error = error.localizedDescription }
@@ -141,6 +142,22 @@ import CryptoKit
         catch { self.error = error.localizedDescription }
     }
     func changeEmail() { emailCodeAddress = nil; error = nil }
+    func removeLoginIdentity(_ identity: AppLoginIdentity) async {
+        guard let client, let id = userID, !busy else { return }
+        busy = true; error = nil; defer { busy = false }
+        do { try await client.removeLoginIdentity(identity.id, expectedUserID: id); await refreshLoginIdentities() }
+        catch { self.error = error.localizedDescription }
+    }
+    func signOutAll(model: EngramModel) async {
+        guard !busy, !model.chatGPT.busy, !model.busy, !model.typedAnswer.busy, !model.markingAnswer else {
+            error = "Finish the current request or answer review before signing out."; return
+        }
+        error = nil
+        if signedIn { await signOut(model: model); guard !signedIn else { return } }
+        await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
+        await model.chatGPT.signOutAll()
+        if let failure = model.chatGPT.error { error = failure }
+    }
     private func finishSignIn(_ id: UUID) {
         // Keep the current profile active until the learner accepts a library.
         // Cancelling Google sign-in must not orphan a ChatGPT local profile.

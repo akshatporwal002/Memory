@@ -19,19 +19,16 @@ struct AccountSettingsRows: View {
         Group {
             if model.cloud.signedIn {
                 EngramListSection {
-                    Label("Connected",systemImage:"person.crop.circle.badge.checkmark")
-                    Text(model.cloud.status).font(.caption).engramSecondaryText()
+                    Text("Engram library").font(.subheadline)
+                    Text(model.cloud.userID != nil ? (model.cloud.syncEnabled ? model.cloud.status : "Signed in · cloud sync not enabled") : "ChatGPT profile · saved on this device").font(.caption).engramSecondaryText()
                     if model.cloud.syncEnabled && model.cloud.userID != nil { Button("Sync now") { Task { await model.cloud.sync(model:model) } } }
-                    Button("Sign out",role:.destructive) { confirmSignOut = true }
-                } header: { Text("Account") } footer: { Text("Your libraries belong to your Engram profile. Eligible AI requests use your connected ChatGPT plan.") }
+                } header: { Text("Library") }
                 EngramListSection { LibrarySpacePicker(model: model) }
             }
             EngramAccountSignIn(model: model, compact: true)
-            if model.cloud.userID != nil {
-                Text("Google, Apple and email can be linked to this Engram account. Your connected ChatGPT account supplies AI access.").font(.caption).engramSecondaryText()
-                ForEach(model.cloud.loginIdentities) { identity in
-                    Label(identity.provider.capitalized + " linked", systemImage: "checkmark").font(.caption).engramSecondaryText()
-                }
+            if model.cloud.signedIn || !model.chatGPT.registrations.isEmpty {
+                Button("Sign out all", role: .destructive) { confirmSignOut = true }
+                    .frame(minHeight: 44).accessibilityIdentifier("account-sign-out-all")
             }
             if model.cloud.pendingLinkUserID != nil {
                 HStack { Text("Finish linking in your browser").font(.caption); Spacer(); Button("Cancel") { model.cloud.cancelLoginLink() } }
@@ -67,9 +64,9 @@ struct AccountSettingsRows: View {
                 Button(model.cloud.syncEnabled ? "Start with my cloud library" : "Start with an empty library") { Task { await model.cloud.confirmInitialLibrary(upload:false,model:model) } }
                 Button("Cancel",role:.cancel) { Task { await model.cloud.cancelInitialLibrary() } }
             } message: { Text(model.cloud.localProfileID != nil ? "Your ChatGPT connection stays connected. You can copy its local library to a new Engram profile, or use the account's existing library. The original is preserved." : "Uploading is optional. Local libraries and other accounts remain separate on this device.") }
-            .confirmationDialog("Sign out of Engram?",isPresented:$confirmSignOut) {
-                Button("Sign out",role:.destructive) { Task { await model.cloud.signOut(model:model) } }
-            } message: { Text("Your account's work stays saved privately on this device. The local library becomes active.") }
+            .confirmationDialog("Sign out of all accounts on this device?",isPresented:$confirmSignOut) {
+                Button("Sign out all",role:.destructive) { Task { await model.cloud.signOutAll(model:model) } }
+            } message: { Text("Signs out of Engram's Google, Apple and email session and disconnects all ChatGPT AI accounts on this device. Saved libraries remain preserved; the guest library becomes active. Other devices are not signed out.") }
     }
 }
 

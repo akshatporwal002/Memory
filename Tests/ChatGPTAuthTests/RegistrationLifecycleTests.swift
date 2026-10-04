@@ -3,6 +3,32 @@ import XCTest
 @testable import ChatGPTAuth
 
 final class RegistrationLifecycleTests: XCTestCase {
+    @MainActor final class Storage: ChatGPTCredentialStorage {
+        var vault: ChatGPTVault
+        init(_ vault: ChatGPTVault) { self.vault = vault }
+        func load() throws -> ChatGPTVault? { vault }
+        func save(_ vault: ChatGPTVault) throws { self.vault = vault }
+    }
+    @MainActor func testSignOutAllRemovesEveryRegistrationAndPersistsAcrossRestart() async {
+        var vault = ChatGPTVault(hostID: "fixture-host")
+        vault.registrations = [account("one"), account("two", subject: "other")]
+        vault.activeClientID = "one"
+        let storage = Storage(vault), transport = OAuthClientTests.Transport()
+        let client = ChatGPTOAuthClient(transport: transport, verifier: OAuthClientTests.Verifier())
+        func connection() -> ChatGPTConnection {
+            ChatGPTConnection(storage: storage, client: client,
+                makeListener: { fatalError("Sign-out must not open a browser") },
+                makeAttempt: { _, _, _ in fatalError("Sign-out must not initiate OAuth") })
+        }
+        let active = connection()
+        await active.signOutAll()
+        XCTAssertTrue(active.registrations.isEmpty)
+        XCTAssertNil(active.activeClientID)
+        XCTAssertFalse(active.busy)
+        XCTAssertEqual(storage.vault.hostID, "fixture-host")
+        XCTAssertEqual(transport.requests.filter { $0.url?.path.contains("revoke") == true }.count, 2)
+        XCTAssertEqual(connection().state, .disconnected)
+    }
     private func account(_ client: String, subject: String = "owner", email: String = "same@example.com", expiry: Double = 2000) -> ChatGPTRegistration {
         ChatGPTRegistration(clientID: client, subject: subject, email: email, credentials:
             ChatGPTCredentials(accessToken: "fixture", refreshToken: "fixture", idToken: "fixture",

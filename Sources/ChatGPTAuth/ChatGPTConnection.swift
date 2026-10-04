@@ -121,6 +121,20 @@ public enum ChatGPTConnectionState: String,Sendable { case disconnected,connecti
     }
 
     /// Future AI adapters use this gate. Main-actor busy state serializes rotating-token refreshes.
+    public func signOutAll() async {
+        guard !busy else { return }
+        busy = true; error = nil; defer { busy = false }
+        var revoked = true
+        for account in vault.registrations where account.credentials != nil {
+            do { try await client.revoke(account) } catch { revoked = false }
+        }
+        do {
+            var updated = vault; updated.registrations = []; updated.activeClientID = nil
+            try persist(updated); showPlanConfirmation = false
+            notice = revoked ? "All ChatGPT accounts disconnected on this device." : "Disconnected on this device. Remove Engram access in ChatGPT settings if remote revocation was not completed."
+        } catch { self.error = ChatGPTAuthError.secureStorageUnavailable.localizedDescription }
+    }
+
     public func validAccessToken(now: Date = Date()) async throws -> String {
         guard storageReady, !busy, let account = activeAccount, let credentials = account.credentials else { throw ChatGPTAuthError.signInRequired }
         guard account.planUsageEnabled else { throw ChatGPTAuthError.planPermissionMissing }

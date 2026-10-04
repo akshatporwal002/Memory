@@ -9,6 +9,8 @@ import AppKit
 
 struct ChatGPTConnectionView: View {
     @Bindable var connection: ChatGPTConnection
+    var signOutAction: (() async -> Void)? = nil
+    @State private var confirmSignOut = false
     @State private var browser: ChatGPTBrowserDestination?
     @Environment(\.engramTheme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -27,7 +29,7 @@ struct ChatGPTConnectionView: View {
                 }
                 Text(statusText)
                     .font(theme.font(.metadata)).foregroundStyle(theme.palette(for: scheme).secondaryText)
-                Button("Sign out of ChatGPT") { Task { await connection.signOut() } }
+                Button("Disconnect ChatGPT", role: .destructive) { confirmSignOut = true }
                     .buttonStyle(.bordered).disabled(connection.busy)
             }
             ForEach(connection.registrations) { account in
@@ -77,6 +79,11 @@ struct ChatGPTConnectionView: View {
             if let error = connection.error { EngramInlineError(message: error) }
             if let notice = connection.notice { Text(notice).font(theme.font(.metadata)).accessibilityLabel(notice) }
         }
+        .confirmationDialog("Disconnect this ChatGPT account?", isPresented: $confirmSignOut) {
+            Button("Disconnect ChatGPT", role: .destructive) { Task {
+                if let signOutAction { await signOutAction() } else { await connection.signOut() }
+            } }
+        } message: { Text("Removes this account's AI access on this device. Google, Apple and email stay signed in. If you use a local ChatGPT library profile, its library is preserved and the guest library becomes active.") }
         .alert("You're using your ChatGPT plan", isPresented: $connection.showPlanConfirmation) {
             Button("Got it") { connection.acknowledgePlanUsage() }
         } message: {

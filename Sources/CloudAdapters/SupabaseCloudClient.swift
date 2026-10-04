@@ -106,9 +106,22 @@ public actor SupabaseCloudClient: CloudTransport {
         let session = try await client.auth.signInWithOAuth(provider:provider == "apple" ? .apple : .google,redirectTo:URL(string:"engram://app-auth"))
         return session.user.id
     }
-    public func signOut() async throws { try await client.auth.signOut() }
+    public func signOut() async throws { try await client.auth.signOut(scope: .local) }
     public func loginIdentities() async throws -> [AppLoginIdentity] {
-        try await client.auth.userIdentities().map { AppLoginIdentity(id: $0.identityId, provider: $0.provider) }
+        try await client.auth.userIdentities().map { identity in
+            let email: String?
+            if case .string(let value) = identity.identityData?["email"] { email = value } else { email = nil }
+            return AppLoginIdentity(id: identity.identityId, provider: identity.provider, email: email)
+        }
+    }
+    public func removeLoginIdentity(_ identityID: UUID, expectedUserID: UUID) async throws {
+        guard try await currentUserID() == expectedUserID else { throw EngramError.conflict }
+        let identities = try await client.auth.userIdentities()
+        guard identities.count > 1 else { throw EngramError.invalid("Keep at least one login method to access your Engram account.") }
+        guard let identity = identities.first(where: { $0.identityId == identityID }), identity.provider != "email" else {
+            throw EngramError.invalid("This login method cannot be removed here.")
+        }
+        try await client.auth.unlinkIdentity(identity)
     }
     public func linkProvider(_ provider: String, expectedUserID: UUID) async throws {
         guard ["google", "apple"].contains(provider), try await currentUserID() == expectedUserID else { throw EngramError.conflict }
