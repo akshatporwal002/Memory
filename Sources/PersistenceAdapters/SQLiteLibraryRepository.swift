@@ -79,13 +79,20 @@ public actor SQLiteLibraryRepository: LibraryRepository {
     public func hasAccount(_ userID: String) throws -> Bool {
         !(try db.rows("SELECT account FROM libraries WHERE account=?",["user:" + userID])).isEmpty
     }
-    public func selectAccount(_ userID: String?, uploadLocal: Bool = false, syncEnabled: Bool = true) throws {
+    public func selectAccount(_ userID: String?, uploadLocal: Bool = false, syncEnabled: Bool = true, copyCurrentChatGPTProfile: Bool = false) throws {
         let next = userID.map { "user:" + $0 } ?? "local"
         guard !next.contains("\u{0}") else { throw EngramError.invalid("Invalid account.") }
+        if copyCurrentChatGPTProfile {
+            guard uploadLocal, userID != nil, partition.hasPrefix("user:chatgpt-"), partition != next else { throw EngramError.conflict }
+            guard try db.rows("SELECT account FROM libraries WHERE account=?", [next]).isEmpty else {
+                throw EngramError.invalid("This account already has a saved library. Use its existing library; your ChatGPT profile's library remains saved separately.")
+            }
+        }
         try db.execute("BEGIN IMMEDIATE")
         do {
             if try db.rows("SELECT account FROM libraries WHERE account=?", [next]).isEmpty {
-                let local = try db.rows("SELECT payload FROM libraries WHERE account='local'").first?["payload"] ?? ""
+                let source = copyCurrentChatGPTProfile ? partition : "local"
+                let local = try db.rows("SELECT payload FROM libraries WHERE account=?", [source]).first?["payload"] ?? ""
                 var snapshot = uploadLocal ? try JSONDecoder().decode(LibrarySnapshot.self,from:Data(local.utf8)) : LibrarySnapshot(); snapshot.session = nil
                 try db.execute("INSERT INTO libraries(account,revision,payload,upload_enabled) VALUES(?,?,?,?)", [next,String(snapshot.revision),try Self.encode(snapshot),userID == nil || !syncEnabled ? "0" : "1"])
                 if uploadLocal, userID != nil, syncEnabled { try db.execute("INSERT INTO outbox(id,account,revision,payload) VALUES(?,?,?,?)", [UUID().uuidString,next,String(snapshot.revision),"{}"]) }

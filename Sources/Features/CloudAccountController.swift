@@ -142,8 +142,8 @@ import CryptoKit
     }
     func changeEmail() { emailCodeAddress = nil; error = nil }
     private func finishSignIn(_ id: UUID) {
-        localProfileID = nil
-        UserDefaults.standard.set("cloud", forKey: "engram.accountMethod")
+        // Keep the current profile active until the learner accepts a library.
+        // Cancelling Google sign-in must not orphan a ChatGPT local profile.
         confirmationUserID = id
     }
     func confirmInitialLibrary(upload: Bool,model: EngramModel) async {
@@ -152,10 +152,13 @@ import CryptoKit
         busy = true; defer { busy = false }
         do {
             await model.assistant.stopAndWait(); model.voice.stop(); model.pdfLearning.cancel()
-            try await repository.selectAccount(id.uuidString.lowercased(),uploadLocal:upload,syncEnabled:syncEnabled)
+            try await repository.selectAccount(id.uuidString.lowercased(),uploadLocal:upload,syncEnabled:syncEnabled,
+                copyCurrentChatGPTProfile: upload && localProfileID != nil)
             model.pdfLearning.selectAccount(id)
-            userID = id; confirmationUserID = nil
+            userID = id; localProfileID = nil; confirmationUserID = nil
+            UserDefaults.standard.set("cloud", forKey: "engram.accountMethod")
             status = syncEnabled ? "Connected" : "Signed in · libraries saved on this device"
+            await refreshLoginIdentities()
             await model.restoreLibrarySelection(); startNotifications(model:model); await model.refresh()
             busy = false; await sync(model:model)
         } catch { self.error = error.localizedDescription }
@@ -174,6 +177,7 @@ import CryptoKit
             guard try await repository.hasAccount(id.uuidString.lowercased()) else { confirmationUserID = id; return }
             try await repository.selectAccount(id.uuidString.lowercased(),syncEnabled:syncEnabled); model.pdfLearning.selectAccount(id); userID = id
             status = syncEnabled ? "Connected" : "Signed in · libraries saved on this device"
+            await refreshLoginIdentities()
             await model.restoreLibrarySelection(); startNotifications(model:model); await model.refresh(); await sync(model:model)
         }
         catch { status = "Local library" }

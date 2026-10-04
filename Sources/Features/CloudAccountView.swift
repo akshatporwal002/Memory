@@ -28,6 +28,7 @@ struct AccountSettingsRows: View {
             }
             EngramAccountSignIn(model: model, compact: true)
             if model.cloud.userID != nil {
+                Text("Google, Apple and email can be linked to this Engram account. Your connected ChatGPT account supplies AI access.").font(.caption).engramSecondaryText()
                 ForEach(model.cloud.loginIdentities) { identity in
                     Label(identity.provider.capitalized + " linked", systemImage: "checkmark").font(.caption).engramSecondaryText()
                 }
@@ -62,10 +63,10 @@ struct AccountSettingsRows: View {
             } message: { Text("Your ChatGPT identity and AI access use one sign-in. Cloud library sync for this method is awaiting server setup; your libraries stay saved on this device.") }
             .onAppear { if let value = model.cloud.pendingJoinToken { token = value; model.cloud.pendingJoinToken = nil } }
             .confirmationDialog("Choose your account's starting library",isPresented:Binding(get: { model.cloud.confirmationUserID != nil },set: { _ in })) {
-                Button(model.cloud.syncEnabled ? "Upload this device's local library" : "Use this device's local library") { Task { await model.cloud.confirmInitialLibrary(upload:true,model:model) } }
+                Button(model.cloud.localProfileID != nil ? "Copy my ChatGPT profile's library" : (model.cloud.syncEnabled ? "Upload this device's local library" : "Use this device's local library")) { Task { await model.cloud.confirmInitialLibrary(upload:true,model:model) } }
                 Button(model.cloud.syncEnabled ? "Start with my cloud library" : "Start with an empty library") { Task { await model.cloud.confirmInitialLibrary(upload:false,model:model) } }
                 Button("Cancel",role:.cancel) { Task { await model.cloud.cancelInitialLibrary() } }
-            } message: { Text("Uploading is optional. Local libraries and other accounts remain separate on this device.") }
+            } message: { Text(model.cloud.localProfileID != nil ? "Your ChatGPT connection stays connected. You can copy its local library to a new Engram profile, or use the account's existing library. The original is preserved." : "Uploading is optional. Local libraries and other accounts remain separate on this device.") }
             .confirmationDialog("Sign out of Engram?",isPresented:$confirmSignOut) {
                 Button("Sign out",role:.destructive) { Task { await model.cloud.signOut(model:model) } }
             } message: { Text("Your account's work stays saved privately on this device. The local library becomes active.") }
