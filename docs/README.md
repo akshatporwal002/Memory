@@ -1,49 +1,46 @@
 # Documentation
 
-Project documentation belongs in this directory. Keep new design proposals under `design/`; use the sections below to find existing plans, research, guides, and verification reports.
+Start with [current implementation status](CURRENT-STATUS.md) and [remaining work](BACKLOG.md). Updated after main advanced to `ef0218d` on 5 October 2026. Later implementation reports supersede the earlier cleanup snapshot.
 
-Documents retain their original dates and verification context. Historical reports are not claims about the current build. Unless stated otherwise, shell commands and plain-text source/tool paths assume the repository root as the working directory. Markdown links resolve relative to their document.
+## Active requirements
 
-## Product and design
+- [October 5 review, batch grading, maths and tutor requirements](REVIEW-UI-BATCH-GRADING-AND-TUTOR-REQUIREMENTS.md)
+- [October 5 approvals](OVERNIGHT-APPROVALS-2026-10-05.md) — Q1–Q10 and tutor/setup decisions.
+- [Latest implementation decisions and validation](UNATTENDED-REVIEW-IMPLEMENTATION-DECISIONS.md)
+- [External setup and verified product metadata](EXTERNAL-SETUP-STATUS.md)
 
-- [iPhone Library product proposal and user flows](design/iphone-library-product-brief.md)
-- [iPhone Library landing implementation and scope](design/iphone-library-landing-implementation.md)
-- [Product plan](ENGRAM-PLAN.md)
-- [First-build specification](ENGRAM-FIRST-BUILD.md)
-- [Product research](PRODUCT-RESEARCH.md)
-- [Competitor pain-point research](COMPETITOR-PAIN-RESEARCH.md)
-- [Design handoff](DESIGN-HANDOFF.md)
-- [Design preview and assets](../design/previews/design-preview.html) — mockups, not the native app
+- [Remaining work](BACKLOG.md) — unfinished features, configuration/testing gates and optional future candidates extracted from mixed historical documents.
+- [Consolidated requirements — 4 October](OVERNIGHT-IMPLEMENTATION-REQUIREMENTS.md) — latest UI/accounts, providers/voice, billing, Testing decks, maths input and tutor specification.
+- [Voice, transcription and payment specification — 4 October](VOICE-TRANSCRIPTION-AND-BILLING-PLAN.md) — detailed job/payment behavior, extended by the consolidated requirements.
 
-## Build and usage
+**Conflict rule:** use the newest dated documentation. Later dated follow-ups inside a document override its earlier directions. The consolidated requirements explicitly override the voice specification's older deferrals of Google BYOK and paid cloud speech. Archived documents supply historical context only; they do not restore superseded requirements.
+
+## Build, architecture and reference
 
 - [Project overview](../README.md)
 - [Apple build guide](README-APPLE.md)
-- [Toolchain setup](TOOLCHAIN.md)
-- [Screenshot export](SCREENSHOT-EXPORT.md)
-
-## Architecture and interoperability
-
-- [Architecture](ARCHITECTURE.md)
+- [Current architecture](ARCHITECTURE.md)
+- [Accounts and named libraries](ACCOUNT-AND-LIBRARIES.md)
+- [ChatGPT authentication](CHATGPT-SIGN-IN.md)
 - [Anki compatibility](ANKI-COMPATIBILITY.md)
-- [Anki source review](ANKI-SOURCE-REVIEW.md)
-- [Media compatibility](MEDIA-COMPATIBILITY.md)
+- [Imported card/media compatibility](MEDIA-COMPATIBILITY.md)
+- [Screenshot export](SCREENSHOT-EXPORT.md)
 - [Third-party notices](THIRD-PARTY-NOTICES.md)
 
-## Handoff and verification
+Reference guides describe their supported scope. Historical test counts inside them retain their original dates; source presence or fixture screenshots do not certify current live services.
 
-- [Implementation handoff](HANDOFF.md)
-- [Implementation log](IMPLEMENTATION-LOG.md)
-- [Core review](CORE-REVIEW.md)
-- [Import review](IMPORT-REVIEW.md)
-- [Test results](TEST-RESULTS.md)
-- [Performance](PERFORMANCE.md)
-- [Raw validation evidence](../validation/)
+## Current feature reports
 
-## Files intentionally kept with their consumers
+- [Overnight progress](OVERNIGHT-IMPLEMENTATION-PROGRESS.md) and [acceptance audit](OVERNIGHT-ACCEPTANCE-AUDIT.md) — later stage notes override earlier checklists.
+- [Provider foundation](PERSONAL-AI-PROVIDER-FOUNDATION.md), [cloud speech](CLOUD-SPEECH-IMPLEMENTATION.md), [voice capture](VOICE-CAPTURE-INTEGRATION.md), [purchase/access foundation](VOICE-PURCHASE-AND-ACCESS-FOUNDATION.md).
+- [Testing library](TESTING-LIBRARY.md), [mathematical input](MATH-EQUATION-ENTRY.md), [tutor assignments](TUTOR-ASSIGNMENTS-PLAN.md), [tutor validation](TUTOR-FOUNDATION-VALIDATION.md).
+- [Account revision](ACCOUNT-CONNECTION-REVISION.md), [account validation](ACCOUNT-MANAGEMENT-VALIDATION.md), [Google sign-in repair](GOOGLE-SIGN-IN-REPAIR.md).
 
-- [Agent definitions](../agents/README.md) remain in `agents/` for tool discovery.
-- [Anki fixture notes](../Tests/AnkiAdapterTests/Fixtures/README.md) stay with the test resources.
-- [SQLite provenance](../Sources/CSQLite/PROVENANCE.md), [archive-codec provenance](../Sources/CArchive/PROVENANCE.md), and vendored licenses stay beside their source.
-- [Bundled acknowledgements](../App/Acknowledgements.txt) remain an app resource.
-- Design assets/generation tools remain in `design/`; raw logs and measurements remain in `validation/`.
+## Historical material
+
+[Archive index](archive/README.md) contains completed implementation/review reports, superseded plans, research, benchmarks and old environment setup. Remaining work from those documents is consolidated in the backlog; their original decisions and evidence remain available. Raw logs/screenshots stay beside their existing consumers in `validation/`, `design/previews/` and `current_ui/`.
+
+## Files kept beside their consumers
+
+- [Agent definitions](../agents/README.md), [Anki fixture notes](../Tests/AnkiAdapterTests/Fixtures/README.md), and provenance records stay with their tools/tests/source.
+- [SQLite provenance](../Sources/CSQLite/PROVENANCE.md), [archive-codec provenance](../Sources/CArchive/PROVENANCE.md), vendored licenses and [bundled acknowledgements](../App/Acknowledgements.txt) remain in place.

@@ -1,12 +1,8 @@
-# Native Apple build and verification
+# Build and run on Apple platforms
 
-These are **unverified Apple build instructions** for the native SwiftUI implementation. This development run used Windows; Xcode compilation, simulators, SwiftUI previews, VoiceOver, native keyboard behavior and Liquid Glass rendering are pending. A Swift 6.3.3 Windows `swiftc -frontend -parse` pass succeeded for Features and App source; it checks Swift syntax only, without resolving SwiftUI types or linking an Apple app. The HTML contact sheet is only a design mockup.
+Deployment targets are iOS/iPadOS 17 and macOS 14. Use a Mac with Xcode, installed simulator runtimes and XcodeGen. Physical-device signing requires the user's development configuration. The checked-in [project.yml](../project.yml) and [Package.swift](../Package.swift) define the project and dependencies.
 
-## Prerequisites and build
-
-- A Mac supported by stable Xcode 26, including installed iOS simulator runtimes. Deployment targets are iOS/iPadOS 17 and macOS 14. Build with the modern SDK for system Liquid Glass on supported OS 26 devices; earlier releases use normal native system chrome.
-- XcodeGen installed from its official distribution (for example `brew install xcodegen`). No paid service is required for simulator or local unsigned builds. Device signing requires the user's own Apple development setup.
-- The checked-in `Package.swift` and `Vendor/FSRS` source must be present.
+## Build
 
 From the repository root:
 
@@ -18,34 +14,23 @@ xcodebuild -project Engram.xcodeproj -scheme Engram-macOS -destination 'platform
 open Engram.xcodeproj
 ```
 
-Choose an installed iPhone simulator, then an iPad simulator, and Run `Engram-iOS`. Run `Engram-macOS` using My Mac. Exact device names vary by installed runtime: `xcrun simctl list devices available`. Record the device and OS used when executing the pending checklist. `xcodegen` generates the project, iOS Info.plist and Mac entitlements from the checked-in specification; those outputs must not be confused with successful compilation.
+Run `Engram-iOS` with an installed iPhone/iPad simulator, or `Engram-macOS` with My Mac. Discover available simulator names using `xcrun simctl list devices available`. Run a device build only with the appropriate signing/provisioning configuration.
 
-The application uses `Application Support/Engram/library.json` within its own sandbox/container. It loads an existing file or starts an empty library. Each accepted grade writes the entire validated snapshot atomically before advancing. Media lives in that library snapshot. No network or AI provider is needed for local study. Do not delete the app/container before exporting a complete backup.
+## Tests
 
-macOS uses a single `Window`, removes the New Window command, and sets a minimum readable window size. iOS/iPadOS disable multiple scenes in the generated Info.plist. This avoids multiple repository writers until explicit multiwindow coordination is implemented. A separate installation on another device has separate data; this build does not sync.
+```sh
+swift test
+swift test --package-path Vendor/FSRS
+```
 
-## UI behavior and integration
+For UI tests, select an available simulator and run the shared iOS scheme's test action. DEBUG `--ui-testing` fixtures isolate sample data and simulated responses; they do not verify live account/provider behavior.
 
-`App/EngramApp.swift` is the concrete composition root: `AtomicFileRepository` + `FSRSScheduler` + `StudyService` + `EngramModel`. The Features target imports only LearningCore, StudyApplication and DesignSystem. It must not create a persistence or scheduler adapter.
+## Storage and configuration
 
-`EngramRootView(model:portabilityAction:)` provides an application-owned import/export sheet. It inspects packages, explains compatibility and source identity, requires a scheduling choice, writes a recovery backup and commits a confirmed merge/replacement. Native backup and Anki export use the system file exporter. `CardContentView(text:media:)` renders the shared allowlisted formatting, local raster images and local audio. See ANKI-COMPATIBILITY.md and MEDIA-COMPATIBILITY.md for supported cases. Both integrations are implemented in source; Apple file-panel and media runtime checks remain pending.
+The app opens `Application Support/Engram/library.sqlite` in its own container and can migrate the legacy JSON library with a verified recovery copy. Named libraries are isolated by account and selected library. Export each active library to a complete `.engram` backup before removing an app/container or changing production data. Recovery and data migration are implemented in source; check their full platform behavior using disposable test data.
 
-Today uses the same queue policy as study and labels available new/due counts within limits. Library lists real notes and generated cards, with per-card suspension, deck filtering, text search, `tag:name` and `is:suspended`. Note context menus expose editing/deletion; deck actions expose rename/delete. New notes support basic and cloze; imported reverse notes retain their type. Editor preview uses the same core renderer as review. Saved note type changes require migration and are disabled. Ordinary text edits and moves preserve schedules. Removing a cloze marker retires that sibling. Unsaved drafts live in the feature model above layout branches, with an explicit discard confirmation.
+ChatGPT credentials are stored separately in device-only Keychain. Google/Apple/email and hosted sync need provider/backend configuration; `EngramCloudPilotEnabled` remains false by default. A configured endpoint or successful build is not proof of live authentication or two-device synchronization.
 
-Review uses an opaque scrollable content surface with controls outside scrolling content. Compact grades are 2×2, wide grades are a row, accessibility text sizes use a column. Question and answer use the core renderer. Space reveals, 1–4 grade after reveal, Command-Z undoes, Escape exits. These shortcuts only exist in the review sheet, which has no editable inputs; editor shortcuts are separate. Busy guards and captured presentation identifiers prevent rapid inputs from grading the next question. Stable mutation IDs permit retries after uncertain completion. Persistence succeeds before the model advances; animation does not drive writes. Exiting keeps the persisted session; completion offers a refresh for newly due learning cards.
+## Verification scope
 
-Theme and appearance are persisted separately in device UserDefaults. Both stay separate from library/scheduler data. The root updates the theme environment without changing feature identity. The navigation shell adapts by width (<600 compact native tabs, wider native sidebar). Native platform controls provide system material; Increase Contrast/Reduce Transparency request opaque toolbar treatment. Exact optical behavior remains a runtime gate.
-
-## Pending native acceptance run
-
-1. Launch empty, create `Biology::Plants`, create a basic note, create `The {{c1::xylem}} carries {{c2::water}}.`, verify both siblings, preview and edit a note.
-2. Study, reveal, exercise Again/Hard/Good/Easy, undo, and rapidly repeat mouse/keyboard events. Confirm exactly one review event per accepted presentation. Exit and resume the saved revealed card; restart and verify cards/history persist.
-3. Search tags, suspend one cloze sibling, verify the other stays independently scheduled. Move a note, rename a parent deck, cancel and confirm note/deck deletion. Inspect true empty and no-match states.
-4. Switch Warm/Neutral and System/Light/Dark during a draft and between question/answer. Resize iPad/Mac, rotate phone, dismiss/reopen sheets and ensure draft/session selection persists.
-5. Run VoiceOver, Full Keyboard Access, largest Dynamic Type, long prompts and answers, empty/invalid cloze inputs, visible focus, Reduce Motion, Reduce Transparency and Increase Contrast. Check Save with keyboard presented and last list row above native tabs.
-6. Verify both pre-26 native fallback and OS26 Liquid Glass chrome over warm/light/dark backgrounds. Measure long review responsiveness before making performance claims.
-7. Exercise system import/export pickers with the checked-in Anki fixtures and a complete native backup. Confirm result counts, progress choice, duplicate policies, pre-import backup and restore. Test visible missing/unsupported media errors and actual image/audio playback.
-8. With a disposable app container, save a backup, close the app, corrupt its library file and relaunch. Restore through the failure screen and verify the original bytes survive under Recovery originals. Never perform this check on a user's real library.
-9. Open Settings → Open-source acknowledgements and verify the complete bundled notices are readable.
-
-Known limitations at this handoff: Apple compilation and runtime tests have not run. Startup recovery, rendering and portability are integrated in source and their platform-independent contracts have executed tests. Initial repository decoding runs away from the main actor. No claim is made that static source inspection verifies native behavior.
+Later repository reports record Apple builds, simulator tests and signed iPhone installations, superseding the [original Windows-only instructions](archive/superseded/README-APPLE.md). No build/tests were rerun for the 5 October documentation cleanup. See [current status](CURRENT-STATUS.md) for evidence and [the backlog](BACKLOG.md#implemented-foundations-needing-configuration-or-acceptance) for remaining accessibility, media, backup, performance, live AI and device/cloud acceptance.

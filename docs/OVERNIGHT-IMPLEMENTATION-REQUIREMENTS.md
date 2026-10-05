@@ -2,6 +2,8 @@
 
 Recorded: 4 October 2026, Australia/Sydney.
 
+Current implementation gaps and acceptance gates are consolidated in [BACKLOG.md](BACKLOG.md); source/evidence status is in [CURRENT-STATUS.md](CURRENT-STATUS.md). These requirements take precedence over conflicting older plans.
+
 Status: agreed requirements and implementation plan, not a claim that these features have been implemented. This document consolidates the latest UI, accounts, voice, billing, test-deck, tutor and maths requests. Later explicit user instructions take precedence.
 
 **Latest approval boundary:** the user requires individual manual approval before implementing any new question type. Ordering, multiple-select, new numeric question schemas, code/grammar debugging and every catalogue type below are proposals only until explicitly approved. Continue the approved UI/account/voice/billing/test-content work. The mathematical keyboard remains a separately requested input-tool design; do not use it to introduce unapproved question types.

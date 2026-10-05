@@ -2,6 +2,8 @@
 
 Status: implementation specification agreed on 4 October 2026. This document does not claim implementation or production readiness.
 
+> The later [consolidated requirements](OVERNIGHT-IMPLEMENTATION-REQUIREMENTS.md) override conflicting scope here: Google BYOK, optional Google/OpenAI cloud speech and a feature-flagged Gemini Live adapter are now requested. The billing rules below remain applicable. See [the backlog](BACKLOG.md) for current unfinished work.
+
 ## Deliverable and product decisions
 
 No application code, payment configuration or live charging will be changed as part of preparing this document. This newer specification supersedes conflicting voice and review behaviour in the existing voice documents.

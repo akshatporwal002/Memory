@@ -1,0 +1,61 @@
+# Verification evidence
+
+> Archived on 5 October 2026 from main `381c917`. This is historical context, not current implementation guidance. Outstanding work is tracked in [the backlog](../../BACKLOG.md); newer requirements take precedence.
+
+## Current integrated result
+
+**Final follow-up verification from the delivered project: 3 September 2026 04:28:29 Australia/Sydney — 62 XCTest cases passed, 0 failures**, source checkpoint `31fa632`. Full output replaces `validation/persistence-optimized-tests.log`. This includes the real Windows atomic-replacement failure (Foundation error513), unchanged-file/cache assertions and successful retry. The earlier directory-disappearance test now explicitly checks conflict rather than claiming it reaches file writing. The benchmark, FSRS and Anki results are unchanged; Apple filesystem fault injection, performance and native runtime remain pending.
+
+**Persistence follow-up, 3 September 2026 04:23:34 Australia/Sydney: 61 XCTest cases passed, 0 failures.** The release benchmark found multi-second per-grade latency with attachments. Exact-byte external-change checks replace redundant whole-library disk decoding; two independently meaningful regressions additionally reject same-revision file edits and external deletion. Their original 2-case/6-assertion RED is in `validation/external-file-change-red.log`, and full GREEN output is in `validation/persistence-optimized-tests.log`. All four benchmark cases retain exact durable-grade and complete-backup fidelity. See PERFORMANCE.md and the raw before/after JSON. Earlier 59-test evidence below remains historical.
+
+**Final delivered-source verification: 3 September 2026, 04:16:17 Australia/Sydney — 59 XCTest cases passed, 0 failures.** Built from the committed requested project at `C:\Users\aoswa\Documents\project\Memory` into a fresh external scratch directory, so no staged-package build outputs were reused. Source checkpoint: `e6fe3d4`. Full compile/test output: `validation/delivered-project-clean-tests.log`. The final three cases add direct-export provenance checks and refusal of unsafe same-library APKG merge. Eight application import transaction tests and twelve Anki/archive tests now pass. The original same-library duplication is captured in `validation/own-export-red.log`; the no-mutation guard result is in `validation/own-export-green.log`.
+
+3 September 2026, 04:06:48 Australia/Sydney: **56 XCTest cases passed, 0 failures**, using the production core, application, file/memory repositories, FSRS adapter, archive/Anki adapters and startup recovery helper. Full output: `validation/swift-tests-windows.log`. The trailing Swift Testing runner reports zero tests because Engram's suite uses XCTest; it does not negate the 56 executed XCTest cases.
+
+The pinned upstream FSRS source independently passed **98 tests in 23 suites**; output: `validation/fsrs-upstream-tests-windows.log`. Four actual Swift-produced package variants passed official Anki 26.08.1 backend import/semantic comparison in disposable collections; structured output: `validation/anki-roundtrip-results.json`. See ANKI-COMPATIBILITY.md for exact fixture provenance, tested content and limitations.
+
+Additional verified contracts include all six independently reproduced import regressions, seven import transaction tests (backup failure, repeated import, stale inspection/media collision, concurrent change during backup, pre-commit cancellation, final commit failure, native evidence rejection), twelve safe-markup tests and four damaged-startup recovery tests. Test assertions were retained through remediation. Historical RED logs are preserved under `validation/`; the native-evidence merge failure was reproduced before adding its explicit rejection. The recovery tests compare exact original bytes and validate failure safety.
+
+Final App/Features/DesignSystem source passed Swift syntax parsing; `validation/apple-source-syntax-only.log` explicitly labels its limitation. `project.yml` parsed with YAML anchors resolving identically for both apps' document types. **XcodeGen, SwiftUI typechecking, Apple linking and native execution have not run.** No code-coverage percentage, UI conformance or frame-rate claim is made.
+
+From the delivered repository root on Windows:
+
+```powershell
+. ./scripts/Enter-SwiftEnvironment.ps1
+swift test
+swift test --package-path Vendor/FSRS
+node design/previews/build-previews.cjs
+```
+
+The first integrated run used `--package-path staging` in the working sandbox. The delivered tree was copied without build artifacts; the final verification above used `swift test --package-path <delivered-project> --scratch-path <fresh-scratch-directory>`. Apple commands are in README-APPLE.md. Anki fixture commands are in ANKI-COMPATIBILITY.md. Ordinary tests use bundled fixtures without requiring Anki installed.
+
+## Host
+
+Windows x64, Swift 6.3.3, Microsoft Visual C++ 14.44, Windows SDK 10.0.22621. See TOOLCHAIN.md. No Mac/Xcode/simulators are available in this session.
+
+## First workflow run
+
+2026-09-03, `swift test --package-path staging` using scripts/Enter-SwiftEnvironment.ps1: build succeeded, 5 XCTest tests, 0 failures. Covers durable create/study/reopen/undo, cloze sibling preservation, invalid input rollback, memory/file repository CAS and validation, deterministic injected scheduler, memory transaction failure and retry. This run predates Anki adapter integration and later regression tests.
+
+An initial compilation failure was due to async expressions inside XCTest autoclosures; assertions were changed to await values first. This was test harness repair, not a business-behaviour RED test.
+
+## Design
+
+`node design/previews/build-previews.cjs`: 72 contrast pairs passed; minimum ordinary-text ratio 5.289:1. Contact sheet is a design mockup, not a native runtime capture. See DESIGN-HANDOFF.md for remaining checks.
+
+## Expanded core regression run
+
+2026-09-03 03:44 Sydney, full `swift test`: 20 XCTest tests, 0 failures. Includes 17 core/application tests plus 3 archive tests. Verified all four real FSRS grades, concurrent duplicate attempts, daily limit/undo and DST boundary, learning→review→relearning, persisted revealed-session resume, actual filesystem write failure/retry, corrupt-file non-overwrite, unsupported scheduler rejection, retirement/reintroduction and stale editor/deletion protection.
+
+Independent review regression RED: 12-test run had two failures (parent deck learning wait omitted children; parent no-op rename collided with own children). Both tests passed after sharing eligibility policy and validating rename mappings against unaffected decks case-insensitively. Baseline/RED source is checkpoint 079df56.
+
+## Required pending checks
+
+- Native document-picker Anki migration and backup/restore workflows; adapter and disposable backend checks above have passed.
+- Build iOS/iPadOS and macOS with stable Xcode; exercise create → study → relaunch.
+- Runtime layout: iPhone portrait/landscape, iPad narrow/full, Mac resize, long content and keyboard-visible editor.
+- Runtime accessibility: VoiceOver, Dynamic Type, focus/keyboard, reduced motion/transparency, increased contrast.
+- Runtime native glass, reveal/grade interruptibility and frame timing; no frame-rate claim.
+- Large-library memory/write throughput and media playback on Apple platforms.
+
+This file is updated as verification proceeds. No native release-readiness claim is made.

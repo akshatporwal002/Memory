@@ -1,8 +1,6 @@
 # ChatGPT connection
 
-Settings → ChatGPT → Continue with ChatGPT connects an optional ChatGPT account.
-Eligible users can grant ChatGPT plan usage. This change adds authentication and
-session management; it does not add generation, tutoring, RAG, or library sync.
+The account flow connects an optional ChatGPT account; see [accounts and libraries](ACCOUNT-AND-LIBRARIES.md) for the newer unified screen and identity boundaries. This guide describes authentication mechanics. AI chat, grading and PDF workflows now use the connection, while ChatGPT identity alone does not establish a Supabase session. The newer direct AI & Connections controls are described in [the account revision](ACCOUNT-CONNECTION-REVISION.md); live provider acceptance remains in [the backlog](BACKLOG.md).
 
 The implementation follows OpenAI's public open-source flow:
 
@@ -25,7 +23,7 @@ in device-only, non-synchronizing Keychain storage outside the study repository,
 library exports, and defaults. Account/client mappings survive local sign-out;
 access, refresh, and ID tokens are cleared. Failed remote revocation is disclosed.
 
-Future AI adapters must obtain credentials through `validAccessToken()` so that
+AI adapters must obtain credentials through `validAccessToken()` so that
 plan permission and serialized refresh/token rotation are enforced. Inference
 must use the public Responses endpoint with `store: false` and `stream: true`.
 ChatGPT plan usage currently excludes hosted file search and the Files upload API.
