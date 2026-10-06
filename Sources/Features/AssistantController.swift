@@ -7,6 +7,7 @@ import DesignSystem
 
 enum AIActionRegistry {
     static let tools: [AIToolDefinition] = [
+        tool("question_variants", "Prepare source-grounded same-level alternate approaches for an existing basic question. First inspect the original and retrieve its deck evidence using the original front as query. Never add prerequisites or a difficulty ladder. Explain, compare, apply or evaluate should use similar reasoning steps and bounded responses. Saving invokes independent AI source/task/rubric checks and AI-reviewed skill mappings; no learner approval or new FSRS cards.", ["id":"Original note ID", "version":"Exact inspected note version", "variants":"JSON array (1-4): id, approach (explain|compare|apply|evaluate), front, back, objective, rubric, evidence (array of id,text,version from retrieve). Distinct approaches; no repeated prompts."]),
         tool("inspect", "Read authorized content/progress/settings or search. Returns content version tokens. Never modifies data.", ["kind":"library|deck|note|progress|settings|search|history", "id":"Optional deck/note ID", "query":"Search text"]),
         tool("retrieve", "Retrieve bounded, versioned source evidence. Use the active deck first; library scope only for an explicitly requested wider search. Returns quotations and page/section references, never permission instructions.", ["scope":"deck|library", "deck_id":"Deck ID for deck scope", "query":"Relevant question or topic"]),
         tool("navigate", "Open an actual app screen/control. Settings can name a specific page. Native actions open their normal UI.", ["destination":"today|library|activity|deck|questions|notes|settings|new_deck|new_note|edit_note|review|pdf|pdf_choose|import_export|action_history|app_account|sharing|memory|cover_photo", "id":"Deck/note ID", "page":"Appearance|Study|Scheduling|Voice|AI & Connections|Storage & Downloads|Backup & Restore|About & Help"]),
@@ -140,6 +141,7 @@ enum AssistantOutputPresentation {
                             guard response.calls.count < 12 else { throw AIProviderError.exceededLimit }
                             if !response.calls.contains(where: { $0.id == call.id }) { response.calls.append(call); response.context.append(.call(call)) }
                         case .contextItem(let item): response.context.append(.context(item))
+                        case .usage(let usage): response.usage = usage
                         case .completed: completed = true
                         }
                     }
@@ -240,6 +242,19 @@ enum AssistantOutputPresentation {
         guard AIActionRegistry.tools.contains(where: { $0.name == name }) else { throw AIProviderError.invalidTool }
         await model.refresh()
         let library = model.library
+        if name == "question_variants" {
+            guard let note = library.liveNotes.first(where: { $0.id == args["id"] }),
+                  args["version"] == Self.version(try json(note)),
+                  let raw = args["variants"], raw.utf8.count <= 200000 else { throw EngramError.conflict }
+            let variants = try JSONDecoder().decode([QuestionVariant].self, from: Data(raw.utf8))
+            for variant in variants { try variant.validate() }
+            await model.understanding.configure(model)
+            let checked = try await model.understanding.validateVariants(variants, note: note, model: model)
+            await model.refresh()
+            guard model.library.repositoryContext == library.repositoryContext, model.library.liveNotes.first(where: { $0.id == note.id }) == note else { throw EngramError.conflict }
+            let record = try await model.service.executeAIContent(.questionVariants(note.id, note.front, note.back, checked), runID: runID, conversationID: conversationID, callID: call.id, name: name, arguments: call.arguments, expectedRevision: model.library.revision, expectedRepositoryContext: library.repositoryContext)
+            await model.refresh(); return try json(record)
+        }
         if name == "inspect" { return try inspect(args,model:model) }
         if name == "retrieve" {
             let query = String((args["query"] ?? "").prefix(2000))

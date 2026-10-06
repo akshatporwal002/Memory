@@ -4,12 +4,23 @@ import LearningCore
 /// Application use cases. Views share this actor; no database or vendor scheduler enters presentation code.
 public actor StudyService {
     public enum DocumentDestination: Sendable { case notebook(String), folder(String) }
-    let repository: any LibraryRepository
+    var repository: any LibraryRepository
     private let libraries: LibrarySpaceRepository
     let scheduler: any Scheduler
-    public init(repository: any LibraryRepository, scheduler: any Scheduler) {
+    var learnerCoordinator: LearnerStudyCoordinator?
+    public func configureLearnerModels(store: any LearnerModelStore, account: @escaping @Sendable () async -> UUID?) {
+        guard learnerCoordinator == nil else { return }
+        let coordinator = LearnerStudyCoordinator(store: store, spaces: libraries, accountProvider: account)
+        learnerCoordinator = coordinator; repository = LearnerObservingRepository(base: libraries, coordinator: coordinator)
+    }
+    public init(repository: any LibraryRepository, scheduler: any Scheduler,
+                learnerStore: (any LearnerModelStore)? = nil, learnerAccount: (@Sendable () async -> UUID?)? = nil) {
         let scoped = LibrarySpaceRepository(base: repository)
-        self.repository = scoped; self.libraries = scoped; self.scheduler = scheduler
+        self.libraries = scoped; self.scheduler = scheduler
+        if let learnerStore, let learnerAccount {
+            let coordinator = LearnerStudyCoordinator(store: learnerStore, spaces: scoped, accountProvider: learnerAccount)
+            self.learnerCoordinator = coordinator; self.repository = LearnerObservingRepository(base: scoped, coordinator: coordinator)
+        } else { self.learnerCoordinator = nil; self.repository = scoped }
     }
     public func librarySpaces() async throws -> [LibrarySpace] { try await libraries.spaces() }
     public func selectedLibraryID() async -> String { await libraries.selectedID }
@@ -393,6 +404,7 @@ public actor StudyService {
         var note = Note(id: prior?.id ?? UUID().uuidString, deckID: draft.deckID, kind: draft.kind, front: draft.front,
             back: draft.back, tags: tags, source: draft.source, origin: prior?.origin, modifiedAt: now)
         note.questionType = draft.questionType ?? prior?.questionType
+        if let prior, prior.front == note.front, prior.back == note.back, prior.source == note.source { note.questionFamily = prior.questionFamily }
         if let index = library.notes.firstIndex(where: { $0.id == note.id }) { library.notes[index] = note } else { library.notes.append(note) }
         for i in library.cards.indices where library.cards[i].noteID == note.id {
             library.cards[i].deckID = draft.deckID
@@ -506,6 +518,8 @@ public actor StudyService {
         library.reviews.append(ReviewEvent(id: mutationID, cardID: item.card.id, deckID: item.card.deckID, sessionID: session.id,
             rating: rating, reviewedAt: revealedAt, committedAt: now, before: item.card.schedule, after: outcome))
         library.reviews[library.reviews.count - 1].settingsSnapshot = library.settings
+        library.reviews[library.reviews.count - 1].presentationID = presentationID
+        library.reviews[library.reviews.count - 1].gradingMethod = "manual"
         library.reviews[library.reviews.count - 1].questionType = library.liveNotes.first { $0.id == item.card.noteID }?.canonicalQuestionType
         library.reviews[library.reviews.count - 1].subject = library.liveNotes.first { $0.id == item.card.noteID }?.declaredSubject
         library.reviews[library.reviews.count - 1].questionSubtype = library.liveNotes.first { $0.id == item.card.noteID }?.declaredQuestionSubtype

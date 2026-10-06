@@ -2,6 +2,7 @@ import Foundation
 import LearningCore
 
 public enum AIContentOperation: Sendable {
+    case questionVariants(String, String, String, [QuestionVariant])
     case createDeck(String), renameDeck(String,String), saveNote(NoteDraft), deleteNote(String), deleteDeck(String)
     case saveNotebook(String,[NotebookBlock]), retention(String,Double?), suspend(String,Bool), settings(StudySettings)
     case memory(LearningMemory), deleteMemory(String)
@@ -39,8 +40,9 @@ extension StudyService {
         try await repository.commit(library,expectedRevision:library.revision)
     }
     public func executeAIContent(_ operation: AIContentOperation, runID: String, conversationID: String, callID: String,
-                                 name: String, arguments: String, expectedRevision: Int, now: Date = Date()) async throws -> AIActionRecord {
+                                 name: String, arguments: String, expectedRevision: Int, now: Date = Date(), expectedRepositoryContext: String? = nil) async throws -> AIActionRecord {
         let library = try await repository.read()
+        guard expectedRepositoryContext.map({ $0 == library.repositoryContext }) ?? true else { throw EngramError.conflict }
         if let existing = library.assistantState?.runs.flatMap(\.actions).first(where: { $0.id == callID && $0.status == "completed" }) { guard existing.name == name, existing.arguments == arguments else { throw EngramError.conflict }; return existing }
         guard library.revision == expectedRevision else { throw EngramError.conflict }
         let baseline: [String:String]?
@@ -48,6 +50,8 @@ extension StudyService {
         let journal = AIJournalRepository(base:repository,runID:runID,conversationID:conversationID,callID:callID,name:name,arguments:arguments,preferencesBaseline:baseline)
         let service = StudyService(repository:journal,scheduler:scheduler)
         switch operation {
+        case .questionVariants(let id, let front, let back, let variants):
+            try await service.saveQuestionVariants(noteID: id, originalFront: front, originalBack: back, variants: variants, expectedRevision: expectedRevision, now: now)
         case .createDeck(let name): _ = try await service.createDeck(name:name,now:now)
         case .renameDeck(let id,let name): try await service.renameDeck(id:id,name:name)
         case .saveNote(let draft): _ = try await service.saveNote(draft,now:now)

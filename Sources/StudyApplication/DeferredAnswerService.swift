@@ -87,6 +87,7 @@ extension StudyService {
         var event = ReviewEvent(id: reviewID, cardID: card.id, deckID: card.deckID, sessionID: attempt.sessionID, rating: grade, reviewedAt: attempt.createdAt, committedAt: now, before: card.schedule, after: outcome)
         event.settingsSnapshot = settings; event.assessment = assessment
         event.gradingMethod = manualGrade == nil ? assessment?.method : "manual"
+        event.presentationID = attempt.presentationID
         event.questionType = attempt.questionType; event.questionSchemaVersion = attempt.questionSchemaVersion; event.inputModality = attempt.inputModality
         event.subject = attempt.subject; event.questionSubtype = attempt.questionSubtype
         library.reviews.append(event); library.cards[ci].schedule = outcome; library.cards[ci].version += 1
@@ -142,6 +143,7 @@ extension StudyService {
                 var event = ReviewEvent(id: "dispute-" + UUID().uuidString, cardID: card.id, deckID: card.deckID, sessionID: attempt.sessionID, rating: grade, reviewedAt: attempt.createdAt, committedAt: now, before: before, after: after)
                 event.settingsSnapshot = settings; event.assessment = assessment; library.reviews.append(event)
                 library.reviews[library.reviews.count - 1].gradingMethod = manualGrade == nil ? assessment.method : "manual"
+                library.reviews[library.reviews.count - 1].presentationID = attempt.presentationID
                 library.reviews[library.reviews.count - 1].questionType = attempt.questionType
                 library.reviews[library.reviews.count - 1].subject = attempt.subject
                 library.reviews[library.reviews.count - 1].questionSubtype = attempt.questionSubtype

@@ -107,6 +107,7 @@ struct ReviewView: View {
         .interactiveDismissDisabled(model.busy)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.library.session?.current?.presentationID)
         .onAppear { model.voice.present(model: model) }
+        .task(id: model.library.session?.current?.presentationID) { await model.understanding.captureRecall(model) }
         .onDisappear { model.voice.stop(); model.deferredReview.referenceVisible = false; model.deferredReview.requestFlush() }
         .onChange(of: submitted?.id) { _, value in model.deferredReview.referenceVisible = value != nil }
         .onChange(of: scenePhase) { _, phase in

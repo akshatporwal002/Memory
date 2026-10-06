@@ -56,6 +56,7 @@ public struct EngramRootView: View {
         .engramCanvas()
         .engramCaptureSurface()
         .task {
+            await model.understanding.configure(model)
             await model.research.configure(model)
             model.aiMarker.measured = { [weak model] event in
                 guard let model else { return }
@@ -115,6 +116,7 @@ public struct EngramRootView: View {
             guard !capturingScreenshots else { return }
             while !Task.isCancelled {
                 await model.deferredReview.processReady(model)
+                await model.understanding.processReady(model)
                 await model.research.observeActivity(model, active: scenePhase == .active)
                 do { try await Task.sleep(for: .seconds(2)) } catch { break }
             }
@@ -131,7 +133,9 @@ public struct EngramRootView: View {
             }
         }
         .sheet(isPresented: Binding(get: { model.deferredReview.summaryPresented }, set: { model.deferredReview.summaryPresented = $0 })) { NavigationStack { ReviewFeedbackSummaryView(model: model) } }
+        .sheet(isPresented: Binding(get: { model.understanding.presented }, set: { model.understanding.presented = $0 })) { UnderstandingPracticeView(model: model) }
         .onChange(of: scenePhase) { _, phase in
+            model.understanding.foreground = phase == .active
             model.deferredReview.foreground = phase == .active
             Task { await model.research.observeActivity(model, active: phase == .active) }
             if phase == .active { Task { await model.refresh(); await model.cloud.sync(model:model); if scenePhase == .active { await model.voiceWork.resume(model: model) } } }

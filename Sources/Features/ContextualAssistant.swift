@@ -184,13 +184,19 @@ struct ContextualAssistant: View {
             .padding(.horizontal, 16)
             .padding(.bottom, open ? 8 : 0)
         }
-        .confirmationDialog("Confirm the assistant's requested change", isPresented: Binding(get: { model.assistant.pendingConfirmation != nil }, set: { if !$0 { Task { await model.assistant.reject(model: model) } } })) {
+        .sheet(isPresented: Binding(get: { model.assistant.pendingConfirmation?.name.components(separatedBy: ".").last == "question_variants" }, set: { if !$0 && model.assistant.pendingConfirmation != nil { Task { await model.assistant.reject(model: model) } } })) {
+            QuestionVariantReview(model: model)
+        }
+        .confirmationDialog("Confirm the assistant's requested change", isPresented: Binding(get: { model.assistant.pendingConfirmation != nil && model.assistant.pendingConfirmation?.name.components(separatedBy: ".").last != "question_variants" }, set: { if !$0 { Task { await model.assistant.reject(model: model) } } })) {
             Button("Confirm change") { Task { await model.assistant.confirm(model: model) } }
             Button("Cancel", role: .cancel) { Task { await model.assistant.reject(model: model) } }
         } message: {
             Text(model.library.assistantState?.runs.flatMap(\.actions).last(where: { $0.id == model.assistant.pendingConfirmation?.id })?.summary ?? "Review this requested change before accepting.")
         }
         .animation(motion, value: stage)
+        .onChange(of: model.questionVariantRequest) { _, request in
+            if let request { prompt = request; stage = .medium; model.questionVariantRequest = nil }
+        }
         .animation(motion, value: thread.count)
         .onChange(of: context) { _, _ in prompt = ""; error = nil; showingHistory = false; selectedHistoryID = nil; close() }
         .onChange(of: model.libraryPresentationEpoch) { _, _ in messages = [:]; selectedDeckID = nil; selectedHistoryID = nil; prompt = ""; error = nil; close() }

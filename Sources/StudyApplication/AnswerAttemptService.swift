@@ -52,6 +52,8 @@ extension StudyService {
             rating:grade,reviewedAt:attempt.createdAt,committedAt:now,before:item.card.schedule,after:outcome)
         review.settingsSnapshot = library.settings
         review.assessment = attempt.assessment
+        review.gradingMethod = manualGrade == nil ? attempt.assessment?.method : "manual"
+        review.presentationID = attempt.presentationID
         review.questionType = library.liveNotes.first { $0.id == attempt.noteID }?.canonicalQuestionType
         review.subject = library.liveNotes.first { $0.id == attempt.noteID }?.declaredSubject
         review.questionSubtype = library.liveNotes.first { $0.id == attempt.noteID }?.declaredQuestionSubtype

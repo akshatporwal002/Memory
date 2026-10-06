@@ -254,6 +254,8 @@ extension StudyService {
         var review = ReviewEvent(id: reviewID, cardID: job.card.id, deckID: job.card.deckID, sessionID: job.attempt.sessionID,
             rating: rating, reviewedAt: job.attempt.createdAt, committedAt: now, before: before, after: outcome)
         review.settingsSnapshot = job.settings; review.assessment = assessment; library.reviews.append(review)
+        library.reviews[library.reviews.count - 1].presentationID = job.attempt.presentationID
+        library.reviews[library.reviews.count - 1].gradingMethod = assessment.method
         library.reviews[library.reviews.count - 1].questionType = job.note.canonicalQuestionType
         library.reviews[library.reviews.count - 1].subject = job.note.declaredSubject
         library.reviews[library.reviews.count - 1].questionSubtype = job.note.declaredQuestionSubtype

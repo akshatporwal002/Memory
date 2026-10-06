@@ -39,11 +39,13 @@ struct UtilityListStyle: ViewModifier {
 }
 
 private enum SettingsPage: String, CaseIterable, Identifiable {
+    case learning = "Learning & Practice"
     case appearance = "Appearance", study = "Study", scheduling = "Scheduling", voice = "Voice",
          ai = "AI & Connections", tutor = "Tutor", storage = "Storage & Downloads", backup = "Backup & Restore", about = "About & Help"
     var id: String { rawValue }
     var symbol: String {
         switch self {
+        case .learning: "brain"
         case .appearance: "paintpalette.fill"
         case .study: "book.fill"
         case .scheduling: "calendar"
@@ -57,6 +59,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
     }
     var keywords: String {
         switch self {
+        case .learning: "learner models understanding variants practice mastery dashboard"
         case .appearance: "theme dark light system text accessibility"
         case .study: "daily limits new cards reviews time zone day begins"
         case .scheduling: "fsrs retention memory"
@@ -82,7 +85,7 @@ struct SettingsView: View {
     @Environment(\.engramScreenshotAcknowledgements) private var captureAcknowledgements
     @State private var search = ""
     private var groups: [[SettingsPage]] {
-        search.isEmpty ? [[.appearance], [.study, .scheduling], [.voice, .ai, .tutor], [.storage, .backup], [.about]] : [SettingsPage.allCases]
+        search.isEmpty ? [[.appearance], [.study, .scheduling, .learning], [.voice, .ai, .tutor], [.storage, .backup], [.about]] : [SettingsPage.allCases]
     }
 
     var body: some View {
@@ -161,6 +164,7 @@ struct SettingsView: View {
 
     private func summary(_ page: SettingsPage) -> String {
         switch page {
+        case .learning: "Understanding practice"
         case .appearance: model.appearance.title
         case .study: "\(model.library.settings.newCardsPerDay) new/day"
         case .scheduling: model.library.settings.desiredRetention.formatted(.percent.precision(.fractionLength(0)))
@@ -174,6 +178,7 @@ struct SettingsView: View {
     }
     @ViewBuilder private func destination(_ page: SettingsPage) -> some View {
         switch page {
+        case .learning: UnderstandingSettingsView(model: model, deckID: nil)
         case .appearance:
             Form {
                 EngramListSection {

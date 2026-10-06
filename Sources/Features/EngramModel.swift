@@ -27,6 +27,8 @@ public struct DeckForm: Identifiable {
     let pdfLearning = PDFLearningController()
     let cloud: CloudAccountController
     let assistant = AssistantController()
+    let understanding = UnderstandingController()
+    var questionVariantRequest: String?
     let typedAnswer = TypedAnswerController()
     let deferredReview = DeferredReviewController()
     let tutor = TutorController()
@@ -61,6 +63,7 @@ public struct DeckForm: Identifiable {
         return account == "local" && activeLibraryID == LibrarySpace.defaultID ? "engram.deckCreationDraft.v1" : "engram.deckCreationDraft.v1." + account + "." + activeLibraryID
     }
     private func refreshLibraryPresentation() {
+        understanding.resetPresentation()
         libraryPresentationEpoch = UUID()
         selectedDeckID = nil; libraryDeckRequest = nil; search = ""
         activeDeckOverviewID = nil; activeContentDeckID = nil; activeContentKind = nil
@@ -87,7 +90,7 @@ public struct DeckForm: Identifiable {
     }
     public func selectLibrary(_ id: String) async {
         guard id != activeLibraryID else { return }
-        guard !busy, !typedAnswer.busy, !markingAnswer, !cloud.busy, !voiceWork.capturing else { error = "Finish the current edit or answer review before switching libraries."; return }
+        guard !busy, !typedAnswer.busy, !understanding.busy, !markingAnswer, !cloud.busy, !voiceWork.capturing else { error = "Finish the current edit or answer review before switching libraries."; return }
         busy = true; defer { busy = false }
         await assistant.stopAndWait(); voice.stop(); await voiceWork.pause(); pdfLearning.cancel()
         do {

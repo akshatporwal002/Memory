@@ -32,6 +32,7 @@ public struct ScheduleState: Codable, Equatable, Sendable {
     }
 }
 public struct Deck: Codable, Identifiable, Equatable, Sendable {
+    public var understandingSettings: UnderstandingSettings?
     /// Source-preserving PDF learning metadata. Optional for old libraries and backups.
     public var pdfLearning: PDFLearningRecord?
     /// Optional for older libraries; source files are owner-private and never part of shared deck metadata.
@@ -75,6 +76,7 @@ public struct ImportOrigin: Codable, Equatable, Sendable {
     }
 }
 public struct Note: Codable, Identifiable, Equatable, Sendable {
+    public var questionFamily: QuestionFamily?
     public var multipleChoice: MultipleChoiceQuestion?
     public var questionType: String?
     public var mcq: MultipleChoiceQuestion? { kind == .basic ? multipleChoice ?? MultipleChoiceQuestion.parse(front: front, back: back) : nil }
@@ -129,6 +131,7 @@ public struct StudyCard: Codable, Identifiable, Equatable, Sendable {
     }
 }
 public struct ReviewEvent: Codable, Identifiable, Equatable, Sendable {
+    public var presentationID: String?
     public var subject: String?
     public var questionSubtype: String?
     public var gradingMethod: String?

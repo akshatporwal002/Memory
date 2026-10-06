@@ -72,7 +72,14 @@ struct DeckOverviewView: View {
                                 }
                             }
                         }
-
+                        Divider()
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Analytics").font(theme.font(.section)).accessibilityAddTraits(.isHeader)
+                            NavigationLink { NotebookAnalyticsView(model: model, deckID: deckID) } label: {
+                                HStack { Text("Recall, question difficulty & skill estimates"); Spacer(); Image(systemName: "chevron.right").font(.caption) }
+                                    .font(.subheadline).frame(minHeight: 44).contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityIdentifier("notebook-analytics")
+                        }
                     }
                     .padding(EngramSpacing.section).padding(.bottom, 12)
                     .frame(maxWidth: workspace ? 1040 : 720).frame(maxWidth: .infinity)
@@ -82,6 +89,8 @@ struct DeckOverviewView: View {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button("Add question", systemImage: "plus") { model.newNote(deckID: deckID) }
+                            Button("Understanding practice", systemImage: "brain") { Task { await model.understanding.start(deckID: deckID, model: model) } }
+                            NavigationLink { UnderstandingSettingsView(model: model, deckID: deckID) } label: { Label("Learning & practice", systemImage: "slider.horizontal.3") }
                             Button("Edit notes", systemImage: "square.and.pencil") { openNotes() }
                             Button("Add PDF or Markdown", systemImage:"doc.badge.plus") { importingDocument = true }
                             Button("Add image from Photos",systemImage:"photo.on.rectangle") { selectedPhoto = nil; choosingPhoto = true }
@@ -214,30 +223,8 @@ struct DeckQuestionsView: View {
                         Button("Add question") { model.newNote(deckID: deckID) }.buttonStyle(EngramButtonStyle())
                     }
                     ForEach(Array(notes.enumerated()), id: \.element.id) { index, note in
-                        VStack(alignment: .leading, spacing: 12) {
-                            QuestionReadingView(front: note.front, back: note.back, number: index + 1, media: model.library.media)
-                            if !note.source.isEmpty {
-                                DisclosureGroup("Source evidence") { Text(note.source).font(.caption).textSelection(.enabled) }
-                                    .font(.caption).foregroundStyle(palette.secondaryText)
-                            }
-                            HStack {
-                                Button("Edit question") {
-                                    // Questions has its own reading destination; editing uses the existing card editor.
-                                    model.draft = NoteDraft(note: note); model.editorPresented = true
-                                }.font(.caption).frame(minHeight: 44)
-                                Spacer()
-                                Menu {
-                                    ForEach(model.cards(for: note)) { card in
-                                        Button(card.suspended ? "Resume card \(card.ordinal + 1)" : "Suspend card \(card.ordinal + 1)") {
-                                            Task { _ = await model.perform { try await $0.setSuspended(cardID: card.id, suspended: !card.suspended) } }
-                                        }
-                                    }
-                                    Button("Delete question", role: .destructive) { model.deleteNote = note }
-                                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
-                                    .accessibilityLabel("Question \(index + 1) actions")
-                            }.foregroundStyle(palette.secondaryText).disabled(model.busy)
-                            Divider()
-                        }.id(note.id).accessibilityIdentifier("question-\(note.id)")
+                        QuestionFamilyRow(model: model, note: note, number: index + 1)
+                            .id(note.id).accessibilityIdentifier("question-\(note.id)")
                             .background(GeometryReader { geometry in
                                 Color.clear.preference(key: VisibleQuestionPositions.self,
                                     value:[note.id:geometry.frame(in:.named("questions-scroll")).minY])

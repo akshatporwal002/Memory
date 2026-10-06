@@ -35,6 +35,8 @@ extension StudyService {
         event.subject = note.declaredSubject; event.questionSubtype = note.declaredQuestionSubtype
         event.inputModality = note.mcq == nil ? "typed" : "choice"
         event.assessment = assessment; library.reviews.append(event)
+        library.reviews[library.reviews.count - 1].gradingMethod = assessment.method
+        library.reviews[library.reviews.count - 1].presentationID = presentationID
         item.revealedAt = now; item.outcomes = outcomes; item.assessment = assessment
         session.current = item; session.completed += 1; library.session = session
         try Task.checkCancellation()
