@@ -2,6 +2,20 @@ import Foundation
 import LearningCore
 
 public struct NotebookAnalytics: Sendable {
+    public struct Point: Identifiable, Sendable {
+        public var id: String { series + ":" + String(date.timeIntervalSince1970) }
+        public let date: Date
+        public let series: String
+        public let value: Double
+        public var lower: Double? = nil
+        public var upper: Double? = nil
+        public init(date: Date, series: String, value: Double, lower: Double? = nil, upper: Double? = nil) {
+            self.date = date; self.series = series; self.value = value; self.lower = lower; self.upper = upper
+        }
+    }
+    public var isDemo = false
+    public var evidence: [LearnerEvidence] = []
+    public var recallForecast: [Point] = []
     public struct Question: Identifiable, Sendable {
         public var id: String { mapping.questionID + ":" + String(mapping.questionVersion) }
         public let prompt: String
@@ -13,6 +27,7 @@ public struct NotebookAnalytics: Sendable {
         public let description: LearnerModelDescription
         public let mode: LearnerMode
         public let questions: [Question]
+        public var abilityHistory: [Point] = []
     }
     public let observed: LearnerDashboard
     public let components: [Component]
@@ -26,6 +41,10 @@ extension StudyService {
     /// Notebook-local outcomes; predictions retain compatible shared library history.
     /// Read-only: opening analytics neither prepares nor activates a model.
     public func notebookAnalytics(deckID: String, now: Date = Date()) async throws -> NotebookAnalytics {
+        let librarySnapshot = try await repository.read()
+        if let deck = librarySnapshot.liveDecks.first(where: { $0.id == deckID }), LearningAnalyticsDemo.isDemo(deck) {
+            return try LearningAnalyticsDemo.analytics(deck: deck, snapshot: librarySnapshot, scheduler: scheduler, now: now)
+        }
         guard let coordinator = learnerCoordinator else { throw LearnerError.unavailable }
         let context = try await coordinator.context()
         guard context.snapshot.liveDecks.contains(where: { $0.id == deckID }) else { throw LearnerError.unavailable }
@@ -76,14 +95,49 @@ extension StudyService {
                 }
                 rows.append(.init(prompt: question.prompt, mapping: question.mapping, prediction: prediction, calibratedDifficulty: difficulty))
             }
-            components.append(.init(description: entry, mode: mode, questions: rows))
+            var component = NotebookAnalytics.Component(description: entry, mode: mode, questions: rows)
+            if entry.model == .dynamicRasch, rows.contains(where: { $0.prediction != nil }),
+               let candidate = workspace.candidate(for: entry.model, state: state) {
+                let predictor = DynamicRaschLearnerPredictor(artifact: try JSONDecoder().decode(DynamicRaschLearnerPredictor.Artifact.self, from: candidate.parameters))
+                let history = state.latest.filter(predictor.compatible).filter { $0.occurredAt <= now }
+                component.abilityHistory = try NotebookAnalytics.abilityPoints(predictor, evidence: history, now: now)
+            }
+            components.append(component)
         }
         try await coordinator.check(context)
         let current = try await coordinator.store.load(account: context.account, library: context.library)
         guard current.revision == state.revision, current.configuration == state.configuration else { throw LearnerError.conflict }
         let cards = context.snapshot.liveCards.filter { $0.deckID == deckID && !$0.suspended && noteIDs.contains($0.noteID) }
         let estimates = cards.compactMap { (scheduler as? any MemoryEstimating)?.recallProbability(state: $0.schedule, now: now, settings: context.snapshot.settings) }
-        return NotebookAnalytics(observed: LearnerDashboard(evidence: evidence), components: components, recordingEnabled: workspace.recordingEnabled,
+        var result = NotebookAnalytics(observed: LearnerDashboard(evidence: evidence), components: components, recordingEnabled: workspace.recordingEnabled,
             predictedRecall: estimates.isEmpty ? nil : estimates.reduce(0, +) / Double(estimates.count), recallEstimatedCards: estimates.count, recallTotalCards: cards.count)
+        result.evidence = evidence
+        result.recallForecast = NotebookAnalytics.forecast(cards: cards, scheduler: scheduler, settings: context.snapshot.settings, now: now)
+        return result
+    }
+}
+
+extension NotebookAnalytics {
+    static func forecast(cards: [StudyCard], scheduler: any Scheduler, settings: StudySettings, now: Date) -> [Point] {
+        guard let estimator = scheduler as? any MemoryEstimating else { return [] }
+        // Fixed cohort avoids changing the denominator as the forecast advances.
+        let eligible = cards.filter { estimator.recallProbability(state: $0.schedule, now: now, settings: settings) != nil }
+        guard !eligible.isEmpty else { return [] }
+        return (0...14).compactMap { day in
+            let date = now.addingTimeInterval(Double(day) * 86400)
+            let values = eligible.compactMap { estimator.recallProbability(state: $0.schedule, now: date, settings: settings) }
+            guard values.count == eligible.count else { return nil }
+            return Point(date: date, series: "Without more reviews", value: values.reduce(0, +) / Double(values.count))
+        }
+    }
+    static func abilityPoints(_ predictor: DynamicRaschLearnerPredictor, evidence: [LearnerEvidence], now: Date) throws -> [Point] {
+        let dates = Array(Set(evidence.map { min(now, Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: $0.occurredAt))!.addingTimeInterval(-1)) })).sorted()
+        // At most 30 points; replay only evidence available at each time.
+        let strideSize = max(1, Int(ceil(Double(dates.count) / 30)))
+        return try dates.enumerated().filter { $0.offset % strideSize == 0 || $0.offset == dates.count - 1 }.map { _, date in
+            let payload = try predictor.replay(evidence.filter { $0.occurredAt <= date })
+            let ability = try predictor.ability(at: date, history: payload)
+            return Point(date: date, series: "Ability", value: ability.mean, lower: ability.lower, upper: ability.upper)
+        }
     }
 }

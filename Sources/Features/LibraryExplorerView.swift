@@ -214,6 +214,9 @@ struct LibraryExplorerView: View {
         Menu {
             Button("New folder",systemImage:"folder.badge.plus") { beginFolder(in:"") }
             Button("New notebook",systemImage:"book.closed.badge.plus",action:newNotebook)
+            Button("Add learning analytics sample", systemImage: "chart.xyaxis.line") {
+                Task { _ = await model.perform { _ = try await $0.importLearningAnalyticsDemo() } }
+            }
             Button("Testing samples", systemImage: "checklist") { testingSamplesPresented = true }
             Button("Add source file to Library",systemImage:"doc.badge.plus") { beginFolderImport("") }
             Button("Add image to Library",systemImage:"photo.on.rectangle") { beginFolderPhoto("") }

@@ -201,10 +201,16 @@ public struct DeckForm: Identifiable {
         guard let id = library.session?.id else { return false }
         return library.activeReviews.contains { $0.sessionID == id }
     }
+    @ObservationIgnored private var learningDemoSeeded = false
     public func refresh() async {
         guard !busy else { return }
         if !librarySelectionRestored { await restoreLibrarySelection() }
         do {
+            if !learningDemoSeeded && ProcessInfo.processInfo.arguments.contains("--seed-learning-demo") {
+                learningDemoSeeded = true
+                do { _ = try await service.importLearningAnalyticsDemo() }
+                catch { learningDemoSeeded = false; throw error }
+            }
             library = try await service.snapshot(); now = Date(); loaded = true
             librarySpaces = try await service.librarySpaces()
             if let value = library.assistantState?.preferences?["theme"],let choice = EngramTheme(rawValue:value) { theme = choice }
