@@ -87,7 +87,7 @@ extension StudyService {
         item.revealedAt = now; item.assessment = attempt.assessment; item.outcomes = outcomes; session.current = item; session.completed += 1
         library.session = session
         // Commit feedback and scheduling once; advancing is included in the same repository transaction.
-        let queue = QueuePolicy.dueCards(in:library,deckID:session.deckID,now:now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
+        let queue = plannedSessionCards(session, in: library, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init); library.session = session
         try Task.checkCancellation(); try await repository.commit(library,expectedRevision:library.revision)
     }

@@ -17,6 +17,8 @@ private struct ReplayFixture: LearnerPredictor {
 }
 @main struct LearnerModelValidation {
     static func main() async throws {
+        try validateDeadlinePrototype()
+        try await validateDeadlineIntegration()
         let mapping = try ReviewedSkillMapping(questionID: "q", questionVersion: 1, revision: "reviewed-v1", skillIDs: ["s"], reviewedBy: "fixture-reviewer")
         let date = Date(timeIntervalSince1970: 1_000_000)
         func row(_ revision: Int = 1, acceptance: LearnerEvidence.Acceptance = .accepted, correct: Bool? = true,

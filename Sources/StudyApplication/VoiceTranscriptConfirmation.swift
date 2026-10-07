@@ -31,7 +31,7 @@ extension StudyService {
         } else { jobs[index].state = .awaitingMarking; jobs[index].attempt = attempt }
         library.voiceJobs = jobs
         session.skippedCardIDs = (session.skippedCardIDs ?? []) + [attempt.cardID]
-        session.queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }.map(\.id)
+        session.queue = plannedSessionCards(session, in: library, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }.map(\.id)
         session.current = session.queue.first.flatMap { id in library.liveCards.first { $0.id == id }.map(ReviewPresentation.init) }
         library.session = session
         try await repository.commit(library, expectedRevision: library.revision)

@@ -48,7 +48,7 @@ extension StudyService {
         guard var session = library.session, session.id == sessionID,
               session.current?.presentationID == presentationID,
               session.current?.assessment != nil else { throw EngramError.conflict }
-        let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
+        let queue = plannedSessionCards(session, in: library, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
         library.session = session
         try await repository.commit(library, expectedRevision: library.revision)
@@ -57,7 +57,7 @@ extension StudyService {
         var library = try await repository.read()
         guard var session = library.session, session.id == sessionID, let item = session.current, item.presentationID == presentationID else { throw EngramError.conflict }
         session.skippedCardIDs = (session.skippedCardIDs ?? []) + [item.card.id]
-        let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
+        let queue = plannedSessionCards(session, in: library, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init); library.session = session
         try await repository.commit(library, expectedRevision: library.revision)
     }

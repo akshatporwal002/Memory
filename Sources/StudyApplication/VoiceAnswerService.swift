@@ -42,7 +42,7 @@ extension StudyService {
         try job.validate()
         library.voiceJobs = (library.voiceJobs ?? []) + [job]
         if mode == .continueProcessing && !requireConfirmation {
-            session.queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
+            session.queue = plannedSessionCards(session, in: library, now: now)
                 .filter { !(session.skippedCardIDs ?? []).contains($0.id) }.map(\.id)
             session.current = session.queue.first.flatMap { id in library.liveCards.first { $0.id == id }.map(ReviewPresentation.init) }
             library.session = session
@@ -170,7 +170,7 @@ extension StudyService {
                 if current.presentationID == jobs[index].attempt.presentationID {
                     current.card = library.cards[ci]; current.assessment = nil; current.revealedAt = nil; current.outcomes = [:]; session.current = current
                 } else {
-                    let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
+                    let queue = plannedSessionCards(session, in: library, now: now)
                         .filter { !(session.skippedCardIDs ?? []).contains($0.id) }
                     session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
                 }
@@ -184,7 +184,7 @@ extension StudyService {
         guard let job = library.voiceJobs?.first(where: { $0.id == id && $0.deviceID == deviceID && $0.ownerID == ownerID && $0.state == .completed }),
               var session = library.session, session.id == job.attempt.sessionID,
               session.current?.presentationID == job.attempt.presentationID else { throw EngramError.conflict }
-        let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now)
+        let queue = plannedSessionCards(session, in: library, now: now)
             .filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
         library.session = session; try await repository.commit(library, expectedRevision: library.revision)

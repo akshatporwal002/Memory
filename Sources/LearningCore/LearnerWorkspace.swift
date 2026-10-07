@@ -80,6 +80,7 @@ public struct LearnerArtifactReview: Codable, Sendable {
 }
 
 public struct LearnerWorkspace: Codable, Sendable {
+    public var deadlineRecords: [DeadlineRecord]?
     public var understanding: UnderstandingWorkspace?
     public var schemaVersion = 1
     public var revision = 0
@@ -90,6 +91,9 @@ public struct LearnerWorkspace: Codable, Sendable {
     public var artifactReviews: [LearnerArtifactReview] = []
     public init() {}
     public func validate() throws {
+        guard (deadlineRecords?.count ?? 0) <= 500,
+              Set((deadlineRecords ?? []).map { $0.goal.deckID }).count == (deadlineRecords?.count ?? 0) else { throw LearnerError.invalidEvidence }
+        for record in deadlineRecords ?? [] { try record.goal.validate(); guard record.forecasts.count <= 100 else { throw LearnerError.invalidEvidence } }
         try understanding?.validate()
         guard schemaVersion == 1, revision >= 0, captures.count <= 500000, questions.count <= 50000,
               candidates.count <= 100, Set(captures.map(\.attemptID)).count == captures.count,

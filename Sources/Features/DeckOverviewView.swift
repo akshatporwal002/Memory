@@ -75,6 +75,10 @@ struct DeckOverviewView: View {
                         Divider()
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Analytics").font(theme.font(.section)).accessibilityAddTraits(.isHeader)
+                            NavigationLink { DeadlineLearningView(model: model, deckID: deckID) } label: {
+                                HStack { Text("Deadline learning · plan & data"); Spacer(); Image(systemName: "chevron.right").font(.caption) }
+                                    .font(.subheadline).frame(minHeight: 44).contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityIdentifier("notebook-deadline-learning")
                             NavigationLink { NotebookAnalyticsView(model: model, deckID: deckID) } label: {
                                 HStack { Text("Recall, question difficulty & skill estimates"); Spacer(); Image(systemName: "chevron.right").font(.caption) }
                                     .font(.subheadline).frame(minHeight: 44).contentShape(Rectangle())

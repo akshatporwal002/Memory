@@ -192,6 +192,8 @@ public struct ReviewPresentation: Codable, Equatable, Sendable {
     public init(card: StudyCard) { self.presentationID = UUID().uuidString; self.card = card; self.revealedAt = nil; self.outcomes = [:] }
 }
 public struct StudySession: Codable, Identifiable, Equatable, Sendable {
+    /// Explicit experimental deadline queue; absent in ordinary FSRS sessions and old backups.
+    public var deadlineCardIDs: [String]?
     public var skippedCardIDs: [String]?
     public var id: String
     public var deckID: String?

@@ -35,7 +35,7 @@ extension StudyService {
         attempt.inputModality = supplied.inputModality ?? "typed"
         library.answerAttempts = (library.answerAttempts ?? []) + [attempt]
         session.skippedCardIDs = (session.skippedCardIDs ?? []) + [item.card.id]
-        session.queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: supplied.createdAt)
+        session.queue = plannedSessionCards(session, in: library, now: supplied.createdAt)
             .filter { !(session.skippedCardIDs ?? []).contains($0.id) }.map(\.id)
         session.current = session.queue.first.flatMap { id in library.liveCards.first { $0.id == id }.map(ReviewPresentation.init) }
         library.session = session

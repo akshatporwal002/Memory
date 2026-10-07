@@ -10,6 +10,9 @@ struct NotebookAnalyticsView: View {
     @State private var error: String?
     var body: some View {
         Form {
+            EngramListSection("Study goals") {
+                NavigationLink("Deadline learning · plan & data") { DeadlineLearningView(model: model, deckID: deckID) }
+            }
             if let analytics {
                 EngramListSection("Observed outcomes") {
                     LabeledContent("Accepted attempts", value: String(analytics.observed.acceptedAttempts))

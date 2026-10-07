@@ -476,6 +476,23 @@ public actor StudyService {
         session.nextLearningDue = nextLearningDue(in: library, deckID: deckID, now: now)
         library.session = session; try await save(library); return session
     }
+    public func startDeadlineSession(deckID: String, now: Date) async throws -> StudySession {
+        guard let coordinator = learnerCoordinator else { throw LearnerError.unavailable }
+        let context = try await coordinator.context()
+        let plan = try await deadlinePlan(deckID: deckID, now: now, saveForecast: true)
+        guard plan.staleItems == 0 else { throw EngramError.invalid("Target cards changed. Save a new deadline goal before studying.") }
+        var library = try await repository.read()
+        try await coordinator.check(context)
+        guard library.repositoryContext == context.snapshot.repositoryContext, library.revision == context.snapshot.revision else { throw LearnerError.conflict }
+        guard library.session?.current == nil else { throw EngramError.invalid("Finish or close your current review before starting the deadline plan.") }
+        let ids = plan.actions.filter { $0.date <= now }.map(\.cardID)
+        let eligible = QueuePolicy.eligibleCards(in: library, deckID: deckID)
+        let cards = ids.compactMap { id in eligible.first { $0.id == id } }
+        guard !cards.isEmpty else { throw EngramError.invalid("No deadline practice is planned right now.") }
+        var session = StudySession(deckID: deckID, startedAt: now, queue: cards.map(\.id), current: cards.first.map(ReviewPresentation.init))
+        session.deadlineCardIDs = cards.map(\.id)
+        library.session = session; try await save(library); return session
+    }
     /// Rechecks cards that became due, including short learning steps. Does not disturb a visible prompt.
     public func refreshSession(now: Date) async throws -> StudySession? {
         var library = try await repository.read()
@@ -567,6 +584,11 @@ public actor StudyService {
         return clean
     }
     private func refresh(_ session: inout StudySession, in library: LibrarySnapshot, now: Date) {
+        if session.deadlineCardIDs != nil {
+            let cards = plannedSessionCards(session, in: library, now: now)
+            session.queue = cards.map(\.id); session.current = cards.first.map(ReviewPresentation.init); session.nextLearningDue = nil
+            return
+        }
         let queue = QueuePolicy.dueCards(in: library, deckID: session.deckID, now: now).filter { !(session.skippedCardIDs ?? []).contains($0.id) }
         session.queue = queue.map(\.id); session.current = queue.first.map(ReviewPresentation.init)
         session.nextLearningDue = nextLearningDue(in: library, deckID: session.deckID, now: now)
